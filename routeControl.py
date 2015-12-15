@@ -11,22 +11,22 @@ routeState.currentPos   = routeState.waypoints[0]
 routeState.timeStamp    = time.clock()
 
 
-def routeControlUpdate(routeState,batchdata):
+def routeControlUpdate(state,batchdata):
     for item in batchdata:
         if item['messageType'] == 'control':
             print 'route - control message'
         elif item['messageType'] == 'sense':
             #print 'route - sense message'
             sensedPos = item['sensedPos']
-            distToWPx = sensedPos[0] - routeState.waypoints[routeState.nextWaypoint][0]
-            distToWPy = sensedPos[1] - routeState.waypoints[routeState.nextWaypoint][1]
+            distToWPx = sensedPos[0] - state.waypoints[state.nextWaypoint][0]
+            distToWPy = sensedPos[1] - state.waypoints[state.nextWaypoint][1]
             dist = math.hypot( distToWPx , distToWPy )
             #TODO - appropriate distance check for waypoint-reached?
             if dist < 50.0: 
-                print dist, sensedPos, routeState.waypoints[routeState.nextWaypoint]
+                print dist, sensedPos, state.waypoints[state.nextWaypoint]
                 print '******************************waypoint reached'
-                if ( routeState.nextWaypoint+1 < len(routeState.waypoints)):
-                    routeState.nextWaypoint += 1 
+                if ( state.nextWaypoint+1 < len(state.waypoints)):
+                    state.nextWaypoint += 1 
                 
 
 def routeToTrackTranslator( sourceState, destState, destQueue ):

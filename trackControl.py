@@ -16,7 +16,7 @@ trackState.currentPos = (0.0,0,0)
 trackState.demandTheta = math.pi / 2.0
 trackState.demandPos = (0.0,0,0)
 trackState.timeStamp    = time.clock()
-trackState._trackUnitsToMm = 320.0 / 2.0   # TODO use half of wheel track as tracking unit
+trackState._trackUnitsToMm = 310.0 / 2.0   # use half of wheel track as tracking unit
 trackState._movementBudget = math.pi / 2.0 # budget allows for turning pi/2 or more with no forward movement
 
 def trackControlUpdate(state,batchdata):
