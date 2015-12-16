@@ -20,7 +20,8 @@ class ControlLoop(threading.Thread):
 
     
     def run(self):
-        self._lastrun = time.clock()
+        print "starting thread"
+        self._lastrun = time.time()
         while True:
             batchdata = []
             haveData = False
@@ -30,7 +31,7 @@ class ControlLoop(threading.Thread):
                 #keep gathering data until minPeriod has passed
                 #or if nothing appears, continue waiting until maxPeriod before giving up
                 timeout = (haveDataDeadline if haveData else haveNoDataDeadline)\
-                           - time.clock()
+                           - time.time()
                 try:
                     batchdata.append(self.queue.get(True,max(timeout,0)))
                     haveData = True
@@ -38,10 +39,10 @@ class ControlLoop(threading.Thread):
                     pass
                 except Exception as err:
                     print err
-                t = time.clock()
+                t = time.time()
                 if (t >= haveDataDeadline and haveData) or  ( t >= haveNoDataDeadline ):
                     break
-            self._lastrun = time.clock()
+            self._lastrun = time.time()
             self.stateData.writer_acquire()
             self._loopFunction(self.stateData, batchdata)
             self.stateData.writer_release()

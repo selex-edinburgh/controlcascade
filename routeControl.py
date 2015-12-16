@@ -8,7 +8,7 @@ routeState = ObservableState()
 routeState.nextWaypoint = 1
 routeState.waypoints    = [(1000.0,500.0),(1000.0,1000.0),(1550.0,1550.0),(2000.0,1000.0),(3000.0,3000.0),(0.0,1300.0)]
 routeState.currentPos   = routeState.waypoints[0]
-routeState.timeStamp    = time.clock()
+routeState.timeStamp    = time.time()
 
 
 def routeControlUpdate(state,batchdata):
@@ -59,7 +59,7 @@ def testRouteObsTranStub( sourceState, destState, destQueue ):
     global testWorkerRunning, testCounter 
     if not testWorkerRunning:
         th = threading.Thread(target=testWorker)
-        th.daemon = true
+        th.daemon = True
         testWorkerRunning = True
         th.start()
         

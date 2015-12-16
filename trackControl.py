@@ -15,7 +15,7 @@ trackState.currentTheta = math.pi / 2.0
 trackState.currentPos = (0.0,0,0)
 trackState.demandTheta = math.pi / 2.0
 trackState.demandPos = (0.0,0,0)
-trackState.timeStamp    = time.clock()
+trackState.timeStamp    = time.time()
 trackState._trackUnitsToMm = 310.0 / 2.0   # use half of wheel track as tracking unit
 trackState._movementBudget = math.pi / 2.0 # budget allows for turning pi/2 or more with no forward movement
 
@@ -54,7 +54,7 @@ def trackControlUpdate(state,batchdata):
             state.currentPos = (state.currentPos[0] + linearMove * math.cos(midwayTheta), # x move along effective direction
                                     state.currentPos[1] + linearMove * math.sin(midwayTheta)) # y move along effective direction
             state.currentTheta = item['sensedTheta']
-            state.timeStamp = time.clock()
+            state.timeStamp = time.time()
     if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html

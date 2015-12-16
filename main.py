@@ -6,14 +6,18 @@ import routeControl
 def testRouteControl():
 
     routeController = plumbing.controlloop.ControlLoop( routeControl.routeState, routeControl.routeControlUpdate, 1.0, 1.1)
-
+    print "t1"
     ### test environment
+    print "t2"
     testRouteObsTr = plumbing.controlloop.ControlObserverTranslator(routeController, routeControl.testRouteObsTranStub) 
+    print "t3"
     routeControl.routeState.attach(testRouteObsTr)
     ### test environment
+    print "t4"
 
     routeController.start()
-
+    print "t5"
+    #raw_input("Press enter to exit")
 
 
 import trackControl
