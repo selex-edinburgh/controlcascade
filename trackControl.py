@@ -109,6 +109,15 @@ def trackToRouteTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'sense','sensedPos':trackUnitsToMm(sourceState.currentPos)}
     destQueue.put(message)
 
+def trackToOdoTranslator( sourceState, destState, destQueue ):
+    dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
+                                                   sourceState.demandPos[1]-sourceState.currentPos[1])
+                sourceState.demandPos
+    sourceState.currentTheta
+    sourceState.demandTheta
+    destState.currentLRpulses
+    message = {'messageType':'control','demandLR':trackUnitsToMm(sourceState.currentPos)}
+    destQueue.put(message)
 
 
 ########### stub test routine
@@ -121,12 +130,20 @@ def testTrackObsTranStub( sourceState, destState, destQueue ):
         global testCounter
         demandToMeet = 0.05
         while testWorkerRunning:
+            thetaDiff = sourceState.demandTheta - sourceState.currentTheta
+            if thetaDiff > math.pi:
+                thetaDiff -= math.pi * 2.0
+            elif thetaDiff < -math.pi:
+                thetaDiff += math.pi * 2.0
+            thetaSense = sourceState.currentTheta + thetaDiff * demandToMeet
+            dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
+                                                   sourceState.demandPos[1]-sourceState.currentPos[1])
+            distSense = (dist * demandToMeet) *sourceState._trackUnitsToMm
             destQueue.put({'messageType':'sense',
-                           'sensedMove':demandToMeet * math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                                                   sourceState.demandPos[1]-sourceState.currentPos[1])*sourceState._trackUnitsToMm,
-                           'sensedTheta':(demandToMeet * sourceState.demandTheta + ( 1 - demandToMeet ) *sourceState.currentTheta )}) 
+                           'sensedMove':distSense,
+                           'sensedTheta':thetaSense}) 
             testCounter += 0.0
-            time.sleep(0.06)
+            time.sleep(0.05)
     global testWorkerRunning, testCounter 
     if not testWorkerRunning and not sourceState.noLegSet:
         th = threading.Thread(target=testWorker)

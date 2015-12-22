@@ -21,10 +21,10 @@ def testRouteControl():
 
 
 import trackControl
-def testRouteTrackControl():
+def testRouteTrackControl(uiObserver):
 
-    routeController = plumbing.controlloop.ControlLoop( routeControl.routeState, routeControl.routeControlUpdate, 1.0, 1.1)
-    trackController = plumbing.controlloop.ControlLoop( trackControl.trackState, trackControl.trackControlUpdate, 0.1, 0.11)
+    routeController = plumbing.controlloop.ControlLoop( routeControl.routeState, routeControl.routeControlUpdate, 0.5, 0.5)
+    trackController = plumbing.controlloop.ControlLoop( trackControl.trackState, trackControl.trackControlUpdate, 0.1, 0.1)
     routeTrackObsTr = plumbing.controlloop.ControlObserverTranslator(trackController, routeControl.routeToTrackTranslator)
     trackRouteObsTr = plumbing.controlloop.ControlObserverTranslator(routeController, trackControl.trackToRouteTranslator)
     routeControl.routeState.attach(routeTrackObsTr)
@@ -34,13 +34,35 @@ def testRouteTrackControl():
     testTrackObsTr = plumbing.controlloop.ControlObserverTranslator(trackController, trackControl.testTrackObsTranStub)
     trackControl.trackState.attach(testTrackObsTr)
     ### test environment
+    if uiObserver != None: trackControl.trackState.attach(uiObserver)
     
     trackController.start()
     routeController.start()
     
+import odoControl
+def testRouteTrackOdoControl(uiObserver):
 
+    routeController = plumbing.controlloop.ControlLoop( routeControl.routeState, routeControl.routeControlUpdate, 0.5, 0.5)
+    trackController = plumbing.controlloop.ControlLoop( trackControl.trackState, trackControl.trackControlUpdate, 0.1, 0.1)
+    odoController = plumbing.controlloop.ControlLoop( odoControl.odoState, odoControl.odoControlUpdate, 0.05, 0.05)
+    routeTrackObsTr = plumbing.controlloop.ControlObserverTranslator(trackController, routeControl.routeToTrackTranslator)
+    trackRouteObsTr = plumbing.controlloop.ControlObserverTranslator(routeController, trackControl.trackToRouteTranslator)
+    odoTrackObsTr = plumbing.controlloop.ControlObserverTranslator(trackController, odoControl.odoToTrackTranslator)
+    routeControl.routeState.attach(routeTrackObsTr)
+    trackControl.trackState.attach(trackRouteObsTr)
+    odoControl.odoState.attach(odoTrackObsTr)
 
-
+    ### test environment
+    testOdoObsTr = plumbing.controlloop.ControlObserverTranslator(odoController, odoControl.testOdoObsTranStub)
+    odoControl.odoState.attach(testOdoObsTr)
+    ### test environment
+    if uiObserver != None: trackControl.trackState.attach(uiObserver)
+    
+    trackController.start()
+    routeController.start()
+    odoController.start()
+    
 if __name__ == '__main__':
    # testRouteControl()
-    testRouteTrackControl()
+   # testRouteTrackControl(None)
+    testRouteTrackOdoControl(None)
