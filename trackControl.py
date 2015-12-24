@@ -9,15 +9,15 @@ trackState = ObservableState()
 #leg == line ending at next waypoint on route
 #trackState.legTheta  = 0.0
 trackState.noLegSet = True
-trackState.legCoeff  = (0.0,0.0,0.0)
-trackState.legGoal = (0.0,0.0)
+trackState._trackUnitsToMm = 310.0 / 2.0    # use half of wheel track as tracking unit
+trackState._movementBudget = math.pi / 2.0  # budget allows for turning pi/2 or more with no forward movement
+trackState.legCoeff  = (0.0,0.0,0.0)        #in track units
+trackState.legGoal = (0.0,0.0)              #in track units
 trackState.currentTheta = math.pi / 2.0
-trackState.currentPos = (0.0,0,0)
+trackState.currentPos = (0.0,0,0)           #in track units
 trackState.demandTheta = math.pi / 2.0
-trackState.demandPos = (0.0,0,0)
+trackState.demandPos = (0.0,0,0)            #in track units
 trackState.timeStamp    = time.time()
-trackState._trackUnitsToMm = 310.0 / 2.0   # use half of wheel track as tracking unit
-trackState._movementBudget = math.pi / 2.0 # budget allows for turning pi/2 or more with no forward movement
 
 def trackControlUpdate(state,batchdata):
     #process items in batchdata
@@ -75,11 +75,7 @@ def trackControlUpdate(state,batchdata):
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * useableBudget + closePointOnLeg[1])
     # of useableBudget, subtract necessary rotation
     state.demandTheta = math.atan2( legTarget[1] - state.currentPos[1] , legTarget[0] - state.currentPos[0] )
-    rotation = state.demandTheta - state.currentTheta
-    if ( rotation > math.pi ):
-        rotation =  rotation - 2 * math.pi
-    elif ( rotation < -math.pi ):
-        rotation =  rotation + 2 * math.pi
+    rotation = angleDiff( state.currentTheta, state.demandTheta )
         # could constrain rotation to use useable budget
     deltaXtoLegTarget = legTarget[0] - state.currentPos[0] 
     deltaYtoLegTarget = legTarget[1] - state.currentPos[1]
@@ -109,16 +105,22 @@ def trackToRouteTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'sense','sensedPos':trackUnitsToMm(sourceState.currentPos)}
     destQueue.put(message)
 
-def trackToOdoTranslator( sourceState, destState, destQueue ):
-    dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                                                   sourceState.demandPos[1]-sourceState.currentPos[1])
-                sourceState.demandPos
-    sourceState.currentTheta
-    sourceState.demandTheta
-    destState.currentLRpulses
-    message = {'messageType':'control','demandLR':trackUnitsToMm(sourceState.currentPos)}
+def trackToRcChanTranslator( sourceState, destState, destQueue ):
+
+    fwd = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
+                      sourceState.demandPos[1]-sourceState.currentPos[1]) / sourceState._movementBudget
+    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / sourceState._movementBudget
+    
+    message = {'messageType':'control','demandTurn':turn,
+                                       'demandFwd':fwd }
     destQueue.put(message)
 
+def angleDiff ( fromTheta, toTheta ) :
+    thetaDiff = sourceState.toTheta - sourceState.fromTheta
+    if thetaDiff > math.pi:
+        thetaDiff -= math.pi * 2.0
+    elif thetaDiff < -math.pi:
+        thetaDiff += math.pi * 2.0
 
 ########### stub test routine
 
@@ -130,11 +132,7 @@ def testTrackObsTranStub( sourceState, destState, destQueue ):
         global testCounter
         demandToMeet = 0.05
         while testWorkerRunning:
-            thetaDiff = sourceState.demandTheta - sourceState.currentTheta
-            if thetaDiff > math.pi:
-                thetaDiff -= math.pi * 2.0
-            elif thetaDiff < -math.pi:
-                thetaDiff += math.pi * 2.0
+            thetaDiff = angleDiff( sourceState.currentTheta , sourceState.demandTheta )
             thetaSense = sourceState.currentTheta + thetaDiff * demandToMeet
             dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
                                                    sourceState.demandPos[1]-sourceState.currentPos[1])
