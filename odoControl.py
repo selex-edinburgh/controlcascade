@@ -6,22 +6,41 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 odoState = ObservableState()
-odoState.demandLR = (0.0,0.0)
+
 odoState.timeStamp    = time.time()
-odoState._mmPerPulse = 1.0  
+odoState.totalPulseL = 0
+odoState.totalPulseR = 0
+odoState.prevPulseL = 0
+odoState.prevPulseR = 0
+odoState.prevDistTravel = 0
+odoState.distTravel = 0
+odoState._mmPerPulse = 1.0
 
 def odoControlUpdate(state,batchdata):
+    state.prevPulseL = state.totalPulseL
+    state.prevPulseR = state.totalPulseR
     #process items in batchdata
     for item in batchdata:
         if item['messageType'] == 'control':
             pass
         elif item['messageType'] == 'sense':
-            pass
+            state.totalPulseL += item['pulseL']
+            state.totalPulseR += item['pulseR']
 
-
+    #can get state.totalPulseL, state.totalPulseR from i2c here
+    #can account for any rollover here
+    state.prevDistTravel = state.distTravel
+    state.distTravel += math.hypot( state.prevPulseL - state.totalPulseL , state.prevPulseR - state.totalPulseR) * state._mmPerPulse
+    
+    
 def odoToTrackTranslator( sourceState, destState, destQueue ):
-    #todo message = {'messageType':'sense','sensedPos':trackUnitsToMm(sourceState.currentPos)}
-    destQueue.put(None)
+    lrDifferenceMm = (sourceState.totalPulseR - sourceState.totalPulseL) * sourceState._mmPerPulse 
+               
+    theta = lrDifferenceMm / destState._trackWidth + math.pi / 2.0# circumferential move divided by radius to give angle in radians
+                # TODO work around fudge to get robot pointing north at start (pi/2)
+    destQueue.put({'messageType':'sense',
+                   'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
+                   'sensedTheta':theta}) 
 
 
 

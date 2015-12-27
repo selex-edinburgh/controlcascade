@@ -6,7 +6,9 @@ from plumbing.controlloop import ControlObserverTranslator
 
 routeState = ObservableState()
 routeState.nextWaypoint = 1
-routeState.waypoints    = [(1000.0,500.0),
+routeState.waypoints    = [ (0.0,0.0),
+                           (0.0,300.0),
+                           (1000.0,500.0),
                            (1000.0,1000.0),
                            (1550.0,1550.0),
                            (1200.0,200.0),
@@ -79,6 +81,7 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1]}
+    print message
     destQueue.put(message)
 
 

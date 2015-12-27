@@ -9,7 +9,8 @@ trackState = ObservableState()
 #leg == line ending at next waypoint on route
 #trackState.legTheta  = 0.0
 trackState.noLegSet = True
-trackState._trackUnitsToMm = 310.0 / 2.0    # use half of wheel track as tracking unit
+trackState._trackWidth = 310.0 #mm between wheels
+trackState._trackUnitsToMm = trackState._trackWidth / 2.0    # use half of wheel track as tracking unit
 trackState._movementBudget = math.pi / 2.0  # budget allows for turning pi/2 or more with no forward movement
 trackState.legCoeff  = (0.0,0.0,0.0)        #in track units
 trackState.legGoal = (0.0,0.0)              #in track units
@@ -23,7 +24,7 @@ def trackControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:
         if item['messageType'] == 'control':
-            print "Leg goal ",  trackUnitsToMm(state.legGoal)
+            print "Old Leg goal ",  trackUnitsToMm(state.legGoal)
             print "Current pos ", trackUnitsToMm(state.currentPos)
             print "Demand pos", trackUnitsToMm(state.demandPos)
             state.noLegSet = False
@@ -38,6 +39,7 @@ def trackControlUpdate(state,batchdata):
                                      ( legOrigin[0] - state.legGoal[0] ),
                                      ( state.legGoal[0] * legOrigin[1] - legOrigin[0] * state.legGoal[1] ) )        
             print 'track - control message'
+            print "Leg goal ",  trackUnitsToMm(state.legGoal)
 
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #print 'track - sense message'
@@ -70,12 +72,16 @@ def trackControlUpdate(state,batchdata):
     closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg)
     distToGoal = math.hypot( state.legGoal[0] - closePointOnLeg[0], state.legGoal[1] - closePointOnLeg[1] )
     useableBudget = min(distToGoal,state._movementBudget)
+    #legTarget = ( (state.legGoal[0] + closePointOnLeg[0]) / 2.0 , \
+    #                (state.legGoal[1] + closePointOnLeg[1]) / 2.0 )
+    #legTarget = state.legGoal
     # legTarget is a point on the Leg, useableBudget along from closePointOnLeg
     legTarget = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * useableBudget + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * useableBudget + closePointOnLeg[1])
     # of useableBudget, subtract necessary rotation
-    state.demandTheta = math.atan2( legTarget[1] - state.currentPos[1] , legTarget[0] - state.currentPos[0] )
+    state.demandTheta = math.atan2( legTarget[1] -  state.currentPos[1] , legTarget[0] - state.currentPos[0] )
     rotation = angleDiff( state.currentTheta, state.demandTheta )
+    
         # could constrain rotation to use useable budget
     deltaXtoLegTarget = legTarget[0] - state.currentPos[0] 
     deltaYtoLegTarget = legTarget[1] - state.currentPos[1]
@@ -111,16 +117,18 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                       sourceState.demandPos[1]-sourceState.currentPos[1]) / sourceState._movementBudget
     turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / sourceState._movementBudget
     
-    message = {'messageType':'control','demandTurn':turn,
-                                       'demandFwd':fwd }
+    message = {'messageType':'control','demandTurn':turn ,
+                                       'demandFwd':fwd  }
     destQueue.put(message)
+    #print message
 
 def angleDiff ( fromTheta, toTheta ) :
-    thetaDiff = sourceState.toTheta - sourceState.fromTheta
+    thetaDiff = toTheta - fromTheta
     if thetaDiff > math.pi:
         thetaDiff -= math.pi * 2.0
     elif thetaDiff < -math.pi:
         thetaDiff += math.pi * 2.0
+    return thetaDiff
 
 ########### stub test routine
 
@@ -129,9 +137,9 @@ testWorkerRunning = False
 
 def testTrackObsTranStub( sourceState, destState, destQueue ):
     def testWorker():
-        global testCounter
-        demandToMeet = 0.05
-        while testWorkerRunning:
+       global testCounter
+       demandToMeet = 0.05
+       while testWorkerRunning:
             thetaDiff = angleDiff( sourceState.currentTheta , sourceState.demandTheta )
             thetaSense = sourceState.currentTheta + thetaDiff * demandToMeet
             dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
