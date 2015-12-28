@@ -30,7 +30,7 @@ def odoControlUpdate(state,batchdata):
     #can get state.totalPulseL, state.totalPulseR from i2c here
     #can account for any rollover here
     state.prevDistTravel = state.distTravel
-    state.distTravel += math.hypot( state.prevPulseL - state.totalPulseL , state.prevPulseR - state.totalPulseR) * state._mmPerPulse
+    state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
     
     
 def odoToTrackTranslator( sourceState, destState, destQueue ):

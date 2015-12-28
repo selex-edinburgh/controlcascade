@@ -52,3 +52,4 @@ def vsimToOdoTranslator( sourceState, destState, destQueue ):
                'pulseL':round(sourceState.speedL * sourceState.timeDelta * destState._mmPerPulse ,0),
                'pulseR':round(sourceState.speedR * sourceState.timeDelta * destState._mmPerPulse ,0)}
     destQueue.put(message)
+    

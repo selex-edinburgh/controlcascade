@@ -13,7 +13,6 @@ rcChanState.demandFwd = 127
 rcChanState._limitChange = 80
 rcChanState.timeStamp    = time.time()
 
-
 def rcChanControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:
@@ -42,7 +41,6 @@ def rcChanToVsimTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'control',
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 }) 
-    
 
       
     

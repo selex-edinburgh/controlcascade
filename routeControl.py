@@ -55,8 +55,8 @@ routeState.waypoints    = [ (0.0,0.0),
                            (0.0,1300.0)]
 routeState.currentPos   = routeState.waypoints[0]
 routeState.timeStamp    = time.time()
+routeState._near = 160.0
 
-near = 160.0
 
 def routeControlUpdate(state,batchdata):
     for item in batchdata:
@@ -69,7 +69,7 @@ def routeControlUpdate(state,batchdata):
             distToWPy = sensedPos[1] - state.waypoints[state.nextWaypoint][1]
             dist = math.hypot( distToWPx , distToWPy )
             #TODO - appropriate distance check for waypoint-reached?
-            if dist < near: 
+            if dist < state._near: 
                 print dist, sensedPos, state.waypoints[state.nextWaypoint]
                 print '******************************waypoint reached'
                 if ( state.nextWaypoint+1 < len(state.waypoints)):
