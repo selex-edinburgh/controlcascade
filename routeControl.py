@@ -55,7 +55,7 @@ routeState.waypoints    = [ (0.0,0.0),
                            (0.0,1300.0)]
 routeState.currentPos   = routeState.waypoints[0]
 routeState.timeStamp    = time.time()
-routeState._near = 160.0
+routeState._near = 120.0
 
 
 def routeControlUpdate(state,batchdata):
@@ -81,7 +81,7 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1]}
-    print message
+    #print message
     destQueue.put(message)
 
 

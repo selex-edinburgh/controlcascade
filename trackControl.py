@@ -10,27 +10,25 @@ trackState = ObservableState()
 #trackState.legTheta  = 0.0
 trackState.noLegSet = True
 trackState._trackWidth = 310.0 #mm between wheels
-trackState._trackUnitsToMm = trackState._trackWidth / 2.0    # use half of wheel track as tracking unit
-trackState._movementBudget = math.pi / 2.0  # budget allows for turning pi/2 or more with no forward movement
-trackState.legCoeff  = (0.0,0.0,0.0)        #in track units
-trackState.legGoal = (0.0,0.0)              #in track units
+trackState._movementBudget = 500.0  # mm
+trackState.legCoeff  = (0.0,0.0,0.0)        
+trackState.legGoal = (0.0,0.0)              
 trackState.currentTheta = math.pi / 2.0
-trackState.currentPos = (0.0,0,0)           #in track units
+trackState.currentPos = (0.0,0,0)           
 trackState.demandTheta = math.pi / 2.0
-trackState.demandPos = (0.0,0,0)            #in track units
+trackState.demandPos = (0.0,0,0)            
 trackState.timeStamp    = time.time()
 
 def trackControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:
         if item['messageType'] == 'control':
-            print "Old Leg goal ",  trackUnitsToMm(state.legGoal)
-            print "Current pos ", trackUnitsToMm(state.currentPos)
-            print "Demand pos", trackUnitsToMm(state.demandPos)
+            print "Old Leg goal ",  state.legGoal
+            print "Current pos ", state.currentPos
+            print "Demand pos", state.demandPos
             state.noLegSet = False
-            #convert to track units
-            state.legGoal = mmToTrackUnits(item['legGoal'])
-            legOrigin =     mmToTrackUnits(item['legOrigin'])
+            state.legGoal = item['legGoal']
+            legOrigin =     item['legOrigin']
             # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )
             # line  : ax + by + c = 0
             # coefficients
@@ -39,19 +37,20 @@ def trackControlUpdate(state,batchdata):
                                      ( legOrigin[0] - state.legGoal[0] ),
                                      ( state.legGoal[0] * legOrigin[1] - legOrigin[0] * state.legGoal[1] ) )        
             print 'track - control message'
-            print "Leg goal ",  trackUnitsToMm(state.legGoal)
+            print "Leg goal ",  state.legGoal
 
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #print 'track - sense message'
             #approximate as movement along circular arc, effective direction being mid-way on arc
             
             halfArcTurn = (item['sensedTheta']-state.currentTheta) / 2.0
-            halfArcMove = (item['sensedMove']/state._trackUnitsToMm) / 2.0
+            halfArcMove = (item['sensedMove']) / 2.0
             
             if halfArcTurn < 0.1:  # small angle approximation sin(theta) = theta : and avoid divide-by-zero risk
                 linearMove = abs(2.0 * halfArcMove )
             else:
                 linearMove = abs(2.0 * math.sin(halfArcTurn ) * halfArcMove / halfArcTurn) # linear move is shorter than arc
+
             midwayTheta = state.currentTheta + halfArcTurn
             state.currentPos = (state.currentPos[0] + linearMove * math.cos(midwayTheta), # x move along effective direction
                                     state.currentPos[1] + linearMove * math.sin(midwayTheta)) # y move along effective direction
@@ -64,6 +63,7 @@ def trackControlUpdate(state,batchdata):
     b = state.legCoeff[1]
     c = state.legCoeff[2]
     abDist = math.hypot(a,b)
+    state.demandPos = state.legGoal
     if abDist < 1e-10 or state.currentPos == state.legGoal: return #avoid divide by zero
     distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist
     # along perpendicular vector ( a , b )
@@ -71,56 +71,37 @@ def trackControlUpdate(state,batchdata):
     deltaYfromLeg = b * distToLeg / abDist
     closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg)
     distToGoal = math.hypot( state.legGoal[0] - closePointOnLeg[0], state.legGoal[1] - closePointOnLeg[1] )
-    useableBudget = min(distToGoal,state._movementBudget)
-    #legTarget = ( (state.legGoal[0] + closePointOnLeg[0]) / 2.0 , \
-    #                (state.legGoal[1] + closePointOnLeg[1]) / 2.0 )
-    #legTarget = state.legGoal
-    # legTarget is a point on the Leg, useableBudget along from closePointOnLeg
-    legTarget = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * useableBudget + closePointOnLeg[0] , \
-                    (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * useableBudget + closePointOnLeg[1])
-    # of useableBudget, subtract necessary rotation
-    state.demandTheta = math.atan2( legTarget[1] -  state.currentPos[1] , legTarget[0] - state.currentPos[0] )
-    rotation = angleDiff( state.currentTheta, state.demandTheta )
+    absToLeg =  abs(distToLeg)
+    moveAmount = distToGoal
+    if absToLeg > distToGoal: moveAmount =  0
     
-        # could constrain rotation to use useable budget
-    deltaXtoLegTarget = legTarget[0] - state.currentPos[0] 
-    deltaYtoLegTarget = legTarget[1] - state.currentPos[1]
-    distToLegTarget = math.hypot(deltaXtoLegTarget ,deltaYtoLegTarget )
-    useableBudget = min(max(useableBudget - abs(rotation), 0),distToLegTarget)
-    if distToLegTarget < 1e-10:
-        scaleXtoBudget = deltaXtoLegTarget
-        scaleYtoBudget = deltaYtoLegTarget
-    else:
-        scaleXtoBudget = deltaXtoLegTarget * useableBudget / distToLegTarget
-        scaleYtoBudget = deltaYtoLegTarget * useableBudget / distToLegTarget
-    state.demandPos = (state.currentPos[0] + scaleXtoBudget, \
-                            state.currentPos[1] + scaleYtoBudget)
-    
+    # demandPos is a point on the Leg, maxMove along from closePointOnLeg
+    state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
+                    (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
-                    
+    state.demandTheta = math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] )
 
-def mmToTrackUnits( point ):
-  return ( point[0] / trackState._trackUnitsToMm, point[1] / trackState._trackUnitsToMm)
 
-def trackUnitsToMm( point ):
-  return ( point[0] * trackState._trackUnitsToMm, point[1] * trackState._trackUnitsToMm)
 
 
 
 def trackToRouteTranslator( sourceState, destState, destQueue ):
-    message = {'messageType':'sense','sensedPos':trackUnitsToMm(sourceState.currentPos)}
+    message = {'messageType':'sense','sensedPos':sourceState.currentPos}
     destQueue.put(message)
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
-    fwd = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                      sourceState.demandPos[1]-sourceState.currentPos[1]) / sourceState._movementBudget
-    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / sourceState._movementBudget
+    dtgFactor = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
+                      sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
+    brakingPct = round(min(100.0, dtgFactor)  ,0)
+    if brakingPct < 15.0 : brakingPct = 0
+    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / (math.pi / 2.0) 
+    move = max ( 1 - abs(turn), 0 )
     
-    message = {'messageType':'control','demandTurn':turn ,
-                                       'demandFwd':fwd  }
+    message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0 ,
+                                       'demandFwd' : move * brakingPct / 100.0}
     destQueue.put(message)
-    #print message
+    #print "rc control " , message
 
 def angleDiff ( fromTheta, toTheta ) :
     thetaDiff = toTheta - fromTheta

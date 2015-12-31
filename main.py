@@ -70,13 +70,6 @@ import math
 def testControlLoops(uiObserver):
 
     timeScale = 1.0
-    vsimControl.vsimState._speedMax =  350.0
-    vsimControl.vsimState._leftSpeedMultiplier = vsimControl.vsimState._speedMax * vsimControl.vsimState._lrBias
-    vsimControl.vsimState._rightSpeedMultiplier = vsimControl.vsimState._speedMax / vsimControl.vsimState._lrBias
-    vsimControl.vsimState._fricEffectPerSec = 0.99995
-    odoControl.odoState._mmPerPulse = 1.0
-    trackControl.trackState._movementBudget =  math.pi / 2.0
-    routeControl.routeState._near = 100.0
     
     routeController = plumbing.controlloop.ControlLoop( routeControl.routeState, routeControl.routeControlUpdate,       0.2 * timeScale,    0.2 * timeScale)
     trackController = plumbing.controlloop.ControlLoop( trackControl.trackState, trackControl.trackControlUpdate,       0.03  * timeScale,  0.03 * timeScale)

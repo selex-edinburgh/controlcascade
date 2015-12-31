@@ -24,7 +24,7 @@ def rcChanControlUpdate(state,batchdata):
         
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
-    #print state.currentTurn, state.currentFwd
+    #print "rcChan ", state.currentTurn, state.currentFwd
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
