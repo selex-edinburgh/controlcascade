@@ -12,7 +12,7 @@ vsimState.timeStamp = time.time()
 vsimState.timeDelta = 0.0
 vsimState._fricEffectPerSec = 0.95 #deceleration effect
 vsimState._lrBias = 1.0
-vsimState._speedMax = 300.0 # to mm/sec
+vsimState._speedMax = 600.0 # to mm/sec
 vsimState._leftSpeedMultiplier = vsimState._speedMax * vsimState._lrBias
 vsimState._rightSpeedMultiplier = vsimState._speedMax / vsimState._lrBias
 
@@ -25,7 +25,7 @@ def vsimControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             #print item
             state.rcTurn = item['rcTurn'] 
-            state.rcFwd = item['rcFwd'] 
+            state.rcFwd = item['rcFwd']
         elif item['messageType'] == 'sense':
             print "Sense messages not implemented for vsimControl"
     
@@ -39,8 +39,8 @@ def vsimControlUpdate(state,batchdata):
     state.speedL = speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
     state.speedR = speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)
 
-    #print "speedl", state.speedL,demandL,state.timeDelta,state._fricEffectPerSec
-    #print "speedr", state.speedR,demandR,state.timeDelta,state._fricEffectPerSec
+    #print "speedl", state.speedL
+    #print "speedr", state.speedR
 
 def speedUpdate( current, demanded, tDelta, fricPerSec):
     fricNow = fricPerSec * current * tDelta 
@@ -49,7 +49,7 @@ def speedUpdate( current, demanded, tDelta, fricPerSec):
     
 def vsimToOdoTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'sense',
-               'pulseL':round(sourceState.speedL * sourceState.timeDelta * destState._mmPerPulse ,0),
-               'pulseR':round(sourceState.speedR * sourceState.timeDelta * destState._mmPerPulse ,0)}
+               'pulseL':round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulse ,0),
+               'pulseR':round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulse ,0)}
     destQueue.put(message)
     

@@ -1,7 +1,7 @@
 import pygame
 import os
 import math
-import main
+import runControlLoops
 
 # it is better to have an extra variable, than an extremely long line.
 #img_path = 'r2d2.png' #os.path.join('C:\Python27', 'player.png')
@@ -53,13 +53,12 @@ clock = pygame.time.Clock()
 
     
 def updateFn( obj, state ):
-    robot.pos = (state.currentPos[0]*20.0, screenHeight -state.currentPos[1]*20.0)
+    robot.pos = (state.currentPos[0]/10.0, screenHeight -state.currentPos[1]/10.0)
     robot.angle = state.currentTheta / math.pi * 180.0
-    robot.targetPos = (state.demandPos[0] * 20.0, screenHeight - state.demandPos[1] * 20.0) 
+    robot.targetPos = (state.demandPos[0]/10.0, screenHeight - state.demandPos[1]/10.0) 
     robot.targetAngle =  state.demandTheta / math.pi * 180.0
     
-main.testControlLoops(
-#main.testRouteTrackControl(
+runControlLoops.runControlLoops(
      type('testclass', (object,), 
                                  {'update':updateFn})()
                             )

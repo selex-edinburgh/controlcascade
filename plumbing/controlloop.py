@@ -9,13 +9,13 @@ class ControlLoop(threading.Thread):
     
     def __init__ (self, stateData, loopFunction, minPeriod, maxPeriod, name="Unnamed Loop"):
         super(ControlLoop,self).__init__()
-        self.daemon = True
+
         self.queue = Queue.Queue()
         self._minperiod = minPeriod
         self._maxperiod = maxPeriod
         self._loopFunction = loopFunction
         self.stateData = stateData
-        threading.Thread.__init__ (self)
+        self.setDaemon(True)
         self.name = name
 
     
