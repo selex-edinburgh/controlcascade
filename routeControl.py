@@ -84,34 +84,5 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     #print message
     destQueue.put(message)
 
-
-
-############ test method
-
-testCounter = 0.0
-testWorkerRunning = False
-
-def testRouteObsTranStub( sourceState, destState, destQueue ):
-    def testWorker():
-        global testCounter
-        while testWorkerRunning:
-            #print 'tock'
-            lastWP = sourceState.waypoints[sourceState.nextWaypoint-1]
-            nextWP = sourceState.waypoints[sourceState.nextWaypoint]
-            x = lastWP[0] + testCounter * (nextWP[0] - lastWP[0])
-            y = lastWP[1] + testCounter * (nextWP[1] - lastWP[1])
-            destQueue.put({'messageType':'sense','sensedPos':(x,y)})
-            testCounter = min ( testCounter + 0.01, 1.0 )
-            time.sleep(0.1)
-    print 'testRouteControlStub'
-    global testWorkerRunning, testCounter 
-    if not testWorkerRunning:
-        th = threading.Thread(target=testWorker)
-        th.daemon = True
-        testWorkerRunning = True
-        th.start()
-        
-    testCounter = 0.0
-    
       
     

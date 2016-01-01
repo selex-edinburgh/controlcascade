@@ -111,33 +111,6 @@ def angleDiff ( fromTheta, toTheta ) :
         thetaDiff += math.pi * 2.0
     return thetaDiff
 
-########### stub test routine
 
-testCounter = 1.0
-testWorkerRunning = False
-
-def testTrackObsTranStub( sourceState, destState, destQueue ):
-    def testWorker():
-       global testCounter
-       demandToMeet = 0.05
-       while testWorkerRunning:
-            thetaDiff = angleDiff( sourceState.currentTheta , sourceState.demandTheta )
-            thetaSense = sourceState.currentTheta + thetaDiff * demandToMeet
-            dist = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                                                   sourceState.demandPos[1]-sourceState.currentPos[1])
-            distSense = (dist * demandToMeet) *sourceState._trackUnitsToMm
-            destQueue.put({'messageType':'sense',
-                           'sensedMove':distSense,
-                           'sensedTheta':thetaSense}) 
-            testCounter += 0.0
-            time.sleep(0.05)
-    global testWorkerRunning, testCounter 
-    if not testWorkerRunning and not sourceState.noLegSet:
-        th = threading.Thread(target=testWorker)
-        th.daemon = True
-        testWorkerRunning = True
-        th.start()
-    testCounter = 1.0
-    
       
     

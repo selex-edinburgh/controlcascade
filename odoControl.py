@@ -42,31 +42,5 @@ def odoToTrackTranslator( sourceState, destState, destQueue ):
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
                    'sensedTheta':theta}) 
 
-
-
-########### stub test routine
-
-testCounter = 1.0
-testWorkerRunning = False
-
-def testOdoObsTranStub( sourceState, destState, destQueue ):
-    def testWorker():
-        global testCounter
-        demandToMeet = 0.05
-        while testWorkerRunning:
-            sourceState.demandLR
-            destQueue.put({'messageType':'sense',
-                           'leftPulses':demandLR[0],
-                           'rightPulses':demandLR[1]}) 
-            testCounter += 0.0
-            time.sleep(0.05)
-    global testWorkerRunning, testCounter 
-    if not testWorkerRunning :
-        th = threading.Thread(target=testWorker)
-        th.daemon = True
-        testWorkerRunning = True
-        th.start()
-    testCounter = 1.0
-    
       
     
