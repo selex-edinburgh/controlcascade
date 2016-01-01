@@ -15,6 +15,9 @@ odoState.prevPulseR = 0
 odoState.prevDistTravel = 0
 odoState.distTravel = 0
 odoState._mmPerPulse = 0.1
+odoState._rolloverRange = 4096
+odoState._rolloverCountL = 0
+odoState._rolloverCountR = 0
 
 def odoControlUpdate(state,batchdata):
     state.prevPulseL = state.totalPulseL
@@ -24,11 +27,26 @@ def odoControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             pass
         elif item['messageType'] == 'sense':
-            state.totalPulseL += item['pulseL']
-            state.totalPulseR += item['pulseR']
+            leftReading = item['pulseL']
+            rightReading = item['pulseR']
 
     #can get state.totalPulseL, state.totalPulseR from i2c here
-    #can account for any rollover here
+    #account for any rollover here
+    state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
+    state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
+    #print "#### test rollover r", state.totalPulseR, state.prevPulseR
+
+    if ( abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange / 2 ) :
+        sign = math.copysign(1, state.totalPulseL - state.prevPulseL  )
+        state._rolloverCountL -= sign
+        state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
+        print "#################### rollover l", state.totalPulseL, state.prevPulseL
+    if ( abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange / 2 ) :
+        sign = math.copysign(1, state.totalPulseR - state.prevPulseR  )
+        state._rolloverCountR -= sign
+        state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
+        print "#################### rollover r", state.totalPulseR, state.prevPulseR
+
     state.prevDistTravel = state.distTravel
     state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
     
@@ -41,6 +59,7 @@ def odoToTrackTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'sense',
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
                    'sensedTheta':theta}) 
+
 
       
     
