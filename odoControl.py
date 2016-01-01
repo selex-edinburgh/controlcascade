@@ -29,8 +29,10 @@ def odoControlUpdate(state,batchdata):
         elif item['messageType'] == 'sense':
             leftReading = item['pulseL']
             rightReading = item['pulseR']
-
+    
     #can get state.totalPulseL, state.totalPulseR from i2c here
+    readI2C = False        
+    if not(readI2C) and len(batchdata)==0 : return
     #account for any rollover here
     state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
     state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
