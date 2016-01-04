@@ -5,19 +5,23 @@ import threading
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
-odoState = ObservableState()
-
-odoState.timeStamp    = time.time()
-odoState.totalPulseL = 0
-odoState.totalPulseR = 0
-odoState.prevPulseL = 0
-odoState.prevPulseR = 0
-odoState.prevDistTravel = 0
-odoState.distTravel = 0
-odoState._mmPerPulse = 0.1
-odoState._rolloverRange = 4096
-odoState._rolloverCountL = 0
-odoState._rolloverCountR = 0
+class OdoState(ObservableState):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initTheta=math.pi/2.0):
+        super(OdoState,self).__init__()
+        self.totalPulseL = 0
+        self.totalPulseR = 0
+        self.prevPulseL = 0
+        self.prevPulseR = 0
+        self.prevDistTravel = 0
+        self.distTravel = 0
+        self._initTheta = initTheta
+        self._mmPerPulse = mmPerPulse #0.1
+        self._rolloverRange = rolloverRange #4096
+        self._rolloverCountL = rolloverCountL #0
+        self._rolloverCountR = rolloverCountR #0
+        self.timeStamp = time.time()
+        
+#odoState = OdoState(0.1,4096,0,0,math.pi/2) #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR)
 
 def odoControlUpdate(state,batchdata):
     state.prevPulseL = state.totalPulseL
@@ -56,7 +60,7 @@ def odoControlUpdate(state,batchdata):
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseR - sourceState.totalPulseL) * sourceState._mmPerPulse 
     #print "odo dist " , sourceState.distTravel - sourceState.prevDistTravel           
-    theta = lrDifferenceMm / destState._trackWidth + math.pi / 2.0# circumferential move divided by radius to give angle in radians
+    theta = lrDifferenceMm / destState._trackWidth + sourceState._initTheta# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
                 # TODO work around fudge to get robot pointing north at start (pi/2)
     destQueue.put({'messageType':'sense',
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,

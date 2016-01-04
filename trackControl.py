@@ -5,19 +5,21 @@ import threading
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
-trackState = ObservableState()
-#leg == line ending at next waypoint on route
-#trackState.legTheta  = 0.0
-trackState.noLegSet = True
-trackState._trackWidth = 310.0 #mm between wheels
-trackState._movementBudget = 500.0  # mm
-trackState.legCoeff  = (0.0,0.0,0.0)        
-trackState.legGoal = (0.0,0.0)              
-trackState.currentTheta = math.pi / 2.0
-trackState.currentPos = (0.0,0,0)           
-trackState.demandTheta = math.pi / 2.0
-trackState.demandPos = (0.0,0,0)            
-trackState.timeStamp    = time.time()
+class TrackState(ObservableState):
+    def __init__(self, trackWidth, movementBudget):
+        super(TrackState,self).__init__()
+        #leg == line ending at next waypoint on route
+        #self.legTheta  = 0.0
+        self.noLegSet = True
+        self.legCoeff  = (0.0,0.0,0.0)        
+        self.legGoal = (0.0,0.0)              
+        self.currentTheta = math.pi / 2.0
+        self.currentPos = (0.0,0,0)           
+        self.demandTheta = math.pi / 2.0
+        self.demandPos = (0.0,0,0)            
+        self._trackWidth = trackWidth #310.0 #mm between wheels
+        self._movementBudget = movementBudget #500.0  # mm
+        self.timeStamp    = time.time()
 
 def trackControlUpdate(state,batchdata):
     #process items in batchdata

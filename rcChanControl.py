@@ -5,14 +5,18 @@ import threading
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
-rcChanState = ObservableState()
-rcChanState.currentTurn = 127
-rcChanState.currentFwd = 127
-rcChanState.demandTurn = 127
-rcChanState.demandFwd = 127
-rcChanState._limitChange = 80
-rcChanState.timeStamp    = time.time()
+class RcChanState(ObservableState):
+    def __init__(self, limitChange):
+        super(RcChanState,self).__init__()
+        self.currentTurn = 127
+        self.currentFwd = 127
+        self.demandTurn = 127
+        self.demandFwd = 127
+        self._limitChange = limitChange #80
+        self.timeStamp    = time.time()
 
+
+        
 def rcChanControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:

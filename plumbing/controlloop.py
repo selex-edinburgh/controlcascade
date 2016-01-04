@@ -48,6 +48,10 @@ class ControlLoop(threading.Thread):
             self.stateData.writer_release()
             self.stateData.notify()
 
+    def connectTo(self,destLoop,trFn):
+        obsTr = ControlObserverTranslator(destLoop, trFn)
+        self.stateData.attach(obsTr)
+            
 
 class ControlObserverTranslator:
     def __init__(self, destinationLoop, translateFunction):

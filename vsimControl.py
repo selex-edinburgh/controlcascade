@@ -3,19 +3,23 @@ import math
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
-vsimState = ObservableState()
-vsimState.speedL = 0.0 # mm/sec
-vsimState.speedR = 0.0 # mm/sec
-vsimState.rcTurn = 0.0
-vsimState.rcFwd = 0.0
-vsimState.timeStamp = time.time()
-vsimState.timeDelta = 0.0
-vsimState._fricEffectPerSec = 0.95 #deceleration effect
-vsimState._lrBias = 1.0
-vsimState._speedMax = 600.0 # to mm/sec
-vsimState._leftSpeedMultiplier = vsimState._speedMax * vsimState._lrBias
-vsimState._rightSpeedMultiplier = vsimState._speedMax / vsimState._lrBias
+class VsimState(ObservableState):
+    def __init__(self, fricEffectPerSec, lrBias, speedMax):
+        super(VsimState,self).__init__()        
+        self.speedL = 0.0 # mm/sec
+        self.speedR = 0.0 # mm/sec
+        self.rcTurn = 0.0
+        self.rcFwd = 0.0
+        self.timeDelta = 0.0
+        self._fricEffectPerSec = fricEffectPerSec #0.95 #deceleration effect
+        self._lrBias = lrBias #1.0
+        self._speedMax = speedMax #600.0 # to mm/sec
+        self._leftSpeedMultiplier = self._speedMax * self._lrBias
+        self._rightSpeedMultiplier = self._speedMax / self._lrBias
+        self.timeStamp = time.time()
 
+
+        
 def vsimControlUpdate(state,batchdata):
     #process items in batchdata
     prevRcTurn = state.rcTurn
