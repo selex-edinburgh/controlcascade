@@ -6,7 +6,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initTheta=math.degrees(math.pi/2.0)):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initAngle=90):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -14,7 +14,7 @@ class OdoState(ObservableState):
         self.prevPulseR = 0
         self.prevDistTravel = 0
         self.distTravel = 0
-        self._initTheta = initTheta
+        self._initAngle = initAngle
         self._mmPerPulse = mmPerPulse #0.1
         self._rolloverRange = rolloverRange #4096
         self._rolloverCountL = rolloverCountL #0
@@ -60,11 +60,11 @@ def odoControlUpdate(state,batchdata):
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseR - sourceState.totalPulseL) * sourceState._mmPerPulse 
     #print "odo dist " , sourceState.distTravel - sourceState.prevDistTravel           
-    theta = math.degrees(lrDifferenceMm / destState._trackWidth) + sourceState._initTheta# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
+    angle = math.degrees(lrDifferenceMm / destState._trackWidth) + sourceState._initAngle# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
                 # TODO work around fudge to get robot pointing north at start (pi/2)
     destQueue.put({'messageType':'sense',
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
-                   'sensedTheta':theta}) 
+                   'sensedAngle':angle}) 
 
 
       

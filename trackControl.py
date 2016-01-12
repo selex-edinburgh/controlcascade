@@ -9,13 +9,14 @@ class TrackState(ObservableState):
     def __init__(self, trackWidth, movementBudget):
         super(TrackState,self).__init__()
         #leg == line ending at next waypoint on route
-        #self.legTheta  = 0.0
+        #self.legAngle  = 0.0
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)        
-        self.legGoal = (0.0,0.0)              
-        self.currentTheta = math.degrees(math.pi / 2.0)
+        self.legGoal = (0.0,0.0)     
+        self.legOrigin = (0.0,0.0)
+        self.currentAngle = 0
         self.currentPos = (0.0,0,0)           
-        self.demandTheta = math.degrees(math.pi / 2.0)
+        self.demandAngle = 0
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth #310.0 #mm between wheels
         self._movementBudget = movementBudget #500.0  # mm
@@ -30,14 +31,7 @@ def trackControlUpdate(state,batchdata):
             print "Demand pos", state.demandPos
             state.noLegSet = False
             state.legGoal = item['legGoal']
-            legOrigin =     item['legOrigin']
-            # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )
-            # line  : ax + by + c = 0
-            # coefficients
-            # a=(yB−yA) , b=(xA−xB) and c=(xByA - xAyB)
-            state.legCoeff = ( ( state.legGoal[1] - legOrigin[1] ) ,
-                                     ( legOrigin[0] - state.legGoal[0] ),
-                                     ( state.legGoal[0] * legOrigin[1] - legOrigin[0] * state.legGoal[1] ) )        
+            state.legOrigin = item['legOrigin']    
             print 'track - control message'
             print "Leg goal ",  state.legGoal
 
@@ -45,25 +39,29 @@ def trackControlUpdate(state,batchdata):
             #print 'track - sense message'
             #approximate as movement along circular arc, effective direction being mid-way on arc
             
-            halfArcTurn = (item['sensedTheta']-state.currentTheta) / 2.0
+            halfArcTurn = (item['sensedAngle']-state.currentAngle) / 2.0
             halfArcMove = (item['sensedMove']) / 2.0
             
-            if math.radians(halfArcTurn) < 0.1:  # small angle approximation sin(theta) = theta : and avoid divide-by-zero risk
+            if math.radians(halfArcTurn) < 0.1:  # small angle approximation sin(angle) = angle : and avoid divide-by-zero risk
                 linearMove = abs(2.0 * halfArcMove )
             else:
                 linearMove = abs(2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
 
-            midwayTheta = state.currentTheta + halfArcTurn
-            state.currentPos = (state.currentPos[0] + linearMove * math.cos(math.radians(midwayTheta)), # x move along effective direction
-                                    state.currentPos[1] + linearMove * math.sin(math.radians(midwayTheta))) # y move along effective direction
-            state.currentTheta = item['sensedTheta']
+            midwayAngle = state.currentAngle + halfArcTurn
+            state.currentPos = (state.currentPos[0] + linearMove * math.cos(math.radians(midwayAngle)), # x move along effective direction
+                                    state.currentPos[1] + linearMove * math.sin(math.radians(midwayAngle))) # y move along effective direction
+            state.currentAngle = item['sensedAngle']
             state.timeStamp = time.time()
     if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
-    a = state.legCoeff[0]
-    b = state.legCoeff[1]
-    c = state.legCoeff[2]
+    # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )
+    # line  : ax + by + c = 0
+    # coefficients
+    # a=(yB−yA) , b=(xA−xB) and c=(xByA - xAyB)
+    a = state.legGoal[1] - state.legOrigin[1] 
+    b = state.legOrigin[0] - state.legGoal[0]
+    c = (state.legGoal[0] * state.legOrigin[1]) - (state.legOrigin[0] * state.legGoal[1])
     abDist = math.hypot(a,b)
     state.demandPos = state.legGoal
     if abDist < 1e-10 or state.currentPos == state.legGoal: return #avoid divide by zero
@@ -81,7 +79,7 @@ def trackControlUpdate(state,batchdata):
     state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
-    state.demandTheta = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
+    state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
 
 
 
@@ -97,7 +95,7 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                       sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
     brakingPct = round(min(100.0, dtgFactor)  ,0)
     if brakingPct < 15.0 : brakingPct = 0
-    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / math.degrees(math.pi / 2.0) 
+    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
     move = max ( 1 - abs(turn), 0 )
     
     message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0 ,
@@ -105,13 +103,13 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
     destQueue.put(message)
     #print "rc control " , message
 
-def angleDiff ( fromTheta, toTheta ) :
-    thetaDiff = toTheta - fromTheta
-    if thetaDiff > math.degrees(math.pi):
-        thetaDiff -= math.degrees(math.pi * 2.0)
-    elif thetaDiff < math.degrees(-math.pi):
-        thetaDiff += math.degrees(math.pi * 2.0)
-    return thetaDiff
+def angleDiff ( fromAngle, toAngle ) :
+    angleDiff = toAngle - fromAngle
+    if angleDiff > 180:
+        angleDiff -= 360
+    elif angleDiff < -180:
+        angleDiff += 360
+    return angleDiff
 
 
       

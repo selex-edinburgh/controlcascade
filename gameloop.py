@@ -54,9 +54,9 @@ clock = pygame.time.Clock()
     
 def updateFn( obj, state ):
     robot.pos = (state.currentPos[0]/10.0, screenHeight -state.currentPos[1]/10.0)
-    robot.angle = state.currentTheta #/ math.pi * 180.0
+    robot.angle = state.currentAngle    
     robot.targetPos = (state.demandPos[0]/10.0, screenHeight - state.demandPos[1]/10.0) 
-    robot.targetAngle =  state.demandTheta #/ math.pi * 180.0
+    robot.targetAngle =  state.demandAngle
     
 runControlLoops.runControlLoops(
      type('testclass', (object,), 
