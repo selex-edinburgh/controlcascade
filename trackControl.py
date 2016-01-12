@@ -48,8 +48,8 @@ def trackControlUpdate(state,batchdata):
                 linearMove = abs(2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
 
             midwayAngle = state.currentAngle + halfArcTurn
-            state.currentPos = (state.currentPos[0] + linearMove * math.cos(math.radians(midwayAngle)), # x move along effective direction
-                                    state.currentPos[1] + linearMove * math.sin(math.radians(midwayAngle))) # y move along effective direction
+            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
+                                    state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
             state.currentAngle = item['sensedAngle']
             state.timeStamp = time.time()
     if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
@@ -79,7 +79,8 @@ def trackControlUpdate(state,batchdata):
     state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
-    state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
+    #state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
+    state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
 
 
 

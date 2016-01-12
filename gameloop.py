@@ -40,7 +40,7 @@ class Robot(object):  # represents the Robot, not the game
         surface.blit(self.scrBuff,(0,0))
         # blit yourself at your current position
         loc = self.image.get_rect().center
-        rotImg = pygame.transform.rotate(self.image, self.angle)
+        rotImg = pygame.transform.rotate(self.image, 90.0 - self.angle)
         rotImg.get_rect().center = loc
         surface.blit(rotImg, (self.pos[0] - rotImg.get_rect().width/2.0,
                               self.pos[1] - rotImg.get_rect().height/2.0))
@@ -54,9 +54,9 @@ clock = pygame.time.Clock()
     
 def updateFn( obj, state ):
     robot.pos = (state.currentPos[0]/10.0, screenHeight -state.currentPos[1]/10.0)
-    robot.angle = state.currentAngle    
+    robot.angle = state.currentAngle #/ math.pi * 180.0
     robot.targetPos = (state.demandPos[0]/10.0, screenHeight - state.demandPos[1]/10.0) 
-    robot.targetAngle =  state.demandAngle
+    robot.targetAngle =  state.demandAngle #/ math.pi * 180.0
     
 runControlLoops.runControlLoops(
      type('testclass', (object,), 

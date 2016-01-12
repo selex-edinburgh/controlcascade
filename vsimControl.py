@@ -37,8 +37,8 @@ def vsimControlUpdate(state,batchdata):
     state.timeStamp = time.time()
     state.timeDelta = state.timeStamp - prevTimeStamp
 
-    demandL = state._leftSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
-    demandR = state._rightSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0
+    demandL = state._leftSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0
+    demandR = state._rightSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
     
     state.speedL = speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
     state.speedR = speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)

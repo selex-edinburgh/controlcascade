@@ -58,7 +58,7 @@ def odoControlUpdate(state,batchdata):
     
     
 def odoToTrackTranslator( sourceState, destState, destQueue ):
-    lrDifferenceMm = (sourceState.totalPulseR - sourceState.totalPulseL) * sourceState._mmPerPulse 
+    lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
     #print "odo dist " , sourceState.distTravel - sourceState.prevDistTravel           
     angle = math.degrees(lrDifferenceMm / destState._trackWidth) + sourceState._initAngle# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
                 # TODO work around fudge to get robot pointing north at start (pi/2)
