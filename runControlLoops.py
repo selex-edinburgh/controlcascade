@@ -13,7 +13,7 @@ def runControlLoops(uiObserver):
     timeScale = 1.0
     
     routeState  = routeControl.RouteState(120.0)                #RouteState(near)
-    odoState    = odoControl.OdoState(0.1,4096,0,0,math.pi/2)   #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
+    odoState    = odoControl.OdoState(0.1,4096,0,0,math.degrees(math.pi/2))   #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
     rcChanState = rcChanControl.RcChanState(80)                 #RcChanState(limitChange)
     trackState  = trackControl.TrackState(310,500)              #TrackState(trackWidth,movementBudget)
     vsimState   = vsimControl.VsimState(0.95,1.0,600.0)         #VsimState(fricEffectPerSec,lrBias,speedMax)

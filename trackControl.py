@@ -13,9 +13,9 @@ class TrackState(ObservableState):
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)        
         self.legGoal = (0.0,0.0)              
-        self.currentTheta = math.pi / 2.0
+        self.currentTheta = math.degrees(math.pi / 2.0)
         self.currentPos = (0.0,0,0)           
-        self.demandTheta = math.pi / 2.0
+        self.demandTheta = math.degrees(math.pi / 2.0)
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth #310.0 #mm between wheels
         self._movementBudget = movementBudget #500.0  # mm
@@ -48,14 +48,14 @@ def trackControlUpdate(state,batchdata):
             halfArcTurn = (item['sensedTheta']-state.currentTheta) / 2.0
             halfArcMove = (item['sensedMove']) / 2.0
             
-            if halfArcTurn < 0.1:  # small angle approximation sin(theta) = theta : and avoid divide-by-zero risk
+            if math.radians(halfArcTurn) < 0.1:  # small angle approximation sin(theta) = theta : and avoid divide-by-zero risk
                 linearMove = abs(2.0 * halfArcMove )
             else:
-                linearMove = abs(2.0 * math.sin(halfArcTurn ) * halfArcMove / halfArcTurn) # linear move is shorter than arc
+                linearMove = abs(2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
 
             midwayTheta = state.currentTheta + halfArcTurn
-            state.currentPos = (state.currentPos[0] + linearMove * math.cos(midwayTheta), # x move along effective direction
-                                    state.currentPos[1] + linearMove * math.sin(midwayTheta)) # y move along effective direction
+            state.currentPos = (state.currentPos[0] + linearMove * math.cos(math.radians(midwayTheta)), # x move along effective direction
+                                    state.currentPos[1] + linearMove * math.sin(math.radians(midwayTheta))) # y move along effective direction
             state.currentTheta = item['sensedTheta']
             state.timeStamp = time.time()
     if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
@@ -81,7 +81,7 @@ def trackControlUpdate(state,batchdata):
     state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
-    state.demandTheta = math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] )
+    state.demandTheta = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
 
 
 
@@ -97,7 +97,7 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                       sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
     brakingPct = round(min(100.0, dtgFactor)  ,0)
     if brakingPct < 15.0 : brakingPct = 0
-    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / (math.pi / 2.0) 
+    turn = angleDiff(sourceState.currentTheta, sourceState.demandTheta) / math.degrees(math.pi / 2.0) 
     move = max ( 1 - abs(turn), 0 )
     
     message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0 ,
@@ -107,10 +107,10 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
 def angleDiff ( fromTheta, toTheta ) :
     thetaDiff = toTheta - fromTheta
-    if thetaDiff > math.pi:
-        thetaDiff -= math.pi * 2.0
-    elif thetaDiff < -math.pi:
-        thetaDiff += math.pi * 2.0
+    if thetaDiff > math.degrees(math.pi):
+        thetaDiff -= math.degrees(math.pi * 2.0)
+    elif thetaDiff < math.degrees(-math.pi):
+        thetaDiff += math.degrees(math.pi * 2.0)
     return thetaDiff
 
 

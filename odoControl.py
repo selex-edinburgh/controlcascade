@@ -6,7 +6,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initTheta=math.pi/2.0):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initTheta=math.degrees(math.pi/2.0)):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -60,7 +60,7 @@ def odoControlUpdate(state,batchdata):
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseR - sourceState.totalPulseL) * sourceState._mmPerPulse 
     #print "odo dist " , sourceState.distTravel - sourceState.prevDistTravel           
-    theta = lrDifferenceMm / destState._trackWidth + sourceState._initTheta# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
+    theta = math.degrees(lrDifferenceMm / destState._trackWidth) + sourceState._initTheta# + math.pi / 2.0# circumferential move divided by radius to give angle in radians
                 # TODO work around fudge to get robot pointing north at start (pi/2)
     destQueue.put({'messageType':'sense',
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
