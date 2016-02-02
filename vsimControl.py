@@ -63,3 +63,9 @@ def vsimToOdoTranslator( sourceState, destState, destQueue ):
                'pulseR':right  }
     destQueue.put(message)
     
+    
+def vsimToEnvSimTranslator(sourceState, destState, destQueue):
+    pass
+
+
+    

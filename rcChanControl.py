@@ -2,11 +2,12 @@
 import time
 import math
 import threading
+import serial
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class RcChanState(ObservableState):
-    def __init__(self, limitChange):
+    def __init__(self, limitChange, speedLimit):
         super(RcChanState,self).__init__()
         self.currentTurn = 127
         self.currentFwd = 127
@@ -14,20 +15,37 @@ class RcChanState(ObservableState):
         self.demandFwd = 127
         self._limitChange = limitChange #80
         self.timeStamp    = time.time()
+        self.minClip = 127 - speedLimit
+        self.maxClip = 127 + speedLimit
 
+        self.ser= serial.Serial(                     #Set up Serial Interface    
+        port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
+        baudrate=9600,                      #bits/sec      
+        bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
+        timeout=1                           #1 sec       
+        )
 
+    def clip(self, x):
+        #if x < 0 or x >255: print "clip"
+        return min(self.maxClip,max(self.minClip,x))
         
 def rcChanControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:
         if item['messageType'] == 'control':
-            state.demandTurn = clip(-item['demandTurn'] * 127 + 127)
-            state.demandFwd =  clip(item['demandFwd'] * 127 + 127)
+            state.demandTurn = state.clip(item['demandTurn'] * 127 + 127)## expects anti clockwise
+            state.demandFwd =  state.clip(-item['demandFwd'] * 127 + 127) ####inserted -
         elif item['messageType'] == 'sense':
             pass
         
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
+    
+    """"
+    Test for chariot
+    """
+    state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
+    state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
     #print "rcChan ", state.currentTurn, state.currentFwd
     
 def limitedChange(startX, endX, magnitudeLimit):
@@ -36,15 +54,8 @@ def limitedChange(startX, endX, magnitudeLimit):
     diffSign = math.copysign(1,diff)
     change = diffSign * ( min(abs(diff),magnitudeLimit) )
     return startX + change
-    
-def clip(x):
-    #if x < 0 or x >255: print "clip"
-    return min(255,max(0,x))
 
 def rcChanToVsimTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'control',
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 }) 
-
-      
-    

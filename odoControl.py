@@ -2,11 +2,12 @@
 import time
 import math
 import threading
+import smbus
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,rolloverRange=4096,rolloverCountL=0,rolloverCountR=0,initAngle=90):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=65536,rolloverCountL=0,rolloverCountR=0,initAngle=90):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -15,10 +16,14 @@ class OdoState(ObservableState):
         self.prevDistTravel = 0
         self.distTravel = 0
         self._initAngle = initAngle
-        self._mmPerPulse = mmPerPulse #0.1
-        self._rolloverRange = rolloverRange #4096
+        self._mmPerPulse = mmPerPulse #1
+        self._rolloverRange = rolloverRange #32768
         self._rolloverCountL = rolloverCountL #0
         self._rolloverCountR = rolloverCountR #0
+        self.bus = smbus.SMBus(1)    #There are two SMbus available on the R-Pi
+        self.address = 4       	    #Seven bit Byte: as bit 8 is used for READ/WRITE designation.
+        self.control = 176   	    #Tells sensor board slave to read odometers
+        self.numbytes = 4      	
         self.timeStamp = time.time()
         
 #odoState = OdoState(0.1,4096,0,0,math.pi/2) #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR)
@@ -35,8 +40,17 @@ def odoControlUpdate(state,batchdata):
             rightReading = item['pulseR']
     
     #can get state.totalPulseL, state.totalPulseR from i2c here
-    readI2C = False        
+            
+    readI2C = True        
     if not(readI2C) and len(batchdata)==0 : return
+    try:
+        if readI2C:
+            RxBytes = state.bus.read_i2c_block_data(state.address, state.control, state.numbytes)
+            leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
+            rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
+            print "Print 2" , leftReading, rightReading 
+    except:
+            print sys.exc_info()
     #account for any rollover here
     state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
     state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange

@@ -15,13 +15,14 @@ class TrackState(ObservableState):
         self.legGoal = (0.0,0.0)     
         self.legOrigin = (0.0,0.0)
         self.currentAngle = 0
-        self.currentPos = (0.0,0,0)           
+        self.currentPos = (1200.0,0,0)           
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth #310.0 #mm between wheels
         self._movementBudget = movementBudget #500.0  # mm
         self.timeStamp    = time.time()
-
+        self.pole = (1200,0)
+        
 def trackControlUpdate(state,batchdata):
     #process items in batchdata
     for item in batchdata:
@@ -46,12 +47,27 @@ def trackControlUpdate(state,batchdata):
                 linearMove = abs(2.0 * halfArcMove )
             else:
                 linearMove = abs(2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
-
+        
             midwayAngle = state.currentAngle + halfArcTurn
             state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
                                     state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
+                                    
+                                    
+                            
             state.currentAngle = item['sensedAngle']
             state.timeStamp = time.time()
+            
+        elif item['messageType'] == 'obstacle':
+            pass
+            state.pole = (item['obsPosition'])
+            if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
+            (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
+                print "OMG GONNA COLLIDE"
+            
+    
+    
+    
+    
     if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
@@ -72,16 +88,17 @@ def trackControlUpdate(state,batchdata):
     closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg)
     distToGoal = math.hypot( state.legGoal[0] - closePointOnLeg[0], state.legGoal[1] - closePointOnLeg[1] )
     absToLeg =  abs(distToLeg)
-    moveAmount = distToGoal
+    moveAmount = distToGoal 
     if absToLeg > distToGoal: moveAmount =  0
-    
+    #print "absToLeg", absToLeg, "dist: ", distToGoal
     # demandPos is a point on the Leg, maxMove along from closePointOnLeg
     state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
     #state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
     state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
-
+    
+    #print "demand pos", state.demandPos
 
 
 

@@ -20,7 +20,7 @@ class ControlLoop(threading.Thread):
 
     
     def run(self):
-        print "starting thread"
+        print "starting thread\n"
         self._lastrun = time.time()
         while True:
             batchdata = []
@@ -64,8 +64,8 @@ class ControlObserverTranslator:
         updatedState.reader_acquire()
         try:
             self._transFunction(updatedState, self._destStateData, self._destQueue)
-        except Exception as err:
-            print err
+        #except Exception as err:
+           # print err
         finally:
             self._destStateData.reader_release()
             updatedState.reader_release()
