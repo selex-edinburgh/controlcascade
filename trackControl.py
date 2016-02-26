@@ -24,13 +24,11 @@ class TrackState(ObservableState):
         self.pole = (1200,0)
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
-        
+        self.isCollision = False
         
         
 def trackControlUpdate(state,batchdata):   
     for item in batchdata:      # Process items in batchdata
-        
-
         """"
         Store timeStamp data
         """
@@ -71,18 +69,29 @@ def trackControlUpdate(state,batchdata):
                                     
                             
             state.currentAngle = item['sensedAngle']
+            
             state.timeStamp = time.time()
              
-        elif item['messageType'] == 'obstacle':
-            pass
-            state.pole = (item['obsPosition'])
-            if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
-            (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
-                print "OMG GONNA COLLIDE"
+       # elif item['messageType'] == 'obstacle':
+        #    state.isCollision = item['collision']
+         #   print item['collision']
+           # if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
+           # (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
+           #     print "OMG GONNA COLLIDE"
 
     
     
-    if len(batchdata) == 0: return #do nothing here, unless new control or sense messages have arrived
+    
+    
+    if len(batchdata) == 0: return      # do nothing here, unless new control or sense messages have arrived
+    
+    
+    if state.isCollision == True:       # collison warning 
+        state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
+        print "Collision"
+        return 
+    
+    
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
     # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )

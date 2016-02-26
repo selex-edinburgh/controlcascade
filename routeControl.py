@@ -10,7 +10,9 @@ class RouteState(ObservableState):
         self.nextWaypoint = 1
         self.waypoints    = [         
         (1200.0,0.0),
-        (1390.0,210.0),
+       
+        (1390.0,210.0)]
+        """
         (2250.0,200.0),
         (2300.0,980.0),
         (1460.0,1030.0),
@@ -29,8 +31,7 @@ class RouteState(ObservableState):
         (1310.0,1110.0),                              
         (2140.0,1030.0),                        
         (2300.0,220.0)]
-                              
-                            
+            """       
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
         
@@ -41,6 +42,12 @@ def routeControlUpdate(state,batchdata):
         if item['messageType'] == 'waypoint':
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
+            for item['removeWaypoint'] in batchdata:
+                print "<<<>>>>"
+                if item['removeWaypoint'] == True:
+                    state.waypoints.pop()
+                    print "Waypoint Removed"
+
         elif item['messageType'] == 'sense':
             sensedPos = item['sensedPos']
             distToWPx = sensedPos[0] - state.waypoints[state.nextWaypoint][0]

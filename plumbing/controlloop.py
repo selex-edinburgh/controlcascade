@@ -2,6 +2,7 @@ import Queue
 import threading
 import time
 import sys
+import traceback
 
 class ControlLoop(threading.Thread):
     """ 
@@ -38,8 +39,8 @@ class ControlLoop(threading.Thread):
                     haveData = True
                 except Queue.Empty:
                     pass
-                except Exception as err:
-                    print err
+                except:
+                    traceback.print_exc()
                 t = time.time()
                 if (t >= haveDataDeadline and haveData) or  ( t >= haveNoDataDeadline ):
                     break
@@ -48,7 +49,7 @@ class ControlLoop(threading.Thread):
             try:
                 self._loopFunction(self.stateData, batchdata)
             except:
-                print sys.exc_info()
+                traceback.print_exc()
             self.stateData.writer_release()
             self.stateData.notify()
 

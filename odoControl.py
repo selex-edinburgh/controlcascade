@@ -10,7 +10,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=10,rolloverRange=32768,rolloverCountL=0,rolloverCountR=0,initAngle=90):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=32768,rolloverCountL=0,rolloverCountR=0,initAngle=90):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -85,7 +85,8 @@ def odoControlUpdate(state,batchdata, doRead):
     elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and           # check for erranous value from the odometers
         (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
         print "erraneous value"
-            
+           
+   # print state.totalPulseL , state.totalPulseR
     state.prevDistTravel = state.distTravel
     state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
    

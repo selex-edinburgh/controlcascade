@@ -1,5 +1,6 @@
 import pygame
 import math
+from  pygame import gfxdraw
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
@@ -43,7 +44,8 @@ class VisualState(ObservableState):
         self.average = 0
         self.length = 0
         self.variance = 0
-
+        self.isCollision = False
+        self.removeLastWP = False
         self.scanCone = ((0,0),(0,0),(0.0))
     def drawRobot(self, surface):
         surface.blit(self.scrBuff,(0,0))
@@ -58,8 +60,12 @@ class VisualState(ObservableState):
                               self.pos[1] - rotImg.get_rect().height/2.0))
         
         pygame.display.update()      # update the screen
-        
-        pygame.draw.polygon(self.screen, BLACK, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 1)
+        if self.isCollision == False:
+            pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+        else:
+            pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+        #pygame.gfxdraw.filled_polygon(self.screen,  ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), BLACK)
+       # pygame.gfxdraw.filled_polygon(self.screen, self.scanCone[0,1,2], BLACK)
        # print self.scanCone
         
         
@@ -115,6 +121,7 @@ class VisualState(ObservableState):
         
 def visualControlUpdate(state,batchdata):
     
+    state.removeLastWP = False
     for event in pygame.event.get():          # handle every event since the last frame.
         if event.type == pygame.QUIT:
             pygame.quit()       # quit the screen
@@ -122,13 +129,18 @@ def visualControlUpdate(state,batchdata):
             pos = (event.pos[0], state.screenHeight - event.pos[1])
             print "You pressed at locaton: ", pos
             state.waypoint = pos
-
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            print "Right click"
+            state.removeLastWP = True
+            
+   # print state.removeLastWP
     state.screen.fill(WHITE) # fill the screen with white
     state.drawObstacles(state.screen)
     state.drawRobot(state.screen) # draw the Robot to the screen
     state.drawInfoPanel(state.scrBuff )
     state.checkForCollision()
     
+
     for item in batchdata:
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
@@ -143,7 +155,7 @@ def visualControlUpdate(state,batchdata):
       
             state.poleList = (item['poleList'])
             state.wallList = (item['wallList'])
-            state.barrelList=(item['barrelList'])
+            state.barrelList = (item['barrelList'])
             state.rampList = (item['rampList'])
             state.doorList = (item['doorList'])
             state.goalList = (item['goalList'])
@@ -157,13 +169,15 @@ def visualControlUpdate(state,batchdata):
             state.variance = (item['variance'])
         elif item['messageType'] == 'scan':
             state.scanCone = (item['scanCone'])
+            state.isCollision = (item['collision'])
     if len(batchdata) == 0: return
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
     if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
         sourceState.prevWaypoint = sourceState.waypoint
         message = {'messageType':'waypoint',
-                   'newWaypoint'    :sourceState.waypoint}
+                   'newWaypoint'    :sourceState.waypoint,
+                   'removeWaypoint' :sourceState.removeLastWP}
         destQueue.put(message)
 
 
