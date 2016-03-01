@@ -22,7 +22,7 @@ class VisualState(ObservableState):
         self.screenHeight = 721
         self.font = pygame.font.SysFont('Arial', 18)
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
-        self.img_path = 'tank.gif'
+        self.img_path = 'images/tank.gif'
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
         self.background.fill((20, 150, 0))   

@@ -68,8 +68,11 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     """"
     Test for chariot
     """
-    #state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-    #state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
+    try:
+        state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
+        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
+    except:
+        pass
     #print "rcChan ", state.currentTurn, state.currentFwd
     
 def limitedChange(startX, endX, magnitudeLimit):
