@@ -2,7 +2,10 @@
 import time
 import math
 import threading
-#import serial
+try:
+    import serial
+except:
+    print "Serial not connected.."
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
@@ -20,18 +23,28 @@ class RcChanState(ObservableState):
         
         self.timeStampFlow["control"] = time.time()
 
-        '''self.ser= serial.Serial(                     #Set up Serial Interface    
-        port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
-        baudrate=9600,                      #bits/sec      
-        bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
-        timeout=1                           #1 sec       
-        )'''
+        try:
+            self.ser= serial.Serial(            #Set up Serial Interface    
+            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
+            baudrate=9600,                      #bits/sec      
+            bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
+            timeout=1                           #1 sec       
+            )
+        except:
+            print "Serial not connected..."
 
     def clip(self, x):
         #if x < 0 or x >255: print "clip"
         return min(self.maxClip,max(self.minClip,x))
-        
-def rcChanControlUpdate(state,batchdata):
+ 
+
+def simMotor(state, batchdata):
+    rcChanControlUpdate(state, batchdata, False)
+
+def realMotor(state, batchdata):
+    rcChanControlUpdate(state, batchdata, True)
+    
+def rcChanControlUpdate(state,batchdata, motorOutput):
     #process items in batchdata
     
     
