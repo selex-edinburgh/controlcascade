@@ -47,8 +47,6 @@ def realMotor(state, batchdata):
 def rcChanControlUpdate(state,batchdata, motorOutput):
     #process items in batchdata
     
-    
-    
     for item in batchdata:
     
         if 'timeStamp' in item:
@@ -65,14 +63,9 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
     
-    """"
-    Test for chariot
-    """
-    try:
+    if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
-    except:
-        pass
     #print "rcChan ", state.currentTurn, state.currentFwd
     
 def limitedChange(startX, endX, magnitudeLimit):
