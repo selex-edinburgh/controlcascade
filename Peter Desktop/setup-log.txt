@@ -1,0 +1,34 @@
+Image 
+	2015-11-21-raspbian-jessie.img
+Windows tools for SD card format and write
+	SDFormatter
+	Win32DiskImager
+
+> sudo raspi-config
+	Expand Filesystem
+	Overclock -> 900Mhz
+	Advanced 
+		I2C -> Enable -> Load module by default
+
+> mkdir /home/pi/Desktop/archived20160204 
+
+Then recursive copy to archive home/ and etc/ folders from original filesystem 
+into new folder.
+(Use sudo for recursive copy of etc/)
+------------------------------------------------------------------------------------
+To switch off the tty terminal on the UART pins:-
+------------------------------------------------------------------------------------
+Edit /boot/cmdline.txt, removing reference to /dev/ttyAMA0, leaving only this line
+dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait
+
+Then stop and disable the ttyAMA0 device 
+> sudo systemctl stop serial-getty@ttyAMA0.service
+> sudo systemctl disable serial-getty@ttyAMA0.service
+
+Boot message "Uncompressing Linux ... done, booting the kernel." on each reboot
+	Message sent at 115200 baud. Just a transient at boot-up.
+	No "recovery mode" login prompts (not Noobs).
+	After boot, /dev/ttyAMA0 sits at 9800 baud.
+See post 283774 on the Raspberry Pi forum : One solution is to decompress the kernel.
+
+------------------------------------------------------------------------------------

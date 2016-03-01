@@ -1,0 +1,56 @@
+<html>
+<head><title>ControlBoard.py Class</title></head>
+<body>
+<h1 style='display:inline'>ControlBoard</h1>
+<h3 style='display:inline'> rampyge.components.ControlBoard</h3>
+<hr />
+ControlBoard represents the main control board and allows you to digitally control what normally would be controlled via the radio remote.When using the methods, keep in mind that 'speed' is actually a number between 2 and 253 (safe limits), with 127 being the centre point at which there is no movement. A value lower than this produces movement in a backward direction. A value higher than this produces forward motion.
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>()</span></h3>
+<p>When a ControlBoard object is created ( ControlBoard() ),  tranmission is started immediately.</p>
+<br/>
+<h3>forward
+<span style='font-size:80%'>(speed)</span></h3>
+<p>Ease the chariot into forward motion.</p>
+speed -> The speed to accelerate to. (int)<br />
+<br/>
+<h3>reverse
+<span style='font-size:80%'>(speed)</span></h3>
+<p>Ease the chariot into backward motion.</p>
+speed -> The speed to accelerate to. (int)<br />
+<br/>
+<h3>right
+<span style='font-size:80%'>(rspeed)</span></h3>
+<p>Ease the chariot into a right/clockwise turn.</p>
+rspeed -> the final speed to turn with. (int)<br />
+<br/>
+<h3>left
+<span style='font-size:80%'>(rspeed)</span></h3>
+<p>Ease the chariot into a left/anticlockwise turn.</p>
+rspeed -> the final speed to turn with. (int)<br />
+<br/>
+<h3>center
+<span style='font-size:80%'>()</span></h3>
+<p>Ease the rotation of the chariot to a full stop.</p>
+<br/>
+<h3>stop
+<span style='font-size:80%'>()</span></h3>
+<p>Ease the motion of the chariot to a full stop. </p>
+<br/>
+<h3>transmit
+<span style='font-size:80%'>()</span></h3>
+<p>Send command bytes to the control board.</p>
+<br/>
+<h3>loop
+<span style='font-size:80%'>()</span></h3>
+<p>The loop that transmits the signals with appropriate timing.</p>
+<br/>
+<h3>shutdown
+<span style='font-size:80%'>()</span></h3>
+<p>Signals for the transmitting loop to exit.</p>
+<br/>
+</body>
+</html>

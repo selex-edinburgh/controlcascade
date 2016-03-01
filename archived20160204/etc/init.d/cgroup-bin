@@ -1,0 +1,42 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          init-cgroups
+# Required-Start:    mountkernfs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Mounts cgroup filesystems
+### END INIT INFO
+
+PATH=/sbin:/bin
+
+. /lib/lsb/init-functions
+
+do_start () {
+        log_action_msg "Initializing cgroups"
+	mount -t tmpfs none /sys/fs/cgroup
+	mkdir /sys/fs/cgroup/memory
+	if ! mount -t cgroup none /sys/fs/cgroup/memory -o memory 2> /dev/null; then
+		umount /sys/fs/cgroup
+		log_warning_msg "Kernel lacks cgroups or memory controller not available, not starting cgroups."
+		exit 0
+	fi
+	chmod a+r /sys/fs/cgroup/memory/memory.pressure_level
+}
+
+case "$1" in
+  start)
+        do_start
+        ;;
+  restart|reload|force-reload)
+        echo "Error: argument '$1' not supported" >&2
+        exit 3
+        ;;
+  stop)
+        # No-op
+        ;;
+  *)
+        echo "Usage: $0 start|stop" >&2
+        exit 3
+        ;;
+esac

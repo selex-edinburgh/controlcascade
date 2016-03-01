@@ -1,0 +1,9 @@
+cp -r -f /media/PIINTHESKY/apt-get-packages/* /var/cache/apt/archives
+apt-get install i2c-tools
+cp -f /media/PIINTHESKY/setup-scripts/raspi-blacklist.conf /etc/modprobe.d/raspi-blacklist.conf
+cp -f /media/PIINTHESKY/setup-scripts/modules /etc/modules
+adduser pi i2c
+apt-get install python-smbus
+cp -r /media/PIINTHESKY/example-programs/* /home/pi
+cp -r /media/PIINTHESKY/adafruit-library/* /home/pi
+chown --recursive pi:pi /home/pi

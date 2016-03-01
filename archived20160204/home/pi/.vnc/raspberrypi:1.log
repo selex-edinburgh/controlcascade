@@ -1,0 +1,47 @@
+12/12/15 08:10:06 Xvnc version TightVNC-1.3.9
+12/12/15 08:10:06 Copyright (C) 2000-2007 TightVNC Group
+12/12/15 08:10:06 Copyright (C) 1999 AT&T Laboratories Cambridge
+12/12/15 08:10:06 All Rights Reserved.
+12/12/15 08:10:06 See http://www.tightvnc.com/ for information on TightVNC
+12/12/15 08:10:06 Desktop name 'X' (raspberrypi:1)
+12/12/15 08:10:06 Protocol versions supported: 3.3, 3.7, 3.8, 3.7t, 3.8t
+12/12/15 08:10:06 Listening for VNC connections on TCP port 5901
+Font directory '/usr/share/fonts/X11/75dpi/' not found - ignoring
+Font directory '/usr/share/fonts/X11/100dpi/' not found - ignoring
+xrdb: No such file or directory
+xrdb: can't open file '/home/pi/.Xresources'
+
+12/12/15 08:10:09 Got connection from client 192.168.1.42
+12/12/15 08:10:09 Using protocol version 3.8
+12/12/15 08:10:09 Enabling TightVNC protocol extensions
+12/12/15 08:10:12 Full-control authentication passed by 192.168.1.42
+12/12/15 08:10:12 Using tight encoding for client 192.168.1.42
+12/12/15 08:10:12 rfbProcessClientNormalMessage: ignoring unknown encoding 16
+12/12/15 08:10:12 Using image quality level 6 for client 192.168.1.42
+12/12/15 08:10:12 rfbProcessClientNormalMessage: ignoring unknown encoding -223
+12/12/15 08:10:12 Enabling LastRect protocol extension for client 192.168.1.42
+12/12/15 08:10:12 Enabling cursor position updates for client 192.168.1.42
+12/12/15 08:10:12 Enabling full-color cursor updates for client 192.168.1.42
+12/12/15 08:37:48 rfbProcessClientNormalMessage: read: Connection reset by peer
+12/12/15 08:37:48 Client 192.168.1.42 gone
+12/12/15 08:37:48 Statistics:
+12/12/15 08:37:48   key events received 1528, pointer events 6560
+12/12/15 08:37:48   framebuffer updates 8365, rectangles 42598, bytes 10166326
+12/12/15 08:37:48     LastRect markers 6267, bytes 75204
+12/12/15 08:37:48     cursor shape updates 295, bytes 703569
+12/12/15 08:37:48     cursor position updates 1, bytes 12
+12/12/15 08:37:48     copyRect rectangles 881, bytes 14096
+12/12/15 08:37:48     tight rectangles 35154, bytes 9373445
+12/12/15 08:37:48   raw bytes equivalent 911456836, compression ratio 97.238191
+
+12/12/15 08:39:52 Got connection from client 192.168.1.42
+12/12/15 08:39:52 Using protocol version 3.8
+12/12/15 08:39:52 Enabling TightVNC protocol extensions
+12/12/15 08:39:55 Full-control authentication passed by 192.168.1.42
+12/12/15 08:39:55 Using tight encoding for client 192.168.1.42
+12/12/15 08:39:55 rfbProcessClientNormalMessage: ignoring unknown encoding 16
+12/12/15 08:39:55 Using image quality level 6 for client 192.168.1.42
+12/12/15 08:39:55 rfbProcessClientNormalMessage: ignoring unknown encoding -223
+12/12/15 08:39:55 Enabling LastRect protocol extension for client 192.168.1.42
+12/12/15 08:39:55 Enabling cursor position updates for client 192.168.1.42
+12/12/15 08:39:55 Enabling full-color cursor updates for client 192.168.1.42

@@ -1,0 +1,41 @@
+import time
+
+#Update system tim using LXTerminal  sudo date 0413144915
+
+volts=10
+y=20
+z=30
+
+#Print file header to screen
+print "/home/pi/datalogtst.csv/"
+print time.strftime ("%H:%M:%S %b %d %Y")   #Print time,month,day,year
+print("  time    volts  amps  units")         #Write column headings
+print("-----------------------------")                      #Underline headings
+print time.strftime("%H:%M:%S"),"  ",volts,"  ",y,"  ",z    #Print data to screen
+
+#---------------------
+#Open a file to log data separated by commas for excel compatibility =.csv
+#logfile=open('/home/pi/datalogtst.csv','a')     #Open datalog file to append values
+logfile=open('/home/pi/datalogtst.csv','w')     #Open datalog file to overwrite values
+
+#Write time & date file header
+logfile.write(time.strftime("%H:%M:%S %b %d %Y\n")) #Write time & date file header+new line
+logfile.write("time, volts, amps, units\n")         #Write column headings \n
+
+#Write one line of time & data to file
+logfile.write(time.strftime("%H:%M:%S"))            #Write time to file
+logfile.write(", %d" % volts)                       #Write data to file
+logfile.write(", %d" % y)                           #Write data to file
+logfile.write(", %d" % z)                           #Write data to file
+logfile.close()                                     #Close file
+
+#------------------------
+logfile=open('/home/pi/datalogtst.csv','r')         #Open datalog file for reading
+#for i in range(0, 10):
+#    print line
+for line in logfile:                                #Print all lines to screen
+    line=line.strip()
+    print line
+
+logfile.close()                                     #Close file
+

@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+sudo ifdown --force wlan0; iwconfig wlan0 mode ad-hoc
+sudo ifup wlan0
+sudo service networking restart

@@ -1,0 +1,54 @@
+<html>
+<head><title>Sight.py Class</title></head>
+<body>
+<h1 style='display:inline'>Sight</h1>
+<h3 style='display:inline'> rampyge.Sight</h3>
+<hr />
+Instantiating an instance of the Sight class will provide you with access to useful methods for examining the chariot's surroundings.Use it to find objects, and get their exact positions and bearingsin relation to the chariot.
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>(cfg)</span></h3>
+<p>This is called whenever the Sight object is created.Here we just create StepMotor and Rangefinder objects that weneed to get input from the sensors.</p>
+cfg -> The list of configuation variables. (list)<br />
+<br/>
+<h3>begin
+<span style='font-size:80%'>()</span></h3>
+<p>You should call this method after you have initialised the Sightobject, but before you attempt to use any other methods.This resets the motor to its default starting position.</p>
+<br/>
+<h3>nextEdge
+<span style='font-size:80%'>(threshold, maxdist, timeout)</span></h3>
+<p>Scans, finds the next change in distance tha looks like an edge,reports its position, and stops.</p>
+threshold -> how much change to allow before detecting an edge<br />
+maxdist -> the maximum distance from which to use readings. (int)<br />
+timeout -> how long (s) to keep trying to find one. (int)<br />
+<b>Return value:</b>list with edge position (int), distance (float) or 0
+<br />
+<br/>
+<h3>nextObject
+<span style='font-size:80%'>(threshold, maxdist, timeout)</span></h3>
+<p>Finds the next object (surface with distance variance underthe given threshold, and within the given distance) and returnsa new Obstacle.</p>
+threshold -> how much change to allow before detecting edges (int)<br />
+maxdist -> the maximum distance to search for objects (int)<br />
+timeout -> how long (s) to keep trying to find one. (int)<br />
+<b>Return value:</b>the obstacle if one was found, otherwise 0
+<br />
+<br/>
+<h3>checkObject
+<span style='font-size:80%'>(obj, posA, posB)</span></h3>
+<p>Checks if an object is still where it is expected to be byscanning between the points given.</p>
+obj -> The Obstacle to check for (Obstacle)<br />
+posA -> Tne start of the range to check within (int)<br />
+posB -> The end of the range to check within (int)<br />
+<b>Return value:</b>True if the object has not moved, otherwise false
+<br />
+<br/>
+<h3>closestObject
+<span style='font-size:80%'>()</span></h3>
+<p>Scans forward and back once, then returns the distance from theclosest found surface.</p>
+<b>Return value:</b>the distance from the closest surface.
+<br />
+<br/>
+</body>
+</html>

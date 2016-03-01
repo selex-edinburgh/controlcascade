@@ -1,0 +1,17 @@
+auto lo
+
+iface lo inet loopback
+iface eth0 inet dhcp
+iface usb0 inet static
+
+allow-hotplug wlan0
+iface wlan0 inet static
+address 192.168.1.40
+netmask 255.255.255.0
+
+wireless-channel 1
+wireless-essid RPiAdHocNetwork
+wireless-mode ad-hoc
+
+#wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+#iface default inet dhcp

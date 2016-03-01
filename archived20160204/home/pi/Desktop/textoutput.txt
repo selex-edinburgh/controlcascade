@@ -1,0 +1,14 @@
+GPIO 18 Stop/Go Switch input established.  Status=  1
+GPIO 23 ZeroButton input established.      Status=  1
+GPIO 24 Amber LED output established
+GPIO 25 Green LED output established
+1 Waypoints designated
+Reset Function Activated 
+Variables Designated
+Stepper Motor Initialising
+Odometers Reset to Start Conditions
+Lt Wheel 5467 Rt Wheel 4496 Heading -238 degrees
+Infr-Red Ranger scanning between: 18 and -18
+Received Bytes>    8 0 6 254
+I-R Range 2048 mm.  I-R Angle -22.7915194346 degrees
+Program on hold.  Ready to Start

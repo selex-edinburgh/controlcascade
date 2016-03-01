@@ -1,0 +1,39 @@
+<html>
+<head><title>Odometers.py Class</title></head>
+<body>
+<h1 style='display:inline'>Odometers</h1>
+<h3 style='display:inline'> rampyge.components.Odometers</h3>
+<hr />
+Represents the pair of odometers (for measuring chariot displacement from start position.) 
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>(cfg, cg, cl, cr)</span></h3>
+<p>Constructor ( Odometers() )</p>
+cg -> Global pulse to mm translation / correction- default 1.31 (float) <br />
+cl -> Translation/ correction offset for left wheel (float)<br />
+cr -> Translation/ correction offset for right wheel (float)<br />
+<br/>
+<h3>read
+<span style='font-size:80%'>()</span></h3>
+<p>Gets current odometer displacement readings.</p>
+<br/>
+<h3>reset
+<span style='font-size:80%'>()</span></h3>
+<p></p>
+<br/>
+<h3>getHeadingChange
+<span style='font-size:80%'>()</span></h3>
+<p>Calculates the current bearing of the chariot through odometer readings.</p>
+<br/>
+<h3>getDisplacementChange
+<span style='font-size:80%'>()</span></h3>
+<p>Calculates by how much the displacement of the chariot has changed since thelast time that this function was called</p>
+<br/>
+<h3>getDisplacement
+<span style='font-size:80%'>()</span></h3>
+<p>Calculates the displacement of the centre of the chariot from the starting position.</p>
+<br/>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<html>
+<head><title>Chariot.py Class</title></head>
+<body>
+<h1 style='display:inline'>Chariot</h1>
+<h3 style='display:inline'> rampyge.Chariot</h3>
+<hr />
+The representation of a chariot as a whole, controlling various subcomponents.
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>()</span></h3>
+<p>Creates a chariot object but does not start the loop thread. To start operation call (Chariot).start() from your Main script.</p>
+<br/>
+<h3>loop
+<span style='font-size:80%'>()</span></h3>
+<p>The main loop. Put all of your instructions and decision logic in here.</p>
+<br/>
+<h3>go
+<span style='font-size:80%'>(obstacles, targets, ti)</span></h3>
+<p>Command the robot to make its way towards a given target.</p>
+<br/>
+<h3>straight
+<span style='font-size:80%'>(target)</span></h3>
+<p>Move the chariot in a straight line to the given target.</p>
+<br/>
+<h3>turn
+<span style='font-size:80%'>(target)</span></h3>
+<p>Turn the chariot on the spot to face the given target.</p>
+<br/>
+<h3>arc
+<span style='font-size:80%'>(p0, p1, p2, p3)</span></h3>
+<p>Move the chariot in an arced path from p1 to p2</p>
+<br/>
+<h3>collisionCheck
+<span style='font-size:80%'>(obstacles, position)</span></h3>
+<p>(Stub) Checks whether the given position is in collision with any defined obstacles.</p>
+<br/>
+<h3>updateBearing
+<span style='font-size:80%'>()</span></h3>
+<p>Update the current bearing of the chariot</p>
+<br/>
+<h3>getBearing
+<span style='font-size:80%'>(point)</span></h3>
+<p>Get the bearing of a given point from the centre of the chariot.</p>
+point -> The point to find a bearing to (tuple)<br />
+<b>Return value:</b>The relative bearing in degrees. (int)
+<br />
+<br/>
+<h3>getAngle
+<span style='font-size:80%'>(v1, v2)</span></h3>
+<p>Get an angle between the two specified vectors</p>
+v1 -> First vector (tuple)<br />
+v2 -> Second vector (tuple)<br />
+<b>Return value:</b>The angle between the vectors in radians (float) 
+<br />
+<br/>
+<h3>unitVector
+<span style='font-size:80%'>(p1, p2)</span></h3>
+<p>Get a unit vector between the two specified points.</p>
+p1 -> First point (tuple)<br />
+p2 -> Second point (tuple)<br />
+<b>Return value:</b>a unit vector with direction p1 + p2 (tuple)
+<br />
+<br/>
+<h3>start
+<span style='font-size:80%'>()</span></h3>
+<p>Starts the chariot operation loop thread.</p>
+<br/>
+<h1 style='display:inline'>Spline</h1>
+<h3 style='display:inline'> rampyge.Chariot</h3>
+<hr />
+
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>(p0, p1, p2, p3)</span></h3>
+<p></p>
+<br/>
+<h3>tan
+<span style='font-size:80%'>(t)</span></h3>
+<p></p>
+<br/>
+</body>
+</html>

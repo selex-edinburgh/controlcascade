@@ -1,0 +1,51 @@
+<html>
+<head><title>StepMotor.py Class</title></head>
+<body>
+<h1 style='display:inline'>StepMotor</h1>
+<h3 style='display:inline'> rampyge.components.StepMotor</h3>
+<hr />
+StepMotor is a representation of the servo or stepper motor which the distance ranging sensor is mounted on. Use a StepMotor object to control the actions of the servo, and to read in its current bearing.
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>(cfg)</span></h3>
+<p>Constructor ( StepMotor() )</p>
+<br/>
+<h3>scan
+<span style='font-size:80%'>()</span></h3>
+<p>Sends a signal indicating to move in the default range of motion.    </p>
+<br/>
+<h3>restrict
+<span style='font-size:80%'>(min, max)</span></h3>
+<p>Sends a signal indicating to use a restricted range of motion.</p>
+<br/>
+<h3>setSpeed
+<span style='font-size:80%'>(ss,delay)</span></h3>
+<p>Send a signal to change speed with appropriate values.</p>
+ss -> the new step size in whole degrees (int)<br />
+delay -> the new delay between steps (int)<br />
+<br/>
+<h3>reverse
+<span style='font-size:80%'>()</span></h3>
+<p>Sends a signal telling the servo to change direction.</p>
+<br/>
+<h3>stop
+<span style='font-size:80%'>()</span></h3>
+<p>Sends a signal telling the servo to stop moving.</p>
+<br/>
+<h3>move
+<span style='font-size:80%'>(pos)</span></h3>
+<p>Sends a signal telling the servo to move to and stay at a position.</p>
+pos -> the bearing in whole degrees to move to (int)<br />
+<br/>
+<h3>transmit
+<span style='font-size:80%'>(data)</span></h3>
+<p>Writes the appropriate command byte over the i2c bus.</p>
+<br/>
+<h3>read
+<span style='font-size:80%'>()</span></h3>
+<p>Reads in the current servo position.</p>
+<br/>
+</body>
+</html>

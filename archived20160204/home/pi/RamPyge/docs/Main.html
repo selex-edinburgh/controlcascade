@@ -1,0 +1,26 @@
+<html>
+<head><title>Main.py Class</title></head>
+<body>
+<h1 style='display:inline'>Main</h1>
+<h3 style='display:inline'> rampyge.Main</h3>
+<hr />
+The main class. Put your control code here and start the chariot by running this python script.<br />Put your instructions for controlling the chariot in theif __name__ == "__main__" condition block, after m.gui.start().If you remove m.gui.start(), the visualiser will not appear.<br>If you remove m=Main() or m.chariot.start(), the chariot will not function.<br /><br />The code you should use should describe the goals of the chariot-for example, while there are more waypoints, traverse to the next,or for each waypoint, go to it:<br /><pre>for waypoint in m.arena.waypoints:<br /></pre><pre>    m.chariot.goto(waypoint)</pre>
+<br /><br />
+<h2>Methods</h2>
+<hr />
+<h3>__init__
+<span style='font-size:80%'>()</span></h3>
+<p>Initialises the chariot, arena and visualiser,and reads the configuration variables from the fileinto a dictionary.</p>
+<br/>
+<h3>guiworker
+<span style='font-size:80%'>()</span></h3>
+<p>This function is the one taken as an argument to be the coderun in the visualiser thread- basically creating an instance ofVisualiser.</p>
+<br/>
+<h3>getConfig
+<span style='font-size:80%'>()</span></h3>
+<p>Loads variables from the configuration file (config.txt) intoa dictionary. To access these: cfg['VAR_NAME']</p>
+<b>Return value:</b>configuration/environment variables (dict)
+<br />
+<br/>
+</body>
+</html>
