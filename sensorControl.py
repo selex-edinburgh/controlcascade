@@ -20,7 +20,7 @@ def sensorControlUpdate(state,batchdata):
         elif item['messageType'] == 'sense':
             state.scanCone = item['scanCone']
             state.isCollision = item['collision']
-            print item['collision']
+
 def sensorToTrackTranslator(sourceState, destState, destQueue):
     message = {'messageType':'obstacle',
             'collision': sourceState.isCollision}

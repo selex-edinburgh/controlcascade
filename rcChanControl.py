@@ -2,7 +2,10 @@
 import time
 import math
 import threading
-#import serial
+try:
+    import serial
+except:
+    print "Serial not connected.."
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
@@ -20,44 +23,48 @@ class RcChanState(ObservableState):
         
         self.timeStampFlow["control"] = time.time()
 
-        '''self.ser= serial.Serial(                     #Set up Serial Interface    
-        port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
-        baudrate=9600,                      #bits/sec      
-        bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
-        timeout=1                           #1 sec       
-        )'''
+        try:
+            self.ser= serial.Serial(                     #Set up Serial Interface    
+            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
+            baudrate=9600,                      #bits/sec      
+            bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
+            timeout=1                           #1 sec       
+            )
+        except:
+            print "Serial not connected..."
 
     def clip(self, x):
         #if x < 0 or x >255: print "clip"
         return min(self.maxClip,max(self.minClip,x))
+   
+def simMotor(state, batchdata):
+    rcChanControlUpdate(state, batchdata, False)
+
+def realMotor(state, batchdata):
+    rcChanControlUpdate(state, batchdata, True)
         
-def rcChanControlUpdate(state,batchdata):
-    #process items in batchdata
+        
+def rcChanControlUpdate(state,batchdata,motorOutput):
     
-    
-    
-    for item in batchdata:
+    for item in batchdata:      # process items in batch data
     
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
-           # print "TEST",state.timeStampFlow
-            #print state.timeStampFlow
-        
+
         if item['messageType'] == 'control':
             state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)## expects anti clockwise
             state.demandFwd =  state.clip(item['demandFwd'] * 127 + 127) ####inserted minus
+            
         elif item['messageType'] == 'sense':
             pass
         
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
     
-    """"
-    Test for chariot
-    """
-    #state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-    #state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
-    #print "rcChan ", state.currentTurn, state.currentFwd
+    if motorOutput:
+        state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
+        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
+
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
@@ -71,3 +78,10 @@ def rcChanToVsimTranslator( sourceState, destState, destQueue ):
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})
+
+def rcChanToStatsTranslator(sourceState, destState, destQueue):
+    timeStamp = time.time()
+    destQueue.put({'messageType':'motor',
+                    'time': timeStamp,
+                    'rcTurn' : sourceState.currentTurn,
+                    'rcFwd' : sourceState.currentFwd})

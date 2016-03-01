@@ -57,10 +57,11 @@ def odoControlUpdate(state,batchdata, doRead):
         leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
         rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
     state.timeStampFlow["sense"] = time.time()    
+    
     """
     Applies rollover to the odometer readings,
     also checks for erraneous input from the sensors
-    """
+    """ 
     state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
     state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
   
@@ -102,3 +103,8 @@ def odoToTrackTranslator( sourceState, destState, destQueue ):
                    'sensedAngle':angle,
                    'timeStamp'  :sourceState.timeStampFlow["sense"]}) 
                    
+def odoToStatsTranslator( sourceState, destState, destQueue):
+    
+    destQueue.put({'messageType':'odo',
+                    'pulseL': sourceState.totalPulseL,
+                    'pulseR': sourceState.totalPulseR})

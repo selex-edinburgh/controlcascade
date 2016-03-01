@@ -10,7 +10,6 @@ class RouteState(ObservableState):
         self.nextWaypoint = 1
         self.waypoints    = [         
         (1200.0,0.0),
-       
         (1390.0,210.0)]
         """
         (2250.0,200.0),
@@ -43,7 +42,6 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
             for item['removeWaypoint'] in batchdata:
-                print "<<<>>>>"
                 if item['removeWaypoint'] == True:
                     state.waypoints.pop()
                     print "Waypoint Removed"
