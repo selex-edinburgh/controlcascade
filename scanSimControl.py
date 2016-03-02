@@ -13,6 +13,7 @@ class ScanSimState(ObservableState):
         self.poleList = [(0.0),(0.0)]
         self.scanCone = ()
         self.isCollision = False
+        
 def scanSimControlUpdate(state, batchdata):
     for item in batchdata:
         if item['messageType'] == 'control':
@@ -61,10 +62,7 @@ def collisionWarn(p0,p1,p2,p):
     
     return s > 0 and t > 0 and (s + t) < 2 * A * sign;
 
-     
-        
-    
-    
+
 def scanSimToSensorTranslator( sourceState, destState, destQueue):
     message = {'messageType':'sense',
                 'scanCone': sourceState.scanCone,
