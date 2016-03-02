@@ -73,7 +73,7 @@ elif [ $OPTION = 2 ]; then
     fi
 elif [ $OPTION = 3 ]; then
     restartNetwork
-    whiptail --title "Network Restarted" --msgbox "Network has been restarted. Now you will need to connect to a Wifi network else it will fail. Whether it says it's connected or not it's probably lying to you. \...End of rant...\" 10 60
+    whiptail --title "Network Restarted" --msgbox "Network has been restarted. Now you will need to connect to a Wifi network else it will fail. Whether it says it's connected or not it's probably lying to you. /...End of rant.../" 10 60
 else
     whiptail --title "Cancelled" --msgbox "Operation cancelled. Choose Ok to continue." 10 60
 fi
