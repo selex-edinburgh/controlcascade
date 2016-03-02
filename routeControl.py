@@ -43,7 +43,6 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
             for item['removeWaypoint'] in batchdata:
-            for item['removeWaypoint'] in batchdata:
                 if item['removeWaypoint'] == True:
                     state.waypoints.pop()
                     print "Waypoint Removed"
