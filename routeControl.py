@@ -43,7 +43,7 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
             for item['removeWaypoint'] in batchdata:
-                print "<<<>>>>"
+            for item['removeWaypoint'] in batchdata:
                 if item['removeWaypoint'] == True:
                     state.waypoints.pop()
                     print "Waypoint Removed"
@@ -55,12 +55,10 @@ def routeControlUpdate(state,batchdata):
             dist = math.hypot( distToWPx , distToWPy )
             if dist < state._near: 
                 
-            #    print dist, sensedPos, state.waypoints[state.nextWaypoint]
-            #    print '******************************waypoint reached'
+                print dist, sensedPos, state.waypoints[state.nextWaypoint]
+                print '******************************waypoint reached'
                 if ( state.nextWaypoint+1 < len(state.waypoints)):
                     state.nextWaypoint += 1 
-   
-    #state.timeStampNow('control')
     
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     nextID = sourceState.nextWaypoint

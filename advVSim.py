@@ -34,14 +34,9 @@ def advVSimControlUpdate(state, batchdata):
 
     for item in batchdata:
         if item['messageType'] == 'control':
-            #print item
             pass
         elif item['messageType'] == 'sense':
             pass
-                    
-    print(state.read())
-      
-
             
 def advVSimToSensorTranlsator(sourceState, destState, destQueue):
     message = {'messageType':'sense',

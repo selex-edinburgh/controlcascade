@@ -12,6 +12,7 @@ class SensorState(ObservableState):
         self.scanCone = (0.0,0.0)
         self.timeStamp    = time.time()
         self.isCollision = False
+        
 def sensorControlUpdate(state,batchdata):
     for item in batchdata:
         if item['messageType'] == 'control':
@@ -20,7 +21,7 @@ def sensorControlUpdate(state,batchdata):
         elif item['messageType'] == 'sense':
             state.scanCone = item['scanCone']
             state.isCollision = item['collision']
-            #print item['collision']
+            
 def sensorToTrackTranslator(sourceState, destState, destQueue):
     message = {'messageType':'obstacle',
             'collision': sourceState.isCollision}

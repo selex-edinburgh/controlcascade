@@ -34,11 +34,8 @@ def trackControlUpdate(state,batchdata):
         """
         if 'timeStamp' not in item:
             pass
-            #print "HERE ", item
         else:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
-            #print "TEST 3", item['timeStamp']
-            #print "TEST 2", state.timeStampFlow
         if item['messageType'] == 'control':
  
             print "Old Leg goal ",  state.legGoal
@@ -51,7 +48,6 @@ def trackControlUpdate(state,batchdata):
             print "Leg goal ",  state.legGoal
     
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
-            #print 'track - sense message'
             #approximate as movement along circular arc, effective direction being mid-way on arc
             
             halfArcTurn = (item['sensedAngle']-state.currentAngle) / 2.0
@@ -140,9 +136,6 @@ def trackToStatsTranslator(sourceState, destState, destQueue):
     destQueue.put(message)
 """
     
-    
-    
-
 def trackToRouteTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'sense','sensedPos':sourceState.currentPos}
     destQueue.put(message)
@@ -163,7 +156,6 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                                        }
     destQueue.put(message)
 
-
 def trackToScanSimTranslator(sourceState, destState, destQueue):
     message  =  {'messageType':'sense',
                 'sensedPos': sourceState.currentPos,
@@ -177,7 +169,6 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'goal':sourceState.legGoal,
     'demandPos':sourceState.demandPos}
     destQueue.put(message)
-
 
 
 def angleDiff ( fromAngle, toAngle ) :

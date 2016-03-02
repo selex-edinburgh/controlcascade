@@ -15,16 +15,13 @@ class StatsState(ObservableState):
         self.min = 0
         self.length = 0
         self.variance = 0
-      
-        
+         
 def statsControlUpdate(state, batchdata):
     for item in batchdata:
         if item['messageType'] == 'time':
             if 'sourceState' in item:
-                #print "State:", item['sourceState']
                 pass
             if 'delta' in item:
-               # print "Latency:", item['delta']['control']
                 pass
 
     state.max = max(item['delta']['control'] for item in batchdata)
@@ -38,12 +35,11 @@ def toStatsTranslator(sourceState, destState, destQueue):
     deltaTs = {}
     for key, value in sourceState.timeStampFlow.iteritems():
       deltaTs[key] =  timeNow - value
-   # print sourceState.__class__.__name__
+      
     message = {'messageType': 'time',
                 'timeStamp': sourceState.timeStampFlow,
                 'delta': deltaTs,
-                'sourceState': sourceState.__class__.__name__}
-               
+                'sourceState': sourceState.__class__.__name__}           
     destQueue.put(message)
     
 def statsToVisualTranslator(sourceState, destState, destQueue):

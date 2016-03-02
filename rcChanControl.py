@@ -51,8 +51,6 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
-           # print "TEST",state.timeStampFlow
-            #print state.timeStampFlow
         
         if item['messageType'] == 'control':
             state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)## expects anti clockwise
@@ -66,7 +64,6 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
-    #print "rcChan ", state.currentTurn, state.currentFwd
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX

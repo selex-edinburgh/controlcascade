@@ -38,10 +38,6 @@ def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseR = state.totalPulseR
 
     for item in batchdata:          # process items in batchdata
-        #if 'timeStamp' in item:
-        #    state.timeStampFlow[item['messageType']] = item['timeStamp']
-           # state.timeStampFlow['control'] = 'timestamp'...
-           # print state.timeStampFlow['sense']
         if item['messageType'] == 'control':
             pass
         elif item['messageType'] == 'sense':
@@ -86,7 +82,7 @@ def odoControlUpdate(state,batchdata, doRead):
         (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
         print "erraneous value"
            
-   # print state.totalPulseL , state.totalPulseR
+
     state.prevDistTravel = state.distTravel
     state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
    
