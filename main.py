@@ -19,14 +19,14 @@ def runControlLoops():
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(10,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
-    rcChanState = rcChanControl.RcChanState(80, 40)    #RcChanState(limitChange, speedLimit)
+    rcChanState = rcChanControl.RcChanState(40, 80)    #RcChanState(limitChange, speedLimit)
     trackState  = trackControl.TrackState(310,500)      #TrackState(trackWidth,movementBudget)
     vsimState   = vsimControl.VsimState(0.95,1.0,600.0) #VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
-    scanSimState = scanSimControl.ScanSimState(150, 10)        # scanSimState (scanRange, turnSpeed)
+    scanSimState = scanSimControl.ScanSimState(65, 10)        # scanSimState (scanRange, turnSpeed)
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.04 * timeScale,  0.08 * timeScale)

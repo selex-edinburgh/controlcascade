@@ -11,7 +11,7 @@ class ScanSimState(ObservableState):
         self.robotPos = (1200.0,0.0)
         self.robotAngle = 0.0
         self.poleList = [(0.0),(0.0)]
-        self.scanCone = ()
+        self.scanCone = []
         self.isCollision = False
         
 def scanSimControlUpdate(state, batchdata):
@@ -35,7 +35,7 @@ def scanSimControlUpdate(state, batchdata):
     c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  -45))), \
         (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
     
-    state.scanCone = (a,b,c)
+    state.scanCone = [a,b,c]
 
     
     newA = (a[0], (720 - a[1]))     # adjustment for screen height 

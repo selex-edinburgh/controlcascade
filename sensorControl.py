@@ -9,7 +9,7 @@ class SensorState(ObservableState):
         super(SensorState,self).__init__()
         self.scanRange = 100.0
         self.turnSpeed = 0.0
-        self.scanCone = (0.0,0.0)
+        self.scanCone = [(0.0)]
         self.timeStamp    = time.time()
         self.isCollision = False
         

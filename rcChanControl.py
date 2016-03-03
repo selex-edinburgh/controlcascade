@@ -55,6 +55,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         if item['messageType'] == 'control':
             state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)## expects anti clockwise
             state.demandFwd =  state.clip(item['demandFwd'] * 127 + 127) ####inserted minus
+            
         elif item['messageType'] == 'sense':
             pass
         
@@ -63,7 +64,8 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
+        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
+    print "Fwd: ",state.currentFwd, "Turn: ", state.currentTurn
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
