@@ -79,3 +79,4 @@ def rcChanToVsimTranslator( sourceState, destState, destQueue ):
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})
+

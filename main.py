@@ -57,6 +57,7 @@ def runControlLoops():
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
+    rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
     
     routeController.start()
     trackController.start()

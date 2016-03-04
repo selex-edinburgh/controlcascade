@@ -24,7 +24,7 @@ class VisualState(ObservableState):
         pygame.display.set_caption('Rampyge')
         self.screenWidth = 682 # +400
         self.screenHeight = 721 
-        self.font = pygame.font.SysFont('Arial', 18)
+        self.font = pygame.font.SysFont('Arial', 16)
         self.fontTitle = pygame.font.SysFont('Arial',22)
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
         self.img_path = 'images/tank.gif'
@@ -48,7 +48,8 @@ class VisualState(ObservableState):
         self.scrBuff = None
         self.poleRecList = []
         
-        
+        self.rcFwd = 0
+        self.rcTurn = 0
         
         self.max = 0
         self.min = 0
@@ -110,22 +111,26 @@ class VisualState(ObservableState):
        
     def drawInfoPanel(self,surface):
  
-        self.screen.blit(self.fontTitle.render(("Positional Info"), True, BLACK), (505,(721 -710)))     # pos information panel
+        self.screen.blit(self.fontTitle.render(("Positional Data"), True, BLACK), (505,(721 -710)))     # pos information panel
         self.screen.blit(self.font.render(("Position: ({0},{1})".format(int(self.pos[0]), self.screenHeight - int(self.pos[1]))), True, BLACK), (505,721 -675))
         self.screen.blit(self.font.render(("Angle (Deg): {0}".format(int(self.angle))), True, BLACK), (505,721 -655))
         self.screen.blit(self.font.render(("Angle (Rad): {0:.2f}".format(math.radians(self.angle))), True, BLACK), (505,721 -635))
         self.screen.blit(self.font.render(("Target: ({0},{1})".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, BLACK), (505,721 -615))
         
-        self.screen.blit(self.fontTitle.render(("Latency Info (secs)"), True, BLACK), (505,(721 -555)))     # latency information panel
-        self.screen.blit(self.font.render(("Max: {0:.3f}".format(self.max)), True, BLACK), (505,721 -520))
-        self.screen.blit(self.font.render(("Min: {0:.3f}".format(self.min)), True, BLACK), (505,721 -500))
-        self.screen.blit(self.font.render(("Average: {0:.3f}".format(self.average)), True, BLACK), (505,721 -480))
-        self.screen.blit(self.font.render(("Msg Length: {0}".format(self.length)), True, BLACK), (505,721 -460))
-        self.screen.blit(self.font.render(("Variance: {0:.3f}".format(self.variance)), True, BLACK), (505,721 -440))
+        self.screen.blit(self.fontTitle.render(("Latency Data"), True, BLACK), (505,(721 -555)))     # latency information panel
+        self.screen.blit(self.font.render(("Max (s):        {0:.3f}".format(self.max)), True, BLACK), (505,721 -520))
+        self.screen.blit(self.font.render(("Min (s):         {0:.3f}".format(self.min)), True, BLACK), (505,721 -500))
+        self.screen.blit(self.font.render(("Average (s):  {0:.3f}".format(self.average)), True, BLACK), (505,721 -480))
+        self.screen.blit(self.font.render(("Msg Length:  {0}".format(self.length)), True, BLACK), (505,721 -460))
+        self.screen.blit(self.font.render(("Variance:       {0:.3f}".format(self.variance)), True, BLACK), (505,721 -440))
         
-        self.screen.blit(self.fontTitle.render(("Collision Info"), True, BLACK), (505,(721 -400)))     # collision information panel
+        self.screen.blit(self.fontTitle.render(("Collision Data"), True, BLACK), (505,(721 -400)))     # collision information panel
         self.screen.blit(self.font.render(("In Range: %s" % (self.isCollision)), True, BLACK), (505,(721 -365)))
 
+        self.screen.blit(self.fontTitle.render(("Motor Data"), True, BLACK), (505,(721 -305)))     # latency information panel
+        self.screen.blit(self.font.render(("Fwd Command: %s" % (self.rcFwd)), True, BLACK), (505,(721 -270)))
+        self.screen.blit(self.font.render(("Turn Command: %s" % (self.rcTurn)), True, BLACK), (505,(721 -250)))
+        
         pygame.display.update()      # update the screen
         
         
@@ -161,6 +166,7 @@ def visualControlUpdate(state,batchdata):
     
 
     for item in batchdata:
+    
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
             currentAngle = (item['robotAngle'])
@@ -186,9 +192,14 @@ def visualControlUpdate(state,batchdata):
             state.average = (item['average'])
             state.length = (item['length'])
             state.variance = (item['variance'])
+            
         elif item['messageType'] == 'scan':
             state.scanCone = (item['scanCone'])
             state.isCollision = (item['collision'])
+            
+        elif item['messageType'] == 'control':
+            state.rcFwd = (item['rcFwd']*127.0  + 1.0)
+            state.rcTurn = (item['rcTurn']*127.0 + 1.0)
     if len(batchdata) == 0: return
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
