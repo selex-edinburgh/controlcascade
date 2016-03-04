@@ -18,10 +18,10 @@ def runControlLoops():
     timeScale = 1.0
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
-    odoState    = odoControl.OdoState(10,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
-    rcChanState = rcChanControl.RcChanState(40, 80)    #RcChanState(limitChange, speedLimit)
+    odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
+    rcChanState = rcChanControl.RcChanState(40, 30)    #RcChanState(limitChange, speedLimit)
     trackState  = trackControl.TrackState(310,500)      #TrackState(trackWidth,movementBudget)
-    vsimState   = vsimControl.VsimState(0.95,1.0,600.0) #VsimState(fricEffectPerSec,lrBias,speedMax)
+    vsimState   = vsimControl.VsimState(4,1.0,20.0) #VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
@@ -30,8 +30,8 @@ def runControlLoops():
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.04 * timeScale,  0.08 * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.06 * timeScale,  0.06 * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            0.05 * timeScale,  0.07 * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              0.06 * timeScale,  0.06 * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            0.05 * timeScale,  0.07 * timeScale)
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.06 * timeScale,  0.06 * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)

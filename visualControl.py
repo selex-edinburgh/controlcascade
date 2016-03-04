@@ -27,7 +27,7 @@ class VisualState(ObservableState):
         self.font = pygame.font.SysFont('Arial', 16)
         self.fontTitle = pygame.font.SysFont('Arial',22)
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
-        self.img_path = 'images/tank.gif'
+        self.img_path = 'images/Tank.gif'
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
         self.background.fill((20, 150, 0))   
@@ -73,9 +73,11 @@ class VisualState(ObservableState):
         
         pygame.display.update()      # update the screen
         if self.isCollision == False:
-            pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+            #pygame.draw.line(self.screen, BLACK, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 1)
+            pass
         else:
-            pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+            #pygame.draw.line(self.screen, RED, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 1)
+            pass
 
         
     def checkForCollision(self):
