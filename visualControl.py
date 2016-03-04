@@ -51,6 +51,9 @@ class VisualState(ObservableState):
         self.rcFwd = 0
         self.rcTurn = 0
         
+        self.leftReading = 0
+        self.rightReading =0
+        
         self.max = 0
         self.min = 0
         self.average = 0
@@ -128,9 +131,12 @@ class VisualState(ObservableState):
         self.screen.blit(self.font.render(("In Range: %s" % (self.isCollision)), True, BLACK), (505,(721 -365)))
 
         self.screen.blit(self.fontTitle.render(("Motor Data"), True, BLACK), (505,(721 -305)))     # latency information panel
-        self.screen.blit(self.font.render(("Fwd Command: %s" % (self.rcFwd)), True, BLACK), (505,(721 -270)))
-        self.screen.blit(self.font.render(("Turn Command: %s" % (self.rcTurn)), True, BLACK), (505,(721 -250)))
+        self.screen.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, BLACK), (505,(721 -270)))
+        self.screen.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, BLACK), (505,(721 -250)))
         
+        self.screen.blit(self.fontTitle.render(("Odometer Data"), True, BLACK), (505,(721 -190)))     # latency information panel
+        self.screen.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, BLACK), (505,(721 -155)))
+        self.screen.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, BLACK), (505,(721 -135)))
         pygame.display.update()      # update the screen
         
         
@@ -198,8 +204,11 @@ def visualControlUpdate(state,batchdata):
             state.isCollision = (item['collision'])
             
         elif item['messageType'] == 'control':
-            state.rcFwd = (item['rcFwd']*127.0  + 1.0)
-            state.rcTurn = (item['rcTurn']*127.0 + 1.0)
+            state.rcFwd = abs((item['rcFwd']*127.0  ))
+            state.rcTurn = abs((item['rcTurn']*127.0 ))
+        elif item['messageType'] == 'odo':
+            state.leftReading = (item['leftReading'])
+            state.rightReading = (item['rightReading'])
     if len(batchdata) == 0: return
 
 def visualToRouteTranslator(sourceState, destState, destQueue):

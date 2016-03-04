@@ -25,14 +25,34 @@ class OdoState(ObservableState):
         self._rolloverCountR = rolloverCountR        # 0
         self.address = 4       	    # Seven bit Byte: as bit 8 is used for READ/WRITE designation.
         self.control = 176   	    # Tells sensor board slave to read odometers
-        self.numbytes = 4      	
+        self.numbytes = 4      
+        self.lr = 0
+        self.rr = 0
         self.timeStampFlow["sense"] = time.time()
+       
 
 def simUpdate(state,batchdata)    :
     odoControlUpdate(state, batchdata, False)
 def realUpdate(state,batchdata)    :
     odoControlUpdate(state, batchdata, True )
     
+def run_once(f):
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper.has_run = True
+            return f(*args, **kwargs)
+    wrapper.has_run = False
+    return wrapper 
+
+ 
+@run_once  
+def resetOdometers():
+    Txbyte0 = 0              #Center
+    Txbyte1 = 0              #Center
+    Txbytes = [Txbyte0, Txbyte1 ]
+    bus = smbus.SMBus(1)
+    bus.write_block_data(address,control,Txbytes )
+
 def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
     state.prevPulseR = state.totalPulseR
@@ -47,11 +67,15 @@ def odoControlUpdate(state,batchdata, doRead):
     if len(batchdata)==0 : return
    
     if doRead :     # read items from the i2c interface   
+        
+        resetOdometers()
         bus = smbus.SMBus(1)      
         RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)
         
         leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
         rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
+        
+        
     state.timeStampFlow["sense"] = time.time()    
     """
     Applies rollover to the odometer readings,
@@ -59,7 +83,7 @@ def odoControlUpdate(state,batchdata, doRead):
     """
     state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
     state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
-  
+
     if  (abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange * 0.95):
         sign = math.copysign(1, state.totalPulseL - state.prevPulseL  )
         print "sign: ", sign
@@ -97,4 +121,8 @@ def odoToTrackTranslator( sourceState, destState, destQueue ):
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
                    'sensedAngle':angle,
                    'timeStamp'  :sourceState.timeStampFlow["sense"]}) 
-                   
+
+def odoToVisualTranslator(sourceState, destState, destQueue):
+    destQueue.put({'messageType':'odo',
+                    'leftReading': sourceState.totalPulseL,
+                    'rightReading': sourceState.totalPulseR})

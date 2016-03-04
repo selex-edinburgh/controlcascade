@@ -58,6 +58,7 @@ def runControlLoops():
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
+    odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
     
     routeController.start()
     trackController.start()
