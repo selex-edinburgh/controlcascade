@@ -30,9 +30,9 @@ class OdoState(ObservableState):
         self.rr = 0
         self.timeStampFlow["sense"] = time.time()
        
-
 def simUpdate(state,batchdata)    :
     odoControlUpdate(state, batchdata, False)
+    
 def realUpdate(state,batchdata)    :
     odoControlUpdate(state, batchdata, True )
     
@@ -44,7 +44,6 @@ def run_once(f):
     wrapper.has_run = False
     return wrapper 
 
- 
 @run_once  
 def resetOdometers():
     Txbyte0 = 0              #Center
@@ -66,51 +65,46 @@ def odoControlUpdate(state,batchdata, doRead):
 
     if len(batchdata)==0 : return
    
-    if doRead :     # read items from the i2c interface   
-        
-        resetOdometers()
+    if doRead :     # read items from the i2c interface      
+        resetOdometers()        # reset the odometers (only once)
         bus = smbus.SMBus(1)      
-        RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)
+        RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
         
         leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
         rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
         
         
     state.timeStampFlow["sense"] = time.time()    
-    """
-    Applies rollover to the odometer readings,
-    also checks for erraneous input from the sensors
-    """
-    state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
+    
+    state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange      
     state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
 
-    if  (abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange * 0.95):
+    if  (abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange * 0.95):        # apply rollover to odometer readings
         sign = math.copysign(1, state.totalPulseL - state.prevPulseL  )
         print "sign: ", sign
         state._rolloverCountL -= sign
         state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
         print "#################### rollover l", state.totalPulseL, state.prevPulseL   
         
-    elif ((abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange *  0.05) and           # check for erranous value from the odometers
+    elif ((abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
         (abs(state.totalPulseL - state.prevPulseL  ) < state._rolloverRange *  0.95)):
         print "erraneous value"
 
 
-    if ( abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange * 0.95 ) :
+    if ( abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange * 0.95 ) :      # apply rollover to odometer readings
         sign = math.copysign(1, state.totalPulseR - state.prevPulseR  )
         state._rolloverCountR -= sign
         state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
         print "#################### rollover r", state.totalPulseR, state.prevPulseR 
         
-    elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and           # check for erranous value from the odometers
+    elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
         (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
         print "erraneous value"
            
 
     state.prevDistTravel = state.distTravel
-    state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
-   
-
+    state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
+                            (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
    
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 

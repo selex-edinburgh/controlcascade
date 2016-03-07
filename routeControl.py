@@ -9,9 +9,8 @@ class RouteState(ObservableState):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         self.waypoints    = [         
-        (1200.0,0.0),
-       
-        (1390.0,210.0)]
+                            (1200.0,0.0),
+                            (1390.0,210.0)]
         """
         (2250.0,200.0),
         (2300.0,980.0),
@@ -34,7 +33,7 @@ class RouteState(ObservableState):
             """       
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
-        
+
         self.timeStampFlow["control"]    = time.time()
 
 def routeControlUpdate(state,batchdata):

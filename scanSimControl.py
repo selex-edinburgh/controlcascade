@@ -35,8 +35,7 @@ def scanSimControlUpdate(state, batchdata):
     c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  -45))), \
         (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
     
-    state.scanCone = [a,b,c]
-
+    state.scanCone = [a,b,c]        # three points of scan cone
     
     newA = (a[0], (720 - a[1]))     # adjustment for screen height 
     newB = (b[0], (720 - b[1]))
@@ -49,10 +48,8 @@ def scanSimControlUpdate(state, batchdata):
            anyCollisions = True
            break 
     state.isCollision = anyCollisions
-
     
 def collisionWarn(p0,p1,p2,p):
-    
     A = 0.5 * (-p1[1] * p2[0] + p0[1] * (-p1[0] + p2[0]) + p0[0] * (p1[1] - p2[1]) + p1[0] * p2[1])
     sign = 1
     if A < 0:
@@ -61,7 +58,6 @@ def collisionWarn(p0,p1,p2,p):
     t = (p0[0] * p1[1] - p0[1] * p1[0] + (p0[1] - p1[1]) * p[0] + (p1[0] - p0[0]) * p[1]) * sign
     
     return s > 0 and t > 0 and (s + t) < 2 * A * sign;
-
 
 def scanSimToSensorTranslator( sourceState, destState, destQueue):
     message = {'messageType':'sense',

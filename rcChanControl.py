@@ -44,10 +44,8 @@ def simMotor(state, batchdata):
 def realMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, True)
     
-def rcChanControlUpdate(state,batchdata, motorOutput):
-    #process items in batchdata
-    
-    for item in batchdata:
+def rcChanControlUpdate(state,batchdata, motorOutput): 
+    for item in batchdata:      # process items in batchdata
     
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
@@ -65,7 +63,6 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
-    print "Fwd: ",state.currentFwd, "Turn: ", state.currentTurn
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX

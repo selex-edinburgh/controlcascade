@@ -8,8 +8,7 @@ from plumbing.controlloop import ControlObserverTranslator
 class TrackState(ObservableState):
     def __init__(self, trackWidth, movementBudget):
         super(TrackState,self).__init__()
-        #leg == line ending at next waypoint on route
-        #self.legAngle  = 0.0
+
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)        
         self.legGoal = (0.0,0.0)     
@@ -25,19 +24,15 @@ class TrackState(ObservableState):
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
-        
-        
+
 def trackControlUpdate(state,batchdata):   
     for item in batchdata:      # Process items in batchdata
-        """"
-        Store timeStamp data
-        """
         if 'timeStamp' not in item:
             pass
         else:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
+            
         if item['messageType'] == 'control':
- 
             print "Old Leg goal ",  state.legGoal
             print "Current pos ", state.currentPos
             print "Demand pos", state.demandPos

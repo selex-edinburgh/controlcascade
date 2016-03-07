@@ -33,8 +33,7 @@ def envSimControlUpdate(state, batchdata):
             pass
   
     if len(batchdata) == 0: return
-    
-    
+     
 def envSimToSensorTranslator(sourceState, destState, destQueue):
     message = {'messageType':'sense',
                'sensedPole':sourceState.poleList,
