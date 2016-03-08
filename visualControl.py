@@ -67,10 +67,10 @@ class VisualState(ObservableState):
                               self.robotPos[1] - rotImg.get_rect().height/2.0))
         
         pygame.display.update()      # update the screen
-        if self.isCollision == False:
-            pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
-        else:
-            pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+       #    if self.isCollision == False:
+       #      pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+       # else:
+       #     pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
 
 
     def checkForCollision(self):

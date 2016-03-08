@@ -45,12 +45,12 @@ def run_once(f):
     return wrapper 
 
 @run_once  
-def resetOdometers():
+def resetOdometers(state):
     Txbyte0 = 0              #Center
     Txbyte1 = 0              #Center
     Txbytes = [Txbyte0, Txbyte1 ]
     bus = smbus.SMBus(1)
-    bus.write_block_data(address,control,Txbytes )
+    bus.write_block_data(state.address,state.control,Txbytes )
 
 def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
@@ -66,7 +66,7 @@ def odoControlUpdate(state,batchdata, doRead):
     if len(batchdata)==0 : return
    
     if doRead :     # read items from the i2c interface      
-        resetOdometers()        # reset the odometers (only once)
+        resetOdometers(state)        # reset the odometers (only once)
         bus = smbus.SMBus(1)      
         RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
         
