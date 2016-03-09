@@ -49,14 +49,18 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
-        
-        if item['messageType'] == 'control':
-            state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)## expects anti clockwise
-            state.demandFwd =  state.clip(item['demandFwd'] * 127 + 127) ####inserted minus
+            pass
             
+        if item['messageType'] == 'control':
+            if motorOutput:
+                state.demandTurn = state.clip(item['demandTurn'] * 127 + 127)   ## expects anti clockwise
+                state.demandFwd  = state.clip(-item['demandFwd'] * 127 + 127)   ## inserted minus
+            else:
+                state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)  ## expects anti clockwise
+                state.demandFwd  = state.clip(item['demandFwd'] * 127 + 127)    ## inserted minus  
+                
         elif item['messageType'] == 'sense':
             pass
-        
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
     

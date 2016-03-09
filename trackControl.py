@@ -14,7 +14,7 @@ class TrackState(ObservableState):
         self.legGoal = (0.0,0.0)     
         self.legOrigin = (0.0,0.0)
         self.currentAngle = 0
-        self.currentPos = (1200.0,0,0)           
+        self.currentPos = (2390.0,4630.0,0)           
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth       # 310.0 mm between wheels

@@ -109,7 +109,7 @@ def odoControlUpdate(state,batchdata, doRead):
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
           
-    angle =  (math.degrees(lrDifferenceMm / destState._trackWidth)   )+ sourceState._initAngle      
+    angle =  (math.degrees(lrDifferenceMm / destState._trackWidth) %360   )+ sourceState._initAngle      # correct (y) **depends on if trackwidth is correct**
                 
     destQueue.put({'messageType':'sense',
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,

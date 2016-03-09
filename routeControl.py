@@ -9,8 +9,7 @@ class RouteState(ObservableState):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         self.waypoints    = [         
-                            (1200.0,0.0),
-                            (1390.0,210.0)]
+                            (2390.0,4630.0),(2390.0,4630.0)]
         """
         (2250.0,200.0),
         (2300.0,980.0),

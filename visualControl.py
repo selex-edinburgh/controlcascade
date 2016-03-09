@@ -23,7 +23,7 @@ class VisualState(ObservableState):
         pygame.display.set_caption('Rampyge')       # screen caption        
         self.font = pygame.font.SysFont('Arial', 16)        # different fonts used in the program
         self.fontTitle = pygame.font.SysFont('Arial',22)                 
-        self.image = pygame.image.load('images/tank.gif')       # robot image      
+        self.image = pygame.image.load('images/Tank.gif')       # robot image      
         self.wallList = []      # enviromentals
         self.poleList = []
         self.poleRecList = []       # used for collision detection
@@ -67,10 +67,10 @@ class VisualState(ObservableState):
                               self.robotPos[1] - rotImg.get_rect().height/2.0))
         
         pygame.display.update()      # update the screen
-       #    if self.isCollision == False:
-       #      pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
-       # else:
-       #     pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+        if self.isCollision == False:
+            pygame.draw.aalines(self.screen, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
+        else:
+            pygame.draw.aalines(self.screen, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]))
 
 
     def checkForCollision(self):
@@ -88,7 +88,7 @@ class VisualState(ObservableState):
     def drawObstacles(self,surface):
         if self.scrBuff == None:
             self.scrBuff = surface.copy()
-            
+        surface.blit(self.scrBuff,(0,0))    
         pygame.draw.circle(self.scrBuff,WHITE,(self.waypoint[0], self.screenHeight - self.waypoint[1]), 4,)     # draw the waypoints
         pygame.draw.circle(self.scrBuff,BLACK,(self.waypoint[0], self.screenHeight - self.waypoint[1]), 4, 2)
                     
@@ -100,7 +100,7 @@ class VisualState(ObservableState):
             self.pole = ( pole[0], self.screenHeight - pole[1])
             pygame.draw.circle(self.scrBuff,BLUE,self.pole, 10,)
             pygame.draw.circle(self.scrBuff,BLACK,self.pole, 10, 2)
-       
+        pygame.display.update() 
     def drawInfoPanel(self,surface):
  
         self.screen.blit(self.fontTitle.render(("Positional Data"), True, BLACK), (505,(721 -710)))     # robotPos information panel
@@ -137,11 +137,14 @@ def visualControlUpdate(state,batchdata):
             pygame.quit()       # quit the screen
             sys.exit()
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
-            pressPosition = (event.pos[0], state.screenHeight - event.pos[1])
-            for r in state.poleRecList:
+            pressPosition = (event.pos[0], event.pos[1])      
+            for index, r in enumerate(state.poleRecList, start = 0):
                 if r.collidepoint(pressPosition):
-                    print "PRESS ON RECT"
+                    state.poleList.pop(index)
+                    state.poleRecList.pop(index)
+                    print len(state.poleList)
             print "You pressed at locaton: ", pressPosition
+            pressPosition = (event.pos[0], state.screenHeight - event.pos[1])
             state.waypoint = pressPosition
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             print "Right click"
@@ -157,6 +160,7 @@ def visualControlUpdate(state,batchdata):
     state.screen.fill(GREEN, screenAreaBottom) 
     state.screen.fill(GREY, screenOutOfBounds1)
     state.screen.fill(GREY, screenOutOfBounds2)
+
     
     state.drawObstacles(state.screen)       # draw the obstacles to the screen
     state.drawRobot(state.screen)       # draw the Robot to the screen
@@ -167,10 +171,10 @@ def visualControlUpdate(state,batchdata):
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
             currentAngle = (item['robotAngle'])
-            demandPos = (item['demandPos'])
+            goalPos = (item['goal'])
             state.robotPos = (currentPos[0]/10.0, state.screenHeight -currentPos[1]/10.0)
             state.robotAngle = currentAngle
-            state.targetPos = (demandPos[0]/10.0, state.screenHeight - demandPos[1]/10.0) 
+            state.targetPos = (goalPos[0]/10.0, state.screenHeight - goalPos[1]/10.0) 
             
         elif item['messageType'] == 'obstacle':  
             state.poleList = (item['poleList'])
