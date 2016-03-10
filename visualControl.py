@@ -1,9 +1,17 @@
 import pygame
 import math
 import sys
+import os
+from gamelib import *
 from  pygame import gfxdraw
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
+from pygame.locals import *
+
+progname = sys.argv[0]
+progdir = os.path.dirname(progname)
+sys.path.append(os.path.join(progdir,'gamelib'))
+from popup_menu import NonBlockingPopupMenu
 
 BLACK = (  0,   0,   0)     # global constants
 WHITE = (255, 255, 255) 
@@ -13,6 +21,29 @@ RED =   (255,   0,   0)
 GREY = (205,201,201)
 MARGIN = 200
 pygame.init()
+
+
+menu_data = (
+    'Main',
+    'Item 0',
+    'Item 1',
+    (
+        'Things',
+        'Item 0',
+        'Item 1',
+        'Item 2',
+        (
+            'More Things',
+            'Item 0',
+            'Item 1',
+        ),
+    ),
+    'Remove Pole',
+    'Quit',
+)
+
+menu = NonBlockingPopupMenu(menu_data)
+
 
 class VisualState(ObservableState):
     def __init__(self):
@@ -119,16 +150,47 @@ class VisualState(ObservableState):
         surface.blit(self.fontTitle.render(("Odometer Data"), True, BLACK), (505,(self.screenHeight -190)))     # latency information panel
         surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, BLACK), (505,(self.screenHeight -155)))
         surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, BLACK), (505,(self.screenHeight -135)))   # update the screen
-        
-      
-def visualControlUpdate(state,batchdata):
+def handle_menu(e, state):
 
+    global menu
+    print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
+    print e.__dict__
+    if e.name is None:
+        print 'Hide menu'
+        menu.hide()
+    elif e.name == 'Main':
+        if e.text == 'Quit':
+            pygame.quit()
+            
+        if e.text == 'Remove Pole':
+            pressPosition = (e.originalEvent.pos[0], e.originalEvent.pos[1])
+            print pressPosition
+            for index, r in enumerate(state.poleRecList, start = 0):
+                print "resssssss"
+                print r
+                if r.collidepoint(pressPosition):
+                    print "reeeeeeeeeeeeeeeeeeeeemove"
+                    state.poleList.pop(index)
+                    state.poleRecList.pop(index)
+    elif e.name == 'Things':
+        pass
+    elif e.name == 'More Things':
+        pass
+     
+def visualControlUpdate(state,batchdata):
+    
+
+        
     screenAreaTop = pygame.Rect(0,0,480,480)        # assign different areas of the screen for drawing (colours)
     screenAreaBottom = pygame.Rect(120,480, 240,240)
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
     
+    
+    
     state.removeLastWP = False
+    
+    """"
     for event in pygame.event.get():          # handle every event since the last frame.
         if event.type == pygame.QUIT:
             pygame.quit()       # quit the screen
@@ -148,9 +210,24 @@ def visualControlUpdate(state,batchdata):
                     print "waypoint removed..."
             print "You pressed at locaton: ", pressPosition
             state.removeLastWP = True
-    
-    
-    
+    """   
+    for e in menu.handle_events(pygame.event.get()):
+        if e.type == pygame.QUIT:
+            pygame.quit()       # quit the screen
+            sys.exit()
+        elif e.type == MOUSEBUTTONDOWN and e.button ==1:
+            pressPosition = (e.pos[0], e.pos[1])        # pin point press location
+            if (screenAreaTop.collidepoint(pressPosition)) or \
+                (screenAreaBottom.collidepoint(pressPosition)):
+                pressPosition = (e.pos[0], state.screenHeight - e.pos[1])
+                state.waypoint = pressPosition      # create new waypoint from press
+            
+        elif e.type == MOUSEBUTTONDOWN and e.button ==3:
+            menu.show()     # show user menu
+        elif e.type == USEREVENT:
+            if e.code == 'MENU':
+                handle_menu(e, state)
+
     state.screen.fill(GREY)         # fill the screen with colour
     state.screen.fill(GREEN, screenAreaTop)         # fill the screen with colour
     state.screen.fill(GREEN, screenAreaBottom)          # fill the screen with colour
@@ -163,6 +240,7 @@ def visualControlUpdate(state,batchdata):
     state.drawInfoPanel(state.screen )  # draw the information panel to the screen
     state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
     state.checkForCollision()       # check for possible collision
+    menu.draw()     # menu draw *test*
     pygame.display.update()      # update the screen
     
     for item in batchdata:      # process data from batchdata

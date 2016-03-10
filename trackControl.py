@@ -33,15 +33,15 @@ def trackControlUpdate(state,batchdata):
             state.timeStampFlow[item['messageType']] = item['timeStamp']
             
         if item['messageType'] == 'control':
-            print "Old Leg goal ",  state.legGoal
-            print "Current pos ", state.currentPos
-            print "Demand pos", state.demandPos
+       #     print "Old Leg goal ",  state.legGoal
+         #   print "Current pos ", state.currentPos
+        #    print "Demand pos", state.demandPos
             state.noLegSet = False
             state.legGoal = item['legGoal']
             state.legOrigin = item['legOrigin']  
             state.nearWaypoint = item['nearWaypoint']            
-            print 'track - control message'
-            print "Leg goal ",  state.legGoal
+         #   print 'track - control message'
+          #  print "Leg goal ",  state.legGoal
     
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
