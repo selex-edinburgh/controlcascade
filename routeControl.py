@@ -9,9 +9,8 @@ class RouteState(ObservableState):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         self.waypoints    = [         
-        (1200.0,0.0),
-       
-        (1390.0,210.0)]
+          (1200.0,0),(1200.0,1075.0)]
+                          #  (2390.0,4630.0),(2390.0,4630.0)]
         """
         (2250.0,200.0),
         (2300.0,980.0),
@@ -33,8 +32,9 @@ class RouteState(ObservableState):
         (2300.0,220.0)]
             """       
         self.currentPos   = self.waypoints[0]
+        self.isGoal = False
         self._near = near        # 120.0
-        
+
         self.timeStampFlow["control"]    = time.time()
 
 def routeControlUpdate(state,batchdata):
@@ -43,20 +43,18 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
             for item['removeWaypoint'] in batchdata:
-            for item['removeWaypoint'] in batchdata:
                 if item['removeWaypoint'] == True:
                     state.waypoints.pop()
                     print "Waypoint Removed"
 
         elif item['messageType'] == 'sense':
+            state.isGoal = False
             sensedPos = item['sensedPos']
             distToWPx = sensedPos[0] - state.waypoints[state.nextWaypoint][0]
             distToWPy = sensedPos[1] - state.waypoints[state.nextWaypoint][1]
             dist = math.hypot( distToWPx , distToWPy )
             if dist < state._near: 
-                
-                print dist, sensedPos, state.waypoints[state.nextWaypoint]
-                print '******************************waypoint reached'
+                state.isGoal = True
                 if ( state.nextWaypoint+1 < len(state.waypoints)):
                     state.nextWaypoint += 1 
     
@@ -67,7 +65,8 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1],
-               'timeStamp'  :sourceState.timeStampFlow["control"]
+               'timeStamp'  :sourceState.timeStampFlow["control"],
+               'isGoal'     :sourceState.isGoal
                }
               
   

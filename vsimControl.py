@@ -18,14 +18,12 @@ class VsimState(ObservableState):
         self._rightSpeedMultiplier = self._speedMax / self._lrBias
         self.timeStampFlow["sense"] = time.time()
         self.timeStamp= time.time()
-
-
-        
+     
 def vsimControlUpdate(state,batchdata):
 
     prevRcTurn = state.rcTurn
     prevRcFwd = state.rcFwd
-
+ 
     for item in batchdata:      # process items in batchdata
     
         if 'timeStamp' in item:

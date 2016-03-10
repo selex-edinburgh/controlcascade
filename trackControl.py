@@ -8,14 +8,13 @@ from plumbing.controlloop import ControlObserverTranslator
 class TrackState(ObservableState):
     def __init__(self, trackWidth, movementBudget):
         super(TrackState,self).__init__()
-        #leg == line ending at next waypoint on route
-        #self.legAngle  = 0.0
+
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)        
         self.legGoal = (0.0,0.0)     
         self.legOrigin = (0.0,0.0)
         self.currentAngle = 0
-        self.currentPos = (1200.0,0,0)           
+        self.currentPos = (1200.0,0.0)#(2390.0,4630.0,0)           
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth       # 310.0 mm between wheels
@@ -25,27 +24,25 @@ class TrackState(ObservableState):
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
-        
-        
+        self.isGoal = False
+
 def trackControlUpdate(state,batchdata):   
     for item in batchdata:      # Process items in batchdata
-        """"
-        Store timeStamp data
-        """
         if 'timeStamp' not in item:
             pass
         else:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
+            
         if item['messageType'] == 'control':
- 
-            print "Old Leg goal ",  state.legGoal
-            print "Current pos ", state.currentPos
-            print "Demand pos", state.demandPos
+            #print "Old Leg goal ",  state.legGoal
+            #print "Current pos ", state.currentPos
+            #print "Demand pos", state.demandPos
             state.noLegSet = False
             state.legGoal = item['legGoal']
-            state.legOrigin = item['legOrigin']    
-            print 'track - control message'
-            print "Leg goal ",  state.legGoal
+            state.legOrigin = item['legOrigin'] 
+            state.isGoal = item['isGoal']            
+            #print 'track - control message'
+            #print "Leg goal ",  state.legGoal
     
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
@@ -62,25 +59,11 @@ def trackControlUpdate(state,batchdata):
             state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
                                     state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
                                     
-                                    
-                            
             state.currentAngle = item['sensedAngle']
             
             state.timeStamp = time.time()
-             
-       # elif item['messageType'] == 'obstacle':
-        #    state.isCollision = item['collision']
-         #   print item['collision']
-           # if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
-           # (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
-           #     print "OMG GONNA COLLIDE"
 
-    
-    
-    
-    
     if len(batchdata) == 0: return      # do nothing here, unless new control or sense messages have arrived
-    
     
     if state.isCollision == True:       # collison warning 
         state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
@@ -109,18 +92,13 @@ def trackControlUpdate(state,batchdata):
     absToLeg =  abs(distToLeg)
     moveAmount = distToGoal 
     if absToLeg > distToGoal: moveAmount =  0
-    #print "absToLeg", absToLeg, "dist: ", distToGoal
     # demandPos is a point on the Leg, maxMove along from closePointOnLeg
     state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
-    #state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
     state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
     
-    #print "demand pos", state.demandPos
-    
     state.timeStampFlow["control"] = state.timeStampFlow["sense"]
-    
     
 def trackToStatsTranslator(sourceState, destState, destQueue):
     #print sourceState.timeStampFlow
@@ -146,9 +124,9 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                       sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
     brakingPct = round(min(100.0, dtgFactor)  ,0)
     if brakingPct < 15.0 : brakingPct = 0
-    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
+    #brakingPct = 100 # ignore braking logic 
+    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 135
     move = max ( 1 - abs(turn), 0 )
-    
     
     message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0 ,
                                        'demandFwd' : move * brakingPct / 100.0,
@@ -167,7 +145,8 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'robotPos':sourceState.currentPos,
     'robotAngle':sourceState.currentAngle,
     'goal':sourceState.legGoal,
-    'demandPos':sourceState.demandPos}
+    'demandPos':sourceState.demandPos,
+    'isGoal':sourceState.isGoal}
     destQueue.put(message)
 
 

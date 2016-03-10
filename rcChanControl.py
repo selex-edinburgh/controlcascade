@@ -10,16 +10,16 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class RcChanState(ObservableState):
-    def __init__(self, limitChange, speedLimit):
+    def __init__(self, lrChange, fwbkChange, speedScaling):
         super(RcChanState,self).__init__()
         self.currentTurn = 127
         self.currentFwd = 127
         self.demandTurn = 127
         self.demandFwd = 127
-        self._limitChange = limitChange #80
         self.timeStamp    = time.time()
-        self.minClip = 127 - speedLimit
-        self.maxClip = 127 + speedLimit
+        self.speedScaling = speedScaling
+        self._lrChange = lrChange * speedScaling
+        self._fwbkChange = fwbkChange * speedScaling
         
         self.timeStampFlow["control"] = time.time()
 
@@ -35,35 +35,37 @@ class RcChanState(ObservableState):
 
     def clip(self, x):
         #if x < 0 or x >255: print "clip"
-        return min(self.maxClip,max(self.minClip,x))
- 
-
+        return min(254,max(1,x))
+    
 def simMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, False)
 
 def realMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, True)
     
-def rcChanControlUpdate(state,batchdata, motorOutput):
-    #process items in batchdata
-    
-    for item in batchdata:
+def rcChanControlUpdate(state,batchdata, motorOutput): 
+    for item in batchdata:      # process items in batchdata
     
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
-        
+            pass
+            
         if item['messageType'] == 'control':
-            state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)## expects anti clockwise
-            state.demandFwd =  state.clip(item['demandFwd'] * 127 + 127) ####inserted minus
+            if motorOutput:
+                state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * 127 + 127)   ## expects anti clockwise
+                state.demandFwd  = state.clip(-item['demandFwd'] * state.speedScaling * 127 + 127)   ## inserted minus
+            else:
+                state.demandTurn = state.clip(-item['demandTurn'] * state.speedScaling * 127 + 127)  ## expects anti clockwise
+                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * 127 + 127)    ## inserted minus  
+                
         elif item['messageType'] == 'sense':
             pass
-        
-    state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
-    state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
+    state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._lrChange )
+    state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._fwbkChange )
     
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board      
+        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
     
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
@@ -77,3 +79,4 @@ def rcChanToVsimTranslator( sourceState, destState, destQueue ):
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})
+
