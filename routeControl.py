@@ -32,7 +32,7 @@ class RouteState(ObservableState):
             """       
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
-
+        self.nearWaypoint = False
         self.timeStampFlow["control"]    = time.time()
 
 def routeControlUpdate(state,batchdata):
@@ -41,21 +41,18 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
             state.waypoints.append(newWaypoint)
             for item['removeWaypoint'] in batchdata:
-                pass
-            for item['removeWaypoint'] in batchdata:
                 if item['removeWaypoint'] == True:
                     state.waypoints.pop()
                     print "Waypoint Removed"
 
         elif item['messageType'] == 'sense':
+            state.nearWaypoint = False
             sensedPos = item['sensedPos']
             distToWPx = sensedPos[0] - state.waypoints[state.nextWaypoint][0]
             distToWPy = sensedPos[1] - state.waypoints[state.nextWaypoint][1]
             dist = math.hypot( distToWPx , distToWPy )
-            if dist < state._near: 
-                
-                print dist, sensedPos, state.waypoints[state.nextWaypoint]
-                print '******************************waypoint reached'
+            if dist < state._near:                
+                state.nearWaypoint = True
                 if ( state.nextWaypoint+1 < len(state.waypoints)):
                     state.nextWaypoint += 1 
     
@@ -66,11 +63,11 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1],
-               'timeStamp'  :sourceState.timeStampFlow["control"]
+               'timeStamp'  :sourceState.timeStampFlow["control"],
+               'nearWaypoint' :sourceState.nearWaypoint
                }
               
   
     destQueue.put(message)
 
 
-    

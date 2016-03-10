@@ -24,7 +24,7 @@ class TrackState(ObservableState):
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
-
+        self.nearWaypoint = False       # check is near next waypoint
 def trackControlUpdate(state,batchdata):   
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -38,7 +38,8 @@ def trackControlUpdate(state,batchdata):
             print "Demand pos", state.demandPos
             state.noLegSet = False
             state.legGoal = item['legGoal']
-            state.legOrigin = item['legOrigin']    
+            state.legOrigin = item['legOrigin']  
+            state.nearWaypoint = item['nearWaypoint']            
             print 'track - control message'
             print "Leg goal ",  state.legGoal
     
@@ -162,7 +163,8 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'robotPos':sourceState.currentPos,
     'robotAngle':sourceState.currentAngle,
     'goal':sourceState.legGoal,
-    'demandPos':sourceState.demandPos}
+    'demandPos':sourceState.demandPos,
+    'nearWaypoint':sourceState.nearWaypoint}
     destQueue.put(message)
 
 
