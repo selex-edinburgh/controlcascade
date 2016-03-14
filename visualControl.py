@@ -80,6 +80,8 @@ class VisualState(ObservableState):
         self.lengthOfBatch = 0
         self.varianceOfLatency = 0
         
+        self.simMode = True
+        
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
         
     def drawRobot(self, surface):
@@ -133,20 +135,24 @@ class VisualState(ObservableState):
         pygame.draw.line(surface,WHITE, (5, self.screenHeight - 5 ), (480, self.screenHeight- 5), 4)      # draw x axis
         surface.blit(self.fontTitle.render(("X"), True, WHITE), (485,(self.screenHeight - 22))) 
         
+        origin = pygame.Rect(0,self.screenHeight - 30, 40,40)
+        pygame.draw.arc(surface, WHITE, origin, 0,2.2, 4)
+        
+        
     def drawInfoPanel(self,surface):
  
         surface.blit(self.fontTitle.render(("Robot Position"), True, WHITE), (505,(self.screenHeight -710)))     # robotPos information panel
-        surface.blit(self.font.render(("X,Y (mm): ({0},{1})".format(int(self.robotPos[0]), self.screenHeight - int(self.robotPos[1]))), True, WHITE), (505,self.screenHeight - 675))
-        surface.blit(self.font.render(("Heading: {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))  
+        surface.blit(self.font.render(("X,Y (mm):  {0},{1}".format(int(self.robotPos[0]), self.screenHeight - int(self.robotPos[1]))), True, WHITE), (505,self.screenHeight - 675))
+        surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))  
             
         surface.blit(self.fontTitle.render(("Route"), True, WHITE), (505,(self.screenHeight -600)))     # latency information panel
-        surface.blit(self.font.render(("Current Waypoint: ({0},{1})".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, WHITE), (505,self.screenHeight -565))
-        surface.blit(self.font.render(("No. Of Waypoints: {0}".format(len(self.waypointList))), True, WHITE), (505,self.screenHeight -545))
-        surface.blit(self.font.render(("Near Target: %s" % (self.nearWaypoint)), True, WHITE), (505,self.screenHeight -525))
+        surface.blit(self.font.render(("Current Waypoint:  {0},{1}".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, WHITE), (505,self.screenHeight -565))
+        surface.blit(self.font.render(("No. Of Waypoints:  {0}".format(len(self.waypointList))), True, WHITE), (505,self.screenHeight -545))
+        surface.blit(self.font.render(("Near Target:            %s" % (self.nearWaypoint)), True, WHITE), (505,self.screenHeight -525))
         
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(self.screenHeight -475)))     # collision information panel
         surface.blit(self.font.render(("In Range: %s" % (self.isCollision)), True, WHITE), (505,(self.screenHeight -440)))
-        surface.blit(self.imageCompass,( 470, self.screenHeight - 240 ))
+       # surface.blit(self.imageCompass,( 470, self.screenHeight - 240 ))
         """
         REDUNDENT FOR NOW
         surface.blit(self.fontTitle.render(("Motor Data"), True, BLACK), (505,(self.screenHeight -305)))     # latency information panel
@@ -165,6 +171,7 @@ class VisualState(ObservableState):
         """
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
+   
     if e.name is None:
         print 'Hide menu'
         state.menu.hide()

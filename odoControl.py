@@ -65,7 +65,8 @@ def odoControlUpdate(state,batchdata, doRead):
 
     if len(batchdata)==0 : return
    
-    if doRead :     # read items from the i2c interface      
+    if doRead :     # read items from the i2c interface   
+        state.realMode = True # so visualiser knows real chariot is running
         resetOdometers(state)        # reset the odometers (only once)
         bus = smbus.SMBus(1)      
         RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
