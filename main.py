@@ -15,7 +15,8 @@ import scanSimControl
 
 def runControlLoops():
 
-    timeScale = 1.0
+    timeScale = 0.25
+    guiTimeScale = 2.0
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
@@ -35,7 +36,7 @@ def runControlLoops():
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.06 * timeScale,  0.06 * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
-    visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * timeScale,  0.16 * timeScale)
+    visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
     statsController  = plumbing.controlloop.ControlLoop( statsState,  statsControl.statsControlUpdate,   2.00 * timeScale,  2.00 * timeScale)
     scanSimController = plumbing.controlloop.ControlLoop( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
     

@@ -203,8 +203,7 @@ class PopupMenu(object):
         self.screen = pygame.display.get_surface()
         self.clear_screen = self.screen.copy()
         
-        #Save the click position
-        self._pos = pos
+
         if block:
             self._run(block)
 
@@ -222,7 +221,7 @@ class PopupMenu(object):
                             self._make_menu(self.data[key])
                         else:
                             # pick item (post event)
-                            item.originalEvent = self._pos
+                            item.originalEvent = e
                             
                             pygame.event.post(self._pick_event(menu, item ))
                             self._quit(block)
