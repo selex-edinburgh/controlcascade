@@ -34,10 +34,8 @@ class RcChanState(ObservableState):
             print "Serial not connected..."
 
     def clip(self, x):
-        #if x < 0 or x >255: print "clip"
         return min(self.maxClip,max(self.minClip,x))
- 
-
+        
 def simMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, False)
 

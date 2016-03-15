@@ -11,6 +11,7 @@ class RouteState(ObservableState):
         self.waypoints    = [         
                             (2390.0,4630.0),(2390.0,4630.0)]
         """
+        Estimate of course
         (2250.0,200.0),
         (2300.0,980.0),
         (1460.0,1030.0),

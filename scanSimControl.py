@@ -49,7 +49,7 @@ def scanSimControlUpdate(state, batchdata):
            break 
     state.isCollision = anyCollisions
     
-def collisionWarn(p0,p1,p2,p):
+def collisionWarn(p0,p1,p2,p):      # helper function that returns if pole falls within scan range
     A = 0.5 * (-p1[1] * p2[0] + p0[1] * (-p1[0] + p2[0]) + p0[0] * (p1[1] - p2[1]) + p1[0] * p2[1])
     sign = 1
     if A < 0:

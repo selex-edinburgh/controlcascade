@@ -19,7 +19,7 @@ class ControlLoop(threading.Thread):
         self.stateData = stateData
         self.setDaemon(True)
         self.name = name
-
+        self._flag = False
     
     def run(self):
         print "starting thread\n"
@@ -32,6 +32,7 @@ class ControlLoop(threading.Thread):
             while True:
                 #keep gathering data until minPeriod has passed
                 #or if nothing appears, continue waiting until maxPeriod before giving up
+                pass
                 timeout = (haveDataDeadline if haveData else haveNoDataDeadline)\
                            - time.time()
                 try:
@@ -42,8 +43,17 @@ class ControlLoop(threading.Thread):
                 except:
                     traceback.print_exc()
                 t = time.time()
-                if (t >= haveDataDeadline and haveData) or  ( t >= haveNoDataDeadline ):
+        
+
+                for item in batchdata:
+                    if item['messageType'] == 'pause':
+                        self._flag = item['pauseLoops']
+                      #  print self._flag
+                if (t >= haveDataDeadline and haveData and not self._flag) or \
+                        ( t >= haveNoDataDeadline and not self._flag ) : # and if flag is NOT true
                     break
+               # f = open("file.txt", "a")
+                #print >> f, batchdata
             self._lastrun = time.time()
             self.stateData.writer_acquire()
             try:
@@ -52,6 +62,7 @@ class ControlLoop(threading.Thread):
                 traceback.print_exc()
             self.stateData.writer_release()
             self.stateData.notify()
+            
 
     def connectTo(self,destLoop,trFn):
         obsTr = ControlObserverTranslator(destLoop, trFn)

@@ -16,13 +16,13 @@ import scanSimControl
 def runControlLoops():
 
     timeScale = 0.25
-    guiTimeScale = 2.0
+    guiTimeScale = 0.1
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 80)    #RcChanState(limitChange, speedLimit)
     trackState  = trackControl.TrackState(155,500)      #TrackState(trackWidth,movementBudget)
-    vsimState   = vsimControl.VsimState(0.95,1.0,600.0) #VsimState(fricEffectPerSec,lrBias,speedMax)
+    vsimState   = vsimControl.VsimState(1.5,1.0,600.0) #VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
@@ -60,6 +60,16 @@ def runControlLoops():
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
+    
+
+    visualController.connectTo(trackController, visualControl.visualToAppManager)
+    visualController.connectTo(odoController, visualControl.visualToAppManager)
+    visualController.connectTo(rcChanController, visualControl.visualToAppManager)
+    visualController.connectTo(envSimController, visualControl.visualToAppManager)
+    visualController.connectTo(sensorController, visualControl.visualToAppManager)
+    visualController.connectTo(routeController, visualControl.visualToAppManager)
+    visualController.connectTo(scanSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(routeController, visualControl.visualToAppManager)
     
     routeController.start()
     trackController.start()

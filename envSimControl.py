@@ -17,10 +17,11 @@ class EnvSimState(ObservableState):
             (480,720, 480,240), (480,240, 360,240), 
             (360,240, 360,0), (360,0, 120,0)]
         self.barrelList = []
+        self.barrierList = [(40,720,0,680), (240,0,240,240), (440,720,480,680)]
         self.rampList = []
         self.doorList = []
-        self.goalList = []
-        self.ballList = []
+        self.goalList = [(60,240,0,300), (420,240,480,300)]
+        self.ballList = [(60,300),(420,300)]
         
 def envSimControlUpdate(state, batchdata):
 
@@ -45,13 +46,16 @@ def envToVisualTranslator(sourceState, destState, destQueue):
                'poleList':sourceState.poleList,
                'wallList':sourceState.wallList,
                'barrelList':sourceState.barrelList,
+               'barrierList':sourceState.barrierList,
                'rampList':sourceState.rampList,
                'doorList':sourceState.doorList,
                'goalList':sourceState.goalList,
-               'ballList':sourceState.ballList}
+               'ballList':sourceState.ballList,
+               'barrierList': sourceState.barrierList}
     destQueue.put(message)
     
 def envToScanSimControl(sourceState, destState, destQueue):
     message = {'messageType': 'obstacle',
-                'poleList': sourceState.poleList}
+                'poleList': sourceState.poleList            
+}
     destQueue.put(message)
