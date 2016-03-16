@@ -19,7 +19,7 @@ class ControlLoop(threading.Thread):
         self.stateData = stateData
         self.setDaemon(True)
         self.name = name
-        self._flag = False
+        self._running = True
     
     def run(self):
         print "starting thread\n"
@@ -43,24 +43,24 @@ class ControlLoop(threading.Thread):
                 except:
                     traceback.print_exc()
                 t = time.time()
-                
-                for item in batchdata:
+                for item in batchdata:  # if pause
                     if item['messageType'] == 'pause':
-                        self._flag = item['pauseLoops']
+                        self._running =  not item['pauseLoops']
+                
                       #  print self._flag
-                if (t >= haveDataDeadline and haveData and not self._flag) or \
-                        ( t >= haveNoDataDeadline and not self._flag ) : # and if flag is NOT true
+                if (t >= haveDataDeadline and haveData ) or \
+                        ( t >= haveNoDataDeadline  ) : # and if flag is NOT true
                     break
-               # f = open("file.txt", "a")
-                #print >> f, batchdata
-            self._lastrun = time.time()
-            self.stateData.writer_acquire()
-            try:
-                self._loopFunction(self.stateData, batchdata)
-            except:
-                traceback.print_exc()
-            self.stateData.writer_release()
-            self.stateData.notify()
+            
+            if self._running:
+                self._lastrun = time.time()
+                self.stateData.writer_acquire()
+                try:
+                    self._loopFunction(self.stateData, batchdata)
+                except:
+                    traceback.print_exc()
+                self.stateData.writer_release()
+                self.stateData.notify()
             
 
     def connectTo(self,destLoop,trFn):
