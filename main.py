@@ -16,8 +16,21 @@ import scanSimControl
 def runControlLoops():
 
     timeScale = 1
-    guiTimeScale = 1.5
+    guiTimeScale = 0.5
     
+    trackSpeedMin = 0.0016
+    trackSpeedMax =   1
+    
+    odoSpeedMin = 0.0016
+    odoSpeedMax =  1
+    
+    rcChanSpeedMin = 0.0016
+    rcChanSpeedMax = 0.09
+    
+    vsimSpeedMin = 0.0016
+    vsimSpeedMax = 0.06
+    
+  
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 80)    #RcChanState(limitChange, speedLimit)
@@ -30,10 +43,10 @@ def runControlLoops():
     scanSimState = scanSimControl.ScanSimState(65, 10)        # scanSimState (scanRange, turnSpeed)
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
-    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.016 * timeScale,  1 * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.016 * timeScale,  1 * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            0.016 * timeScale,  0.09 * timeScale)
-    vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.016 * timeScale,  0.06 * timeScale)
+    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackSpeedMin * timeScale,  trackSpeedMax * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoSpeedMin * timeScale,  odoSpeedMax * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanSpeedMin * timeScale,  rcChanSpeedMax * timeScale)
+    vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     vsimSpeedMin * timeScale,  vsimSpeedMax * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
@@ -63,14 +76,14 @@ def runControlLoops():
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
     
 
-    visualController.connectTo(trackController, visualControl.visualToAppManager)
+    visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to pause loops
     visualController.connectTo(odoController, visualControl.visualToAppManager)
    # visualController.connectTo(rcChanController, visualControl.visualToAppManager)
    # visualController.connectTo(envSimController, visualControl.visualToAppManager)
    # visualController.connectTo(sensorController, visualControl.visualToAppManager)
    # visualController.connectTo(routeController, visualControl.visualToAppManager)
    # visualController.connectTo(scanSimController, visualControl.visualToAppManager)
-  #  visualController.connectTo(routeController, visualControl.visualToAppManager)
+   # visualController.connectTo(routeController, visualControl.visualToAppManager)
     
     routeController.start()
     trackController.start()

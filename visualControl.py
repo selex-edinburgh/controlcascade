@@ -20,12 +20,12 @@ LIGHT_BLUE = (120,135,171)
 GREEN = (  34, 102,   102)
 RED =   (192,   57,   43)
 GREY = (52,73,94)
-TRAIL_GREY = (44,62,80)
+TRAIL_GREY = (34,167,240)
 MARGIN = 200
 
 pygame.init()
 
-menu_data = (
+menuData = (
     'Main',
     'Add Waypoint',
     'Remove Last Waypoint',
@@ -91,7 +91,7 @@ class VisualState(ObservableState):
         self.realMode = False
   
         self.pauseLoops = False
-        self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
+        self.menu = NonBlockingPopupMenu(menuData)      # define right-click menu
         
     def drawRobot(self, surface):
         if self.scrBuff == None:
@@ -113,8 +113,7 @@ class VisualState(ObservableState):
            
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
         pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)      
-
-
+        
     def drawWaypoints(self, surface):
         for w in self.waypointList:
             pygame.draw.circle(surface,WHITE,(int(w[0] /10), int(self.screenHeight - w[1] /10)), 4,)
@@ -153,7 +152,7 @@ class VisualState(ObservableState):
             pygame.draw.circle(surface,WHITE,self.ball, 7)
         
         pygame.draw.line(surface,WHITE, (5, 500), (5, self.screenHeight -5), 2)      # draw y axis
-        surface.blit(self.font.render(("North"), True, WHITE), (10,500))
+        surface.blit(self.font.render(("  North"), True, WHITE), (10,500))
         surface.blit(self.fontTitle.render(("Y"), True, WHITE), (10,600))
         
         pygame.draw.line(surface,WHITE, (5, self.screenHeight - 5 ), (100, self.screenHeight- 5), 2)      # draw x axis
@@ -193,14 +192,13 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, WHITE), (505,self.screenHeight -75))
         surface.blit(self.font.render(("Variance:       {0:.3f}".format(self.varianceOfLatency)), True, WHITE), (505,self.screenHeight -55))
         """
-       # surface.blit(self.imageCompass,( 470, self.screenHeight - 240 ))
         if self.realMode:
             surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(565,(self.screenHeight - 20)))
         else:
             surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 20)))
-        
-        pos = pygame.mouse.get_pos()
-        pos = (pos[0], self.screenHeight - pos[1] )
+            
+        cursorPos = pygame.mouse.get_pos()        # cursor position
+        cursorPos = (pos[0], self.screenHeight - pos[1] )
         surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 40))
         if self.pauseLoops:
             surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 60))
@@ -243,27 +241,12 @@ def visualControlUpdate(state,batchdata):
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
         
-    """"
-    for event in pygame.event.get():          # handle every event since the last frame.
-        if event.type == pygame.QUIT:
-            pygame.quit()       # quit the screen
-            sys.exit()
-        elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
-            pressPosition = (event.pos[0], event.pos[1])
-            if (screenAreaTop.collidepoint(pressPosition)) or \
-                (screenAreaBottom.collidepoint(pressPosition)):
-                pressPosition = (event.pos[0], state.screenHeight - event.pos[1])
-                state.waypoint = pressPosition
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            pressPosition = (event.pos[0], event.pos[1])      
-            for index, r in enumerate(state.poleRecList, start = 0):
-                if r.collidepoint(pressPosition):
-                    state.poleList.pop(index)
-                    state.poleRecList.pop(index)
-                    print "waypoint removed..."
-            print "You pressed at locaton: ", pressPosition
-            state.removeLastWP = True
-    """   
+    try:
+        if state.targetPos == state.waypointList[-1]:
+            state.pauseLoops = True
+    except:
+        print "error"
+        
     for e in state.menu.handle_events(pygame.event.get()):
         if e.type == pygame.QUIT:
             pygame.quit()       # quit the screen
@@ -274,7 +257,6 @@ def visualControlUpdate(state,batchdata):
                 (screenAreaBottom.collidepoint(pressPosition)):
                 pressPosition = (e.pos[0], state.screenHeight - e.pos[1])
                 state.waypoint = pressPosition      # create new waypoint from press
-            
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
         elif e.type == USEREVENT:
@@ -342,11 +324,15 @@ def visualControlUpdate(state,batchdata):
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
 
+    sourceState.waypointList = destState.waypoints
     if sourceState.removeLastWP:
         destState.waypoints.pop()
         
-        
-    sourceState.waypointList = destState.waypoints
+    a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))         
+    b = sourceState.targetPos[0], sourceState.targetPos[1]
+    if destState.nearWaypoint and b == a:       # pause if at last waypoint   
+        sourceState.pauseLoops = True
+
     if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
         sourceState.prevWaypoint = sourceState.waypoint
         message = {'messageType':'waypoint',

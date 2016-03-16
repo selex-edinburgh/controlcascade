@@ -35,7 +35,7 @@ class RouteState(ObservableState):
         self._near = near        # 120.0
         self.nearWaypoint = False
         self.timeStampFlow["control"]    = time.time()
-
+        self.finalWaypoint = False
 def routeControlUpdate(state,batchdata):
     for item in batchdata:
         if item['messageType'] == 'waypoint':
@@ -56,7 +56,7 @@ def routeControlUpdate(state,batchdata):
                 state.nearWaypoint = True
                 if ( state.nextWaypoint+1 < len(state.waypoints)):
                     state.nextWaypoint += 1 
-    
+
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     nextID = sourceState.nextWaypoint
 

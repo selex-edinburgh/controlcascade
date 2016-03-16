@@ -64,8 +64,6 @@ class ControlLoop(threading.Thread):
     def connectTo(self,destLoop,trFn):
         obsTr = ControlObserverTranslator(destLoop, trFn)
         self.stateData.attach(obsTr)
-        
-    
 
 class ControlObserverTranslator:
     def __init__(self, destinationLoop, translateFunction):

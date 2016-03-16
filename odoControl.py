@@ -108,7 +108,7 @@ def odoControlUpdate(state,batchdata, doRead):
         state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
                                 (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
     except:
-        print "Loop Paused"
+        pass
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
           
