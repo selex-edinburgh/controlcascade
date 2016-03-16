@@ -36,24 +36,22 @@ class ControlLoop(threading.Thread):
                 timeout = (haveDataDeadline if haveData else haveNoDataDeadline)\
                            - time.time()
                 try:
-                    batchdata.append(self.queue.get(True,max(timeout,0)))
-                    haveData = True
+                    item = self.queue.get(True,max(timeout,0))
+                    if item['messageType'] == 'pause':
+                        self._running =  not item['pauseLoops']
+                    if self._running:
+                        batchdata.append(item)
+                        haveData = True
                 except Queue.Empty:
                     pass
                 except:
                     traceback.print_exc()
                 t = time.time()
-                for item in batchdata:  # if pause
-                    if item['messageType'] == 'pause':
-                        self._running =  not item['pauseLoops']
-                
-                      #  print self._flag
                 if (t >= haveDataDeadline and haveData ) or \
                         ( t >= haveNoDataDeadline  ) : # and if flag is NOT true
                     break
-            
+            self._lastrun = time.time()
             if self._running:
-                self._lastrun = time.time()
                 self.stateData.writer_acquire()
                 try:
                     self._loopFunction(self.stateData, batchdata)

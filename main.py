@@ -15,8 +15,8 @@ import scanSimControl
 
 def runControlLoops():
 
-    timeScale = 0.25
-    guiTimeScale = 0.1
+    timeScale = 1
+    guiTimeScale = 1.5
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
@@ -30,8 +30,8 @@ def runControlLoops():
     scanSimState = scanSimControl.ScanSimState(65, 10)        # scanSimState (scanRange, turnSpeed)
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
-    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.016 * timeScale,  0.08 * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.016 * timeScale,  0.06 * timeScale)
+    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.016 * timeScale,  1 * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.016 * timeScale,  1 * timeScale)
     rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            0.016 * timeScale,  0.09 * timeScale)
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.016 * timeScale,  0.06 * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
@@ -64,13 +64,13 @@ def runControlLoops():
     
 
     visualController.connectTo(trackController, visualControl.visualToAppManager)
-    #visualController.connectTo(odoController, visualControl.visualToAppManager)
-    #visualController.connectTo(rcChanController, visualControl.visualToAppManager)
-    #visualController.connectTo(envSimController, visualControl.visualToAppManager)
-    #visualController.connectTo(sensorController, visualControl.visualToAppManager)
-    #visualController.connectTo(routeController, visualControl.visualToAppManager)
+    visualController.connectTo(odoController, visualControl.visualToAppManager)
+   # visualController.connectTo(rcChanController, visualControl.visualToAppManager)
+   # visualController.connectTo(envSimController, visualControl.visualToAppManager)
+   # visualController.connectTo(sensorController, visualControl.visualToAppManager)
+   # visualController.connectTo(routeController, visualControl.visualToAppManager)
    # visualController.connectTo(scanSimController, visualControl.visualToAppManager)
-    #visualController.connectTo(routeController, visualControl.visualToAppManager)
+  #  visualController.connectTo(routeController, visualControl.visualToAppManager)
     
     routeController.start()
     trackController.start()
