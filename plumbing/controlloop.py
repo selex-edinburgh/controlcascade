@@ -8,7 +8,7 @@ class ControlLoop(threading.Thread):
     """ 
         A thread class that 
     """
-    
+   
     def __init__ (self, stateData, loopFunction, minPeriod, maxPeriod, name="Unnamed Loop"):
         super(ControlLoop,self).__init__()
 
@@ -43,8 +43,7 @@ class ControlLoop(threading.Thread):
                 except:
                     traceback.print_exc()
                 t = time.time()
-        
-
+                
                 for item in batchdata:
                     if item['messageType'] == 'pause':
                         self._flag = item['pauseLoops']

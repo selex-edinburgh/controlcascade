@@ -30,10 +30,10 @@ def runControlLoops():
     scanSimState = scanSimControl.ScanSimState(65, 10)        # scanSimState (scanRange, turnSpeed)
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
-    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.04 * timeScale,  0.08 * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.06 * timeScale,  0.06 * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            0.05 * timeScale,  0.07 * timeScale)
-    vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.06 * timeScale,  0.06 * timeScale)
+    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   0.016 * timeScale,  0.08 * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              0.016 * timeScale,  0.06 * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            0.016 * timeScale,  0.09 * timeScale)
+    vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     0.016 * timeScale,  0.06 * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
@@ -53,6 +53,7 @@ def runControlLoops():
     visualController.connectTo(routeController, visualControl.visualToRouteTranslator)
     #routeController.connectTo(statsController, statsControl.toStatsTranslator)
     trackController.connectTo(statsController, statsControl.toStatsTranslator)
+    
     statsController.connectTo(visualController, statsControl.statsToVisualTranslator)
     trackController.connectTo(scanSimController, trackControl.trackToScanSimTranslator)
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
@@ -63,12 +64,12 @@ def runControlLoops():
     
 
     visualController.connectTo(trackController, visualControl.visualToAppManager)
-    visualController.connectTo(odoController, visualControl.visualToAppManager)
-    visualController.connectTo(rcChanController, visualControl.visualToAppManager)
-    visualController.connectTo(envSimController, visualControl.visualToAppManager)
-    visualController.connectTo(sensorController, visualControl.visualToAppManager)
-    visualController.connectTo(routeController, visualControl.visualToAppManager)
-    visualController.connectTo(scanSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(odoController, visualControl.visualToAppManager)
+    #visualController.connectTo(rcChanController, visualControl.visualToAppManager)
+    #visualController.connectTo(envSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(sensorController, visualControl.visualToAppManager)
+    #visualController.connectTo(routeController, visualControl.visualToAppManager)
+   # visualController.connectTo(scanSimController, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
     
     routeController.start()

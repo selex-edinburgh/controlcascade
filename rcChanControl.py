@@ -59,8 +59,17 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
                 
         elif item['messageType'] == 'sense':
             pass
+            
+    if not batchdata:
+        state.demandFwd = 127
+        state.demandTurn = 127
+        
+        
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
+    
+    
+    
     
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     

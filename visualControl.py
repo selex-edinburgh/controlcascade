@@ -8,7 +8,6 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 from pygame.locals import *
 
-
 progname = sys.argv[0]      # lib import for right-click menu
 progdir = os.path.dirname(progname)
 sys.path.append(os.path.join(progdir,'gamelib'))
@@ -54,7 +53,8 @@ class VisualState(ObservableState):
         self.screenWidth = 682      # set screen height and width
         self.screenHeight = 720
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))       
-        pygame.display.set_caption('\t \t \tVisualiser')       # screen caption        
+        pygame.display.set_caption('\t \t \tVisualiser')       # screen caption       
+
         self.font = pygame.font.SysFont('Avenir Next', 16)        # different fonts used in the program
         self.fontTitle = pygame.font.SysFont('Avenir Next',22)                 
         self.image = pygame.image.load('images/robot.png')       # robot image
@@ -177,6 +177,22 @@ class VisualState(ObservableState):
         
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(self.screenHeight -475)))     # collision information panel
         surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(self.screenHeight -440)))
+        """
+        surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(self.screenHeight -390)))     # motor information panel
+        surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(self.screenHeight -355)))
+        surface.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, WHITE), (505,(self.screenHeight -335)))
+        
+        surface.blit(self.fontTitle.render(("Odometer"), True, WHITE), (505,(self.screenHeight -285)))     # odometer information panel
+        surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, WHITE), (505,(self.screenHeight -240)))
+        surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, WHITE), (505,(self.screenHeight -220)))   # update the screen
+        
+        surface.blit(self.fontTitle.render(("Timing"), True, WHITE), (505,(self.screenHeight -180)))     # latency information panel
+        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,self.screenHeight -135))
+        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,self.screenHeight -115))
+        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,self.screenHeight -95))
+        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, WHITE), (505,self.screenHeight -75))
+        surface.blit(self.font.render(("Variance:       {0:.3f}".format(self.varianceOfLatency)), True, WHITE), (505,self.screenHeight -55))
+        """
        # surface.blit(self.imageCompass,( 470, self.screenHeight - 240 ))
         if self.realMode:
             surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(565,(self.screenHeight - 20)))
@@ -188,22 +204,7 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 40))
         if self.pauseLoops:
             surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 60))
-        """
-        REDUNDENT FOR NOW
-        surface.blit(self.fontTitle.render(("Motor Data"), True, BLACK), (505,(self.screenHeight -305)))     # latency information panel
-        surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, BLACK), (505,(self.screenHeight -250)))
-        surface.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, BLACK), (505,(self.screenHeight -270)))
-        
-        surface.blit(self.fontTitle.render(("Odometer Data"), True, BLACK), (505,(self.screenHeight -190)))     # latency information panel
-        surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, BLACK), (505,(self.screenHeight -155)))
-        surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, BLACK), (505,(self.screenHeight -135)))   # update the screen
-        
-        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, BLACK), (505,self.screenHeight -520))
-        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, BLACK), (505,self.screenHeight -500))
-        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, BLACK), (505,self.screenHeight -480))
-        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, BLACK), (505,self.screenHeight -460))
-        surface.blit(self.font.render(("Variance:       {0:.3f}".format(self.varianceOfLatency)), True, BLACK), (505,self.screenHeight -440))
-        """
+            
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
     
@@ -241,9 +242,7 @@ def visualControlUpdate(state,batchdata):
     screenAreaBottom = pygame.Rect(120,480, 240,240)
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
-     
-
-    
+        
     """"
     for event in pygame.event.get():          # handle every event since the last frame.
         if event.type == pygame.QUIT:
@@ -288,16 +287,17 @@ def visualControlUpdate(state,batchdata):
     state.screen.fill(GREY, screenOutOfBounds1)         # fill the screen with colour
     state.screen.fill(GREY, screenOutOfBounds2)         # fill the screen with colour
 
-    
-    state.drawRobot(state.screen)       # draw the Robot to the screen
-    state.drawObstacles(state.screen)   # draw the obstacles to the screen
-    state.drawInfoPanel(state.screen )  # draw the information panel to the screen
-    state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
-    state.drawWaypoints(state.screen)
-    state.checkForCollision()       # check for possible collision
-    state.menu.draw()     # menu draw *test*
-    pygame.display.update()      # update the screen
-    
+    try:
+        state.drawRobot(state.screen)       # draw the Robot to the screen
+        state.drawObstacles(state.screen)   # draw the obstacles to the screen
+        state.drawInfoPanel(state.screen )  # draw the information panel to the screen
+        state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
+        state.drawWaypoints(state.screen)
+        state.checkForCollision()       # check for possible collision
+        state.menu.draw()     # menu draw *test*
+        pygame.display.update()      # update the screen
+    except:
+        print "error"
     for item in batchdata:      # process data from batchdata
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
