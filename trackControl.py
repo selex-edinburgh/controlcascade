@@ -28,7 +28,7 @@ class TrackState(ObservableState):
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
         self.nearWaypoint = False  
-    
+        self.distanceTrav = 0
 def trackControlUpdate(state,batchdata):   
 
     for item in batchdata:
@@ -37,14 +37,15 @@ def trackControlUpdate(state,batchdata):
             state.sensedAngle = item['sensedAngle']
         
     
-    
-    if time.time() < state.timeout:
+    state.distanceTrav = state.distanceTrav + state.sensedMove
+    while state.distanceTrav < 2000:
         state.demandFwd = 0.2
         state.demandTurn  = 0
     else:
         state.demandFwd = 0
         state.demandTurn = 0
-
+    print state.distanceTrav
+            
             
             
 def trackToRcChanTranslator( sourceState, destState, destQueue ):

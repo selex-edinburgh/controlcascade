@@ -43,8 +43,8 @@ def runControlLoops():
     
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackSpeedMin * timeScale,  trackSpeedMax * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoSpeedMin * timeScale,  odoSpeedMax * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanSpeedMin * timeScale,  rcChanSpeedMax * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoSpeedMin * timeScale,  odoSpeedMax * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanSpeedMin * timeScale,  rcChanSpeedMax * timeScale)
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     vsimSpeedMin * timeScale,  vsimSpeedMax * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
