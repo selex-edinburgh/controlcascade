@@ -8,14 +8,13 @@ from plumbing.controlloop import ControlObserverTranslator
 class TrackState(ObservableState):
     def __init__(self, trackWidth, movementBudget):
         super(TrackState,self).__init__()
-        #leg == line ending at next waypoint on route
-        #self.legAngle  = 0.0
+
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)        
         self.legGoal = (0.0,0.0)     
         self.legOrigin = (0.0,0.0)
         self.currentAngle = 0
-        self.currentPos = (1200.0,0,0)           
+        self.currentPos = (2390.0,4630.0,0)           
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)            
         self._trackWidth = trackWidth       # 310.0 mm between wheels
@@ -25,27 +24,19 @@ class TrackState(ObservableState):
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
-        
-        
+        self.nearWaypoint = False       # check is near next waypoint
 def trackControlUpdate(state,batchdata):   
     for item in batchdata:      # Process items in batchdata
-        """"
-        Store timeStamp data
-        """
         if 'timeStamp' not in item:
             pass
         else:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
+            
         if item['messageType'] == 'control':
- 
-            print "Old Leg goal ",  state.legGoal
-            print "Current pos ", state.currentPos
-            print "Demand pos", state.demandPos
             state.noLegSet = False
             state.legGoal = item['legGoal']
-            state.legOrigin = item['legOrigin']    
-            print 'track - control message'
-            print "Leg goal ",  state.legGoal
+            state.legOrigin = item['legOrigin']  
+            state.nearWaypoint = item['nearWaypoint']            
     
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
@@ -167,7 +158,8 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'robotPos':sourceState.currentPos,
     'robotAngle':sourceState.currentAngle,
     'goal':sourceState.legGoal,
-    'demandPos':sourceState.demandPos}
+    'demandPos':sourceState.demandPos,
+    'nearWaypoint':sourceState.nearWaypoint}
     destQueue.put(message)
 
 
