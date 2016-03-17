@@ -24,27 +24,23 @@ class OdoState(ObservableState):
         self._rolloverCountL = rolloverCountL       # 0
         self._rolloverCountR = rolloverCountR        # 0
         self.address = 4       	    # Seven bit Byte: as bit 8 is used for READ/WRITE designation.
-        self.control = 176   	    # Tells sensor board slave to read odometers
+        self.control = 160        # Gives a control output for the odometers to use (160 = reset, 176 = read)
         self.numbytes = 4      
         self.lr = 0
         self.rr = 0
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
-def simUpdate(state,batchdata)    :
+        try:
+            self.bus = smbus.SMBus(1)  
+            self.bus.write_block_data(address,control,numbytes) #Reset the odometers
+        except:
+            pass
+def simUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, False)
     
-def realUpdate(state,batchdata)    :
+def realUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, True )
-    
-def run_once(f):
-    def wrapper(*args, **kwargs):
-        if not wrapper.has_run:
-            wrapper.has_run = True
-            return f(*args, **kwargs)
-    wrapper.has_run = False
-    return wrapper 
 
-@run_once  
 def resetOdometers(state):
     Txbyte0 = 0              #Center
     Txbyte1 = 0              #Center
@@ -63,14 +59,12 @@ def odoControlUpdate(state,batchdata, doRead):
             leftReading = item['pulseL']
             rightReading = item['pulseR']
 
-    
     if len(batchdata)==0 : return
    
-    if doRead :     # read items from the i2c interface   
-        state.realMode = True # so visualiser knows real chariot is running
-        resetOdometers(state)        # reset the odometers (only once)
-        bus = smbus.SMBus(1)      
-        RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
+    if doRead :     # read items from the i2c interface
+        state.realMode = True # so visualiser knows real chariot is running      
+        state.control = 176    # Change the control to tell the sensor board to read the odometers
+        RxBytes = state.bus.read_i2c_block_data(state.address, state.control, state.numbytes) # tell the sensor board to read the odometers
         
         leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
         rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
@@ -102,13 +96,13 @@ def odoControlUpdate(state,batchdata, doRead):
         elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
             (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
             print "erraneous value"
-               
-
+              
         state.prevDistTravel = state.distTravel
         state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
                                 (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
     except:
         pass
+        
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
           

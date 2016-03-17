@@ -10,7 +10,6 @@ class advVSimState(observablestate):
         super(advVSimState, self).__init__()
         self.scanRange = 0.0 #mm
         self.scanAngle = 0.0 #relative to the direction of the chariot
-        
         self.cfg = cfg
         self.connect = False
         if 'US_RANGER_ADDRESS' in self.cfg:
@@ -28,10 +27,8 @@ class advVSimState(observablestate):
             return result/58 # Distance in mm
         else:
             return -1
-        
 
 def advVSimControlUpdate(state, batchdata):
-
     for item in batchdata:
         if item['messageType'] == 'control':
             pass
@@ -39,7 +36,6 @@ def advVSimControlUpdate(state, batchdata):
             pass
             
 def advVSimToSensorTranlsator(sourceState, destState, destQueue):
-    message = {'messageType':'sense',
+    destQueue.put({'messageType':'sense',
                'scanRange':self.scanRange,
-               'scanAngle':self.scanAngle  }
-    destQueue.put(message)
+               'scanAngle':self.scanAngle  })

@@ -17,29 +17,27 @@ class ScanSimState(ObservableState):
 def scanSimControlUpdate(state, batchdata):
     for item in batchdata:
         if item['messageType'] == 'control':
-            pass
-            
+            pass         
         elif item['messageType'] == 'sense':
             state.robotPos = (item['sensedPos'])
             state.robotAngle = (item['sensedAngle'])
         elif item['messageType'] == 'obstacle':
             state.poleList = (item['poleList'])
             
-    if len(batchdata) == 0: return
-        
-    a = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10))        # determine the points of the scanning cone
+    if len(batchdata) == 0: return      # return if batchdata is empty
+    pointA = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10))        # determine the points of the scanning cone
     
-    b = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- 135))), \
-        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- 135))))
+    pointB = ((pointA[0] + state.scanRange * math.cos(math.radians(state.robotAngle- 135))), \
+        (pointA[1] + state.scanRange * math.sin(math.radians(state.robotAngle- 135))))
     
-    c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  -45))), \
-        (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
+    pointC =   ((pointA[0] + state.scanRange * math.cos(math.radians(state.robotAngle  -45))), \
+        (pointA[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
     
-    state.scanCone = [a,b,c]        # three points of scan cone
+    state.scanCone = [pointA,pointB,pointC]        # three points of scan cone
     
-    newA = (a[0], (720 - a[1]))     # adjustment for screen height 
-    newB = (b[0], (720 - b[1]))
-    newC = (c[0], (720 - c[1]))
+    newA = (pointA[0], (720 - pointA[1]))     # adjustment for screen height 
+    newB = (pointB[0], (720 - pointB[1]))
+    newC = (pointC[0], (720 - pointC[1]))
     
     anyCollisions = False 
     
@@ -60,13 +58,11 @@ def collisionWarn(p0,p1,p2,p):      # helper function that returns if pole falls
     return s > 0 and t > 0 and (s + t) < 2 * A * sign;
 
 def scanSimToSensorTranslator( sourceState, destState, destQueue):
-    message = {'messageType':'sense',
+    destQueue.put({'messageType':'sense',
                 'scanCone': sourceState.scanCone,
-                'collision': sourceState.isCollision}
-    destQueue.put(message)
+                'collision': sourceState.isCollision})
 
 def scanSimToVisualTranslator(sourceState, destState, destQueue):
-    message = {'messageType':'scan',
+    destQueue.put({'messageType':'scan',
                 'scanCone': sourceState.scanCone,
-                'collision': sourceState.isCollision}
-    destQueue.put(message)
+                'collision': sourceState.isCollision})

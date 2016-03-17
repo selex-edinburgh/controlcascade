@@ -30,7 +30,6 @@ def runControlLoops():
     vsimSpeedMin = 0.0016
     vsimSpeedMax = 0.06
     
-  
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState(0.3,32768,0,0,0)    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 80)    #RcChanState(limitChange, speedLimit)
@@ -58,24 +57,23 @@ def runControlLoops():
     rcChanController.connectTo(vsimController, rcChanControl.rcChanToVsimTranslator)
     vsimController.connectTo(odoController, vsimControl.vsimToOdoTranslator)
     odoController.connectTo(trackController, odoControl.odoToTrackTranslator)
-    trackController.connectTo(routeController, trackControl.trackToRouteTranslator)
+    #trackController.connectTo(routeController, trackControl.trackToRouteTranslator)
     #envSimController.connectTo(sensorController, envSimControl.envSimToSensorTranslator)
     sensorController.connectTo(trackController, sensorControl.sensorToTrackTranslator)
     envSimController.connectTo(visualController, envSimControl.envToVisualTranslator)
-    trackController.connectTo(visualController, trackControl.trackToVisualTranslator)
+    #trackController.connectTo(visualController, trackControl.trackToVisualTranslator)
     visualController.connectTo(routeController, visualControl.visualToRouteTranslator)
     #routeController.connectTo(statsController, statsControl.toStatsTranslator)
     trackController.connectTo(statsController, statsControl.toStatsTranslator)
     
     statsController.connectTo(visualController, statsControl.statsToVisualTranslator)
-    trackController.connectTo(scanSimController, trackControl.trackToScanSimTranslator)
+    #trackController.connectTo(scanSimController, trackControl.trackToScanSimTranslator)
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
     
-
     visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to pause loops
     visualController.connectTo(odoController, visualControl.visualToAppManager)
    # visualController.connectTo(rcChanController, visualControl.visualToAppManager)
@@ -95,8 +93,7 @@ def runControlLoops():
     statsController.start()
     scanSimController.start()
     visualController.run()
-    
-    
+ 
 if __name__ == '__main__':
 
    runControlLoops()

@@ -64,10 +64,11 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.demandFwd = 127
         state.demandTurn = 127
         
-        
+
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
-    
+    print state.currentFwd
+    print state.currentTurn
     f = open('motorCommands.txt', 'a')
 
     

@@ -12,37 +12,34 @@ class EnvSimState(ObservableState):
                         (330,240),(350,240),(190,330),(210,330),(230,330),
                         (250,330),(270,330),(290,330),(140,615),(340,615)]
         self.wallList = [ 
-            (120,0, 120,240), (120,240, 0,240), 
-            (0,240, 0,720), (0,720, 480,720),
-            (480,720, 480,240), (480,240, 360,240), 
-            (360,240, 360,0), (360,0, 120,0)]
+                        (120,0, 120,240), (120,240, 0,240), 
+                        (0,240, 0,720), (0,720, 480,720),
+                        (480,720, 480,240), (480,240, 360,240), 
+                        (360,240, 360,0), (360,0, 120,0)]
         self.barrelList = []
-        self.barrierList = [(40,720,0,680), (240,0,240,240), (440,720,480,680)]
+        self.barrierList= [(40,720,0,680), (240,0,240,240), (440,720,480,680)]
         self.rampList = []
         self.doorList = []
         self.goalList = [(60,240,0,300), (420,240,480,300)]
         self.ballList = [(60,300),(420,300)]
         
 def envSimControlUpdate(state, batchdata):
-
     for item in batchdata:
         if item['messageType'] == 'control':
             pass
             
         elif item['messageType'] == 'sense':
-
             pass
-  
+            
     if len(batchdata) == 0: return
      
 def envSimToSensorTranslator(sourceState, destState, destQueue):
-    message = {'messageType':'sense',
+    destQueue.put({'messageType':'sense',
                'sensedPole':sourceState.poleList,
-               'sensedWall':sourceState.wallList}
-    destQueue.put(message)
+               'sensedWall':sourceState.wallList})
     
 def envToVisualTranslator(sourceState, destState, destQueue):
-    message = {'messageType':'obstacle',
+    destQueue.put({'messageType':'obstacle',
                'poleList':sourceState.poleList,
                'wallList':sourceState.wallList,
                'barrelList':sourceState.barrelList,
@@ -51,11 +48,8 @@ def envToVisualTranslator(sourceState, destState, destQueue):
                'doorList':sourceState.doorList,
                'goalList':sourceState.goalList,
                'ballList':sourceState.ballList,
-               'barrierList': sourceState.barrierList}
-    destQueue.put(message)
+               'barrierList': sourceState.barrierList})
     
 def envToScanSimControl(sourceState, destState, destQueue):
-    message = {'messageType': 'obstacle',
-                'poleList': sourceState.poleList            
-}
-    destQueue.put(message)
+    destQueue.put({'messageType': 'obstacle',
+                'poleList': sourceState.poleList})

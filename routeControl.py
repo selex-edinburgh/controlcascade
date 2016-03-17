@@ -36,6 +36,7 @@ class RouteState(ObservableState):
         self.nearWaypoint = False
         self.timeStampFlow["control"]    = time.time()
         self.finalWaypoint = False
+        
 def routeControlUpdate(state,batchdata):
     for item in batchdata:
         if item['messageType'] == 'waypoint':
@@ -60,15 +61,11 @@ def routeControlUpdate(state,batchdata):
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     nextID = sourceState.nextWaypoint
 
-    
-    message = {'messageType':'control',
+    destQueue.put({'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1],
                'timeStamp'  :sourceState.timeStampFlow["control"],
                'nearWaypoint' :sourceState.nearWaypoint
-               }
-              
-  
-    destQueue.put(message)
+               })
 
 

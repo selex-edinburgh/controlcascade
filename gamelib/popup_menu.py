@@ -87,7 +87,7 @@ except:
     print 'warning: no data.py in module path: proceeding without it'
 finally:
     try:
-        font = pygame.font.Font(data.filepath('font', 'Vera.ttf'), 14)
+        font = pygame.font.Font(data.filepath('font', 'Avenir Next'), 14)
     except:
         print 'warning: cannot load font Vera.ttf: using system default'
         font = pygame.font.SysFont(None, 20)

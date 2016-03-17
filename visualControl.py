@@ -1,17 +1,11 @@
 import pygame
 import math
-import sys
-import os
-from gamelib import *
+
+from gamelib.popup_menu import NonBlockingPopupMenu
 from  pygame import gfxdraw
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 from pygame.locals import *
-
-progname = sys.argv[0]      # lib import for right-click menu
-progdir = os.path.dirname(progname)
-sys.path.append(os.path.join(progdir,'gamelib'))
-from popup_menu import NonBlockingPopupMenu
 
 BLACK = (  0,   0,   0)     # global constants
 WHITE = (255, 255, 255) 
@@ -21,7 +15,6 @@ GREEN = (  34, 102,   102)
 RED =   (192,   57,   43)
 GREY = (52,73,94)
 TRAIL_GREY = (34,167,240)
-MARGIN = 200
 
 pygame.init()
 
@@ -46,22 +39,20 @@ menu_data = (
     'Quit',
 )
 
-    
-
 class VisualState(ObservableState):
     def __init__(self):
         super(VisualState,self).__init__()
         
         self.screenWidth = 682      # set screen height and width
         self.screenHeight = 720
-        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))       
-        pygame.display.set_caption('\t \t \tVisualiser')       # screen caption       
+        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight)) 
+        
+        pygame.display.set_caption('Visualiser')       # screen caption       
 
         self.font = pygame.font.SysFont('Avenir Next', 16)        # different fonts used in the program
         self.fontTitle = pygame.font.SysFont('Avenir Next',22)                 
         self.image = pygame.image.load('images/robot.png')       # robot image
-        self.imageCompass = pygame.image.load('images/compass.png')
-        self.imageCompass.convert()
+
         self.wallList = []      # enviromentals
         self.poleList = []
         self.goalList = []
@@ -69,12 +60,14 @@ class VisualState(ObservableState):
         self.barrierList= []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
+        self.waypointList = []
+        
         self.waypoint = (0,0)       # list of waypoints       
         self.robotPos = (0,0)       # current position of robot
         self.robotAngle = 0     # current angle of robot
         self.targetPos = (0,0)      # next waypoint      
         self.prevWaypoint = (0,0)       # previous waypoints   
-        self.waypointList = []
+
         self.scrBuff = None        
         self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
         self.isCollision = False    # bool to check if pole in collision range  
@@ -89,9 +82,7 @@ class VisualState(ObservableState):
         self.averageLatency = 0
         self.lengthOfBatch = 0
         self.varianceOfLatency = 0
-        
-        self.realMode = False
-  
+        self.realMode = False 
         self.pauseLoops = False
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
         
@@ -111,11 +102,9 @@ class VisualState(ObservableState):
         else:
             pygame.draw.lines(surface, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
 
-    def drawPath(self,surface):
-           
+    def drawPath(self,surface):    
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
         pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)      
-
 
     def drawWaypoints(self, surface):
         for w in self.waypointList:
@@ -167,7 +156,6 @@ class VisualState(ObservableState):
         
         
     def drawInfoPanel(self,surface):
- 
         surface.blit(self.fontTitle.render(("Robot Position"), True, WHITE), (505,(self.screenHeight -710)))     # robotPos information panel
         surface.blit(self.font.render(("X,Y (mm):  ({0},{1})".format(int(self.robotPos[0]), self.screenHeight - int(self.robotPos[1]))), True, WHITE), (505,self.screenHeight - 675))
         surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))  
@@ -207,13 +195,10 @@ class VisualState(ObservableState):
             surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 60))
             
 def handle_menu(e, state):
-    print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
-    
     if e.name is None:
-        print 'Hide menu'
         state.menu.hide()
+        
     elif e.name == 'Main':
-        print e.originalEvent.pos
         if e.text == 'Quit':
             pygame.quit()  
         if e.text == 'Pause Loops':
@@ -222,7 +207,6 @@ def handle_menu(e, state):
             state.pauseLoops = False
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
-            
         if e.text == 'Remove Pole':
             pressPosition = (e.originalEvent.pos[0], e.originalEvent.pos[1])
             print pressPosition
@@ -236,30 +220,32 @@ def handle_menu(e, state):
         pass
      
 def visualControlUpdate(state,batchdata):
-    
     state.removeLastWP = False
     
     screenAreaTop = pygame.Rect(0,0,480,480)        # assign different areas of the screen for drawing (colours)
     screenAreaBottom = pygame.Rect(120,480, 240,240)
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
-        
+    
     try:
         if state.targetPos == state.waypointList[-1]:
             state.pauseLoops = True
     except:
-        print "error"
+        pass
         
     for e in state.menu.handle_events(pygame.event.get()):
         if e.type == pygame.QUIT:
             pygame.quit()       # quit the screen
             sys.exit()
+            
         elif e.type == MOUSEBUTTONDOWN and e.button ==1:
-            pressPosition = (e.pos[0], e.pos[1])        # pin point press location
+            pressPosition = (e.pos[0], e.pos[1])        # pin point press location 
+            
             if (screenAreaTop.collidepoint(pressPosition)) or \
                 (screenAreaBottom.collidepoint(pressPosition)):
                 pressPosition = (e.pos[0], state.screenHeight - e.pos[1])
                 state.waypoint = pressPosition      # create new waypoint from press
+                
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
         elif e.type == USEREVENT:
@@ -281,8 +267,10 @@ def visualControlUpdate(state,batchdata):
         state.checkForCollision()       # check for possible collision
         state.menu.draw()     # menu draw *test*
         pygame.display.update()      # update the screen
+        
     except:
         print "error"
+        
     for item in batchdata:      # process data from batchdata
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
@@ -326,27 +314,26 @@ def visualControlUpdate(state,batchdata):
     if len(batchdata) == 0: return
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
-
     sourceState.waypointList = destState.waypoints
+    
     if sourceState.removeLastWP:
         destState.waypoints.pop()
         
     a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))         
     b = sourceState.targetPos[0], sourceState.targetPos[1]
+    
     if destState.nearWaypoint and b == a:       # pause if at last waypoint   
         sourceState.pauseLoops = True
 
     if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
         sourceState.prevWaypoint = sourceState.waypoint
-        message = {'messageType':'waypoint',
+        destQueue.put({'messageType':'waypoint',
                    'newWaypoint'    :sourceState.waypoint,
-                   'removeWaypoint' :sourceState.removeLastWP}
-        destQueue.put(message)
+                   'removeWaypoint' :sourceState.removeLastWP})
 
 def visualToAppManager(sourceState, destState, destQueue):
-   # if sourceState.pauseLoops == True:
-    message = {'messageType': 'pause',
-                'pauseLoops': sourceState.pauseLoops}
-    destQueue.put(message)
+    destQueue.put({'messageType': 'pause',
+                'pauseLoops': sourceState.pauseLoops})
+
             
         
