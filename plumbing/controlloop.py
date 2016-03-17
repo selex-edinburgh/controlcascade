@@ -5,10 +5,7 @@ import sys
 import traceback
 
 class ControlLoop(threading.Thread):
-    """ 
-        A thread class that 
-    """
-   
+
     def __init__ (self, stateData, loopFunction, minPeriod, maxPeriod, name="Unnamed Loop"):
         super(ControlLoop,self).__init__()
 
@@ -59,8 +56,7 @@ class ControlLoop(threading.Thread):
                     traceback.print_exc()
                 self.stateData.writer_release()
                 self.stateData.notify()
-            
-
+           
     def connectTo(self,destLoop,trFn):
         obsTr = ControlObserverTranslator(destLoop, trFn)
         self.stateData.attach(obsTr)

@@ -68,9 +68,13 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
     
+    f = open('motorCommands.txt', 'a')
+
     
+    f.write("\n Forward command: %s" % state.currentFwd)
+    f.write("\n Turn command: %s" % state.currentTurn)
     
-    
+    f.close()
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   

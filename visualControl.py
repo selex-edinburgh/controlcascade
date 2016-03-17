@@ -25,7 +25,7 @@ MARGIN = 200
 
 pygame.init()
 
-menuData = (
+menu_data = (
     'Main',
     'Add Waypoint',
     'Remove Last Waypoint',
@@ -45,6 +45,8 @@ menuData = (
     'Remove Pole',
     'Quit',
 )
+
+    
 
 class VisualState(ObservableState):
     def __init__(self):
@@ -91,7 +93,7 @@ class VisualState(ObservableState):
         self.realMode = False
   
         self.pauseLoops = False
-        self.menu = NonBlockingPopupMenu(menuData)      # define right-click menu
+        self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
         
     def drawRobot(self, surface):
         if self.scrBuff == None:
@@ -113,7 +115,8 @@ class VisualState(ObservableState):
            
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
         pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)      
-        
+
+
     def drawWaypoints(self, surface):
         for w in self.waypointList:
             pygame.draw.circle(surface,WHITE,(int(w[0] /10), int(self.screenHeight - w[1] /10)), 4,)
@@ -197,8 +200,8 @@ class VisualState(ObservableState):
         else:
             surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 20)))
             
-        cursorPos = pygame.mouse.get_pos()        # cursor position
-        cursorPos = (pos[0], self.screenHeight - pos[1] )
+        pos = pygame.mouse.get_pos()        # cursor position
+        pos = (pos[0], self.screenHeight - pos[1] )
         surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 40))
         if self.pauseLoops:
             surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 60))
