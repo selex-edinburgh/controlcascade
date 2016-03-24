@@ -14,7 +14,7 @@ sys.path.append(os.path.join(progdir,'gamelib'))
 from popup_menu import NonBlockingPopupMenu
 
 BLACK = (  0,   0,   0)     # global constants
-WHITE = (255, 255, 255) 
+WHITE = (255, 255, 255)
 BLUE =  (  147,   179, 208)
 LIGHT_BLUE = (120,135,171)
 GREEN = (  34, 102,   102)
@@ -22,43 +22,31 @@ RED =   (192,   57,   43)
 GREY = (52,73,94)
 TRAIL_GREY = (34,167,240)
 MARGIN = 200
-
+DARK_GREY = (34,49,63)
+ORANGE = (230,126,34)
 pygame.init()
 
 menu_data = (
     'Main',
     'Add Waypoint',
     'Remove Last Waypoint',
-    'Pause Loops',
-    'Resume Loops',
-    (
-        'Things',
-        'Item 0',
-        'Item 1',
-        'Item 2',
-        (
-            'More Things',
-            'Item 0',
-            'Item 1',
-        ),
-    ),
+    'Pause',
+    'Resume',
     'Remove Pole',
     'Quit',
 )
 
-    
-
 class VisualState(ObservableState):
     def __init__(self):
         super(VisualState,self).__init__()
-        
+
         self.screenWidth = 682      # set screen height and width
         self.screenHeight = 720
-        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))       
-        pygame.display.set_caption('\t \t \tVisualiser')       # screen caption       
+        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
+        pygame.display.set_caption('\t \t \tVisualiser')       # screen caption
 
         self.font = pygame.font.SysFont('Avenir Next', 16)        # different fonts used in the program
-        self.fontTitle = pygame.font.SysFont('Avenir Next',22)                 
+        self.fontTitle = pygame.font.SysFont('Avenir Next',22)
         self.image = pygame.image.load('images/robot.png')       # robot image
         self.imageCompass = pygame.image.load('images/compass.png')
         self.imageCompass.convert()
@@ -69,32 +57,34 @@ class VisualState(ObservableState):
         self.barrierList= []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
-        self.waypoint = (0,0)       # list of waypoints       
+        self.waypoint = (0,0)       # list of waypoints
         self.robotPos = (0,0)       # current position of robot
         self.robotAngle = 0     # current angle of robot
-        self.targetPos = (0,0)      # next waypoint      
-        self.prevWaypoint = (0,0)       # previous waypoints   
+        self.targetPos = (0,0)      # next waypoint
+        self.prevWaypoint = (0,0)       # previous waypoints
         self.waypointList = []
-        self.scrBuff = None        
+        self.scrBuff = None
         self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
-        self.isCollision = False    # bool to check if pole in collision range  
-        self.nearWaypoint = False     # bool to check if near waypoint      
+        self.isCollision = False    # bool to check if pole in collision range
+        self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
         self.rcFwd = 0      #information panel data for motors
-        self.rcTurn = 0        
+        self.rcTurn = 0
         self.leftReading = 0        #information panel data for odometers
-        self.rightReading = 0     
+        self.rightReading = 0
         self.maxLatency = 0       #information panel data for control loops
         self.minLatency = 0
         self.averageLatency = 0
         self.lengthOfBatch = 0
         self.varianceOfLatency = 0
-        
+
         self.realMode = False
-  
-        self.pauseLoops = False
+
+        self.pauseLoops = True      # initialized to true to pause at beginning
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
-        
+
+        self.eventPress = 0
+
     def drawRobot(self, surface):
         if self.scrBuff == None:
                 self.scrBuff = surface.copy()
@@ -102,154 +92,164 @@ class VisualState(ObservableState):
         loc = self.image.get_rect().center
         rotImg = pygame.transform.rotate(self.image, 90.0 - self.robotAngle)
         rotImg.get_rect().center = loc
-        
+
         surface.blit(rotImg, ((self.robotPos[0] ) - rotImg.get_rect().width/2.0,
                               self.robotPos[1] - rotImg.get_rect().height/2.0))
-        
-        if self.isCollision == False: 
+
+        if self.isCollision == False:
             pygame.draw.lines(surface, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
         else:
             pygame.draw.lines(surface, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
 
     def drawPath(self,surface):
-           
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
-        pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)      
+        pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)
 
 
     def drawWaypoints(self, surface):
         for w in self.waypointList:
             pygame.draw.circle(surface,WHITE,(int(w[0] /10), int(self.screenHeight - w[1] /10)), 4,)
             pygame.draw.circle(surface,BLACK,(int(w[0] /10), int(self.screenHeight - w[1] /10)),4,2)
+
     def checkForCollision(self):
         self.poleRecList = []
         for p in self.poleList:
             poleRec = pygame.Rect(p[0] - 10, (self.screenHeight - p[1] ) - 10 , 20,20)
             self.poleRecList.append(poleRec)
 
-        chariotRec = pygame.Rect((self.robotPos[0] - 5, (self.screenHeight - self.robotPos[1])+ 5), (65,65)) 
+        chariotRec = pygame.Rect((self.robotPos[0] - 5, (self.screenHeight - self.robotPos[1])+ 5), (65,65))
 
         for r in self.poleRecList:
             if chariotRec.colliderect(r):
                 pass
 
+
     def drawObstacles(self,surface):
         for wall in self.wallList:      # draw the walls on the screen
             self.wall = (wall[0], self.screenHeight - wall[1],  wall[2], self.screenHeight - wall[3])
             pygame.draw.line(surface, BLACK, (self.wall[0], self.wall[1]), (self.wall[2], self.wall[3]), 4 )
-            
+
         for pole in self.poleList:      # draw poles on the screen
             self.pole = ( pole[0], self.screenHeight - pole[1])
-            pygame.draw.circle(surface,BLUE,self.pole, 10,)
-            pygame.draw.circle(surface,BLACK,self.pole, 10, 2)
-            
+            pygame.draw.circle(surface,BLUE,self.pole, 3,)
+            pygame.draw.circle(surface,BLACK,self.pole, 3, 2)
+
         for goal in self.goalList:
             self.goal = (goal[0], self.screenHeight - goal[1], goal[2], self.screenHeight - goal[3])
             pygame.draw.line(surface,BLACK,(self.goal[0],self.goal[1]),(self.goal[2],self.goal[3]), 4)
-        
+
         for barrier in self.barrierList:
             self.barrier = (barrier[0], self.screenHeight - barrier[1], barrier[2], self.screenHeight - barrier[3])
-            pygame.draw.line(surface,BLACK,(self.barrier[0],self.barrier[1]),(self.barrier[2], self.barrier[3]), 3)
+            pygame.draw.line(surface,BLACK,(self.barrier[0],self.barrier[1]),(self.barrier[2], self.barrier[3]), 2)
         for ball in self.ballList:
             self.ball = (ball[0], self.screenHeight - ball[1])
-            pygame.draw.circle(surface,WHITE,self.ball, 7)
-        
+            pygame.draw.circle(surface,ORANGE,self.ball, 7)
+
+        pygame.draw.polygon(surface,BLACK,((480,0),(442,0),(480,40)),0)     # corner of course
+        pygame.draw.polygon(surface,BLACK,((0,0),(42,0),(0,40)),0)       # corner of course
+    def drawExtras(self,surface):
         pygame.draw.line(surface,WHITE, (5, 500), (5, self.screenHeight -5), 2)      # draw y axis
         surface.blit(self.font.render(("  North"), True, WHITE), (10,500))
         surface.blit(self.fontTitle.render(("Y"), True, WHITE), (10,600))
-        
+
         pygame.draw.line(surface,WHITE, (5, self.screenHeight - 5 ), (100, self.screenHeight- 5), 2)      # draw x axis
-        surface.blit(self.font.render(("East"), True, WHITE), (80,(self.screenHeight - 22))) 
-        surface.blit(self.fontTitle.render(("X"), True, WHITE), (50,(self.screenHeight - 22))) 
-        
+        surface.blit(self.font.render(("East"), True, WHITE), (80,(self.screenHeight - 22)))
+        surface.blit(self.fontTitle.render(("X"), True, WHITE), (50,(self.screenHeight - 22)))
+
         origin = pygame.Rect(-5,self.screenHeight - 25, 40,40)
         pygame.draw.arc(surface, WHITE, origin, 0,2.2, 4)
-        
-        
+
+    def distToPoint(self):
+        a = (self.robotPos)
+        b = (self.targetPos)
+        return int(math.hypot(b[0] - a[0], b[1] - a[1]))        # find distance between the two points
+
     def drawInfoPanel(self,surface):
- 
         surface.blit(self.fontTitle.render(("Robot Position"), True, WHITE), (505,(self.screenHeight -710)))     # robotPos information panel
         surface.blit(self.font.render(("X,Y (mm):  ({0},{1})".format(int(self.robotPos[0]), self.screenHeight - int(self.robotPos[1]))), True, WHITE), (505,self.screenHeight - 675))
-        surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))  
-            
+        surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))
+
         surface.blit(self.fontTitle.render(("Route"), True, WHITE), (505,(self.screenHeight -600)))     # latency information panel
-        surface.blit(self.font.render(("Current Waypoint:  ({0},{1})".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, WHITE), (505,self.screenHeight -565))
-        surface.blit(self.font.render(("No. Of Waypoints:  {0}".format(len(self.waypointList) -1)), True, WHITE), (505,self.screenHeight -545))
-        surface.blit(self.font.render(("Near Target:            %s" % (self.nearWaypoint)), True, WHITE), (505,self.screenHeight -525))
-        
+        surface.blit(self.font.render(("Next Waypoint:  ({0},{1})".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, WHITE), (505,self.screenHeight -565))
+        surface.blit(self.font.render(("No. of Waypoints:  {0}".format(len(self.waypointList) -1)), True, WHITE), (505,self.screenHeight -545))
+        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint)), True, WHITE), (505,self.screenHeight -525))
+        surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,self.screenHeight -505))
+
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(self.screenHeight -475)))     # collision information panel
         surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(self.screenHeight -440)))
         """
         surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(self.screenHeight -390)))     # motor information panel
         surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(self.screenHeight -355)))
         surface.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, WHITE), (505,(self.screenHeight -335)))
-        
+
         surface.blit(self.fontTitle.render(("Odometer"), True, WHITE), (505,(self.screenHeight -285)))     # odometer information panel
         surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, WHITE), (505,(self.screenHeight -240)))
         surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, WHITE), (505,(self.screenHeight -220)))   # update the screen
-        
-        surface.blit(self.fontTitle.render(("Timing"), True, WHITE), (505,(self.screenHeight -180)))     # latency information panel
-        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,self.screenHeight -135))
-        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,self.screenHeight -115))
-        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,self.screenHeight -95))
-        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, WHITE), (505,self.screenHeight -75))
-        surface.blit(self.font.render(("Variance:       {0:.3f}".format(self.varianceOfLatency)), True, WHITE), (505,self.screenHeight -55))
         """
-        if self.realMode:
-            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(565,(self.screenHeight - 20)))
+        surface.blit(self.fontTitle.render(("Timing"), True, WHITE), (505,(self.screenHeight -390)))     # latency information panel
+        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,self.screenHeight - 355))
+        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,self.screenHeight -335))
+        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,self.screenHeight -315))
+        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, WHITE), (505,self.screenHeight -295))
+        surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, WHITE), (505,self.screenHeight -275))
+
+        if self.pauseLoops:
+            surface.blit(self.font.render(("On Route..."), True, DARK_GREY), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 40))
         else:
-            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 20)))
-            
+            surface.blit(self.font.render(("Paused..."), True, DARK_GREY), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("On Route"), True, WHITE), (555, self.screenHeight - 20))
+
+
         pos = pygame.mouse.get_pos()        # cursor position
         pos = (pos[0], self.screenHeight - pos[1] )
-        surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 40))
-        if self.pauseLoops:
-            surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 60))
-            
+        surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 200))
+
+        if self.realMode:
+            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
+            surface.blit(self.font.render(("Simulated mode"), True, DARK_GREY),(555,(self.screenHeight - 120)))
+        else:
+            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 120)))
+            surface.blit(self.font.render(("Non-Simulated mode"), True, DARK_GREY),(555,(self.screenHeight - 100)))
+
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
-    
+
     if e.name is None:
         print 'Hide menu'
         state.menu.hide()
     elif e.name == 'Main':
-        print e.originalEvent.pos
         if e.text == 'Quit':
-            pygame.quit()  
-        if e.text == 'Pause Loops':
+            pygame.quit()
+        if e.text == 'Pause':
             state.pauseLoops = True
-        if e.text == 'Resume Loops':
+        if e.text == 'Resume':
             state.pauseLoops = False
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
-            
         if e.text == 'Remove Pole':
-            pressPosition = (e.originalEvent.pos[0], e.originalEvent.pos[1])
-            print pressPosition
             for index, r in enumerate(state.poleRecList, start = 0):
-                if r.collidepoint(pressPosition):
+                if r.collidepoint(state.eventPress):
                     state.poleList.pop(index)
                     state.poleRecList.pop(index)
     elif e.name == 'Things':
         pass
     elif e.name == 'More Things':
         pass
-     
+
 def visualControlUpdate(state,batchdata):
-    
     state.removeLastWP = False
-    
     screenAreaTop = pygame.Rect(0,0,480,480)        # assign different areas of the screen for drawing (colours)
     screenAreaBottom = pygame.Rect(120,480, 240,240)
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
-        
+
     try:
         if state.targetPos == state.waypointList[-1]:
             state.pauseLoops = True
     except:
         print "error"
-        
+
     for e in state.menu.handle_events(pygame.event.get()):
         if e.type == pygame.QUIT:
             pygame.quit()       # quit the screen
@@ -262,6 +262,7 @@ def visualControlUpdate(state,batchdata):
                 state.waypoint = pressPosition      # create new waypoint from press
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
+            state.eventPress = (e.pos[0], e.pos[1])
         elif e.type == USEREVENT:
             if e.code == 'MENU':
                 handle_menu(e, state)
@@ -272,17 +273,19 @@ def visualControlUpdate(state,batchdata):
     state.screen.fill(GREY, screenOutOfBounds1)         # fill the screen with colour
     state.screen.fill(GREY, screenOutOfBounds2)         # fill the screen with colour
 
-    try:
-        state.drawRobot(state.screen)       # draw the Robot to the screen
-        state.drawObstacles(state.screen)   # draw the obstacles to the screen
-        state.drawInfoPanel(state.screen )  # draw the information panel to the screen
-        state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
-        state.drawWaypoints(state.screen)
-        state.checkForCollision()       # check for possible collision
-        state.menu.draw()     # menu draw *test*
-        pygame.display.update()      # update the screen
-    except:
-        print "error"
+#    try:
+    state.drawRobot(state.screen)       # draw the Robot to the screen
+    state.drawObstacles(state.screen)   # draw the obstacles to the screen
+    state.drawInfoPanel(state.screen )  # draw the information panel to the screen
+    state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
+    state.drawWaypoints(state.screen)
+    state.drawExtras(state.screen)      # draw the extra misc. information
+    state.checkForCollision()       # check for possible collision
+    state.menu.draw()     # menu draw *test*
+    pygame.display.update()      # update the screen
+#    except:
+#        print "error"
+
     for item in batchdata:      # process data from batchdata
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
@@ -291,49 +294,49 @@ def visualControlUpdate(state,batchdata):
             state.nearWaypoint = (item['nearWaypoint'])
             state.robotPos = (currentPos[0]/10.0, state.screenHeight -currentPos[1]/10.0)
             state.robotAngle = currentAngle
-            state.targetPos = (goalPos[0]/10.0, state.screenHeight - goalPos[1]/10.0) 
-            
+            state.targetPos = (goalPos[0]/10.0, state.screenHeight - goalPos[1]/10.0)
+
         elif item['messageType'] == 'obstacle':
-            state.barrierList = (item['barrierList'])        
+            state.barrierList = (item['barrierList'])
             state.poleList = (item['poleList'])
             state.wallList = (item['wallList'])
             state.barrelList = (item['barrelList'])
             state.rampList = (item['rampList'])
             state.doorList = (item['doorList'])
             state.goalList = (item['goalList'])
-            state.ballList = (item['ballList'])  
-            
+            state.ballList = (item['ballList'])
+
         elif item['messageType'] == 'stats':
-            state.max = (item['max'])
-            state.min = (item['min'])
-            state.average = (item['average'])
-            state.length = (item['length'])
-            state.variance = (item['variance'])  
-            
+            state.maxLatency = (item['max'])
+            state.minLatency = (item['min'])
+            state.averageLatency = (item['average'])
+            state.lengthOfBatch = (item['length'])
+            state.varianceOfLatency = (item['variance'])
         elif item['messageType'] == 'scan':
             state.scanCone = (item['scanCone'])
-            state.isCollision = (item['collision'])  
-            
+            state.isCollision = (item['collision'])
+
         elif item['messageType'] == 'control':
             state.rcFwd = abs((item['rcFwd']*127.0  ))
             state.rcTurn = abs((item['rcTurn']*127.0 ))
-            
+
         elif item['messageType'] == 'odo':
             state.leftReading = (item['leftReading'])
             state.rightReading = (item['rightReading'])
             state.realMode = (item['mode'])
-            
+
     if len(batchdata) == 0: return
+
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
 
     sourceState.waypointList = destState.waypoints
     if sourceState.removeLastWP:
         destState.waypoints.pop()
-        
-    a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))         
+
+    a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))
     b = sourceState.targetPos[0], sourceState.targetPos[1]
-    if destState.nearWaypoint and b == a:       # pause if at last waypoint   
+    if destState.nearWaypoint and b == a:       # pause if at last waypoint
         sourceState.pauseLoops = True
 
     if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
@@ -348,5 +351,3 @@ def visualToAppManager(sourceState, destState, destQueue):
     message = {'messageType': 'pause',
                 'pauseLoops': sourceState.pauseLoops}
     destQueue.put(message)
-            
-        

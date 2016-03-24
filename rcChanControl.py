@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import math
+import os
 import threading
 try:
     import serial
@@ -9,76 +10,79 @@ except:
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
+try:        # delete log file
+    os.remove('motorCommands.txt')
+except OSError:
+    pass
+
+
 class RcChanState(ObservableState):
-    def __init__(self, limitChange, speedLimit):
+    def __init__(self, lrChange, fwdbkChange, speedScaling):
         super(RcChanState,self).__init__()
         self.currentTurn = 127
         self.currentFwd = 127
         self.demandTurn = 127
         self.demandFwd = 127
-        self._limitChange = limitChange #80
+        self.speedScaling = speedScaling
+        self._lrChange = lrChange * speedScaling
+        self._fwdbkChange = fwdbkChange * speedScaling
         self.timeStamp    = time.time()
-        self.minClip = 127 - speedLimit
-        self.maxClip = 127 + speedLimit
-        
+        f = open('motorCommands.txt', 'a')
         self.timeStampFlow["control"] = time.time()
-
         try:
-            self.ser= serial.Serial(            #Set up Serial Interface    
-            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
-            baudrate=9600,                      #bits/sec      
-            bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
-            timeout=1                           #1 sec       
+            self.ser= serial.Serial(            #Set up Serial Interface
+            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6
+            baudrate=9600,                      #bits/sec
+            bytesize=8, parity='N', stopbits=1, #8-N-1  protocol
+            timeout=1                           #1 sec
             )
         except:
             print "Serial not connected..."
 
     def clip(self, x):
-        return min(self.maxClip,max(self.minClip,x))
-        
+        return min(254,max(1,x))
+
 def simMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, False)
 
 def realMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, True)
-    
-def rcChanControlUpdate(state,batchdata, motorOutput): 
+
+def rcChanControlUpdate(state,batchdata, motorOutput):
     for item in batchdata:      # process items in batchdata
-    
+
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
             pass
-            
+
         if item['messageType'] == 'control':
             if motorOutput:
-                state.demandTurn = state.clip(item['demandTurn'] * 127 + 127)   ## expects anti clockwise
-                state.demandFwd  = state.clip(-item['demandFwd'] * 127 + 127)   ## inserted minus
+                state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * 127 + 127)   ## expects anti clockwise
+                state.demandFwd  = state.clip(-item['demandFwd'] * state.speedScaling *127 + 127)   ## inserted minus
             else:
-                state.demandTurn = state.clip(-item['demandTurn'] * 127 + 127)  ## expects anti clockwise
-                state.demandFwd  = state.clip(item['demandFwd'] * 127 + 127)    ## inserted minus  
-                
+                state.demandTurn = state.clip(-item['demandTurn'] * state.speedScaling * 127 + 127)  ## expects anti clockwise
+                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * 127 + 127)    ## inserted minus
+
         elif item['messageType'] == 'sense':
             pass
-            
+
     if not batchdata:       # if no messages (loops paused) set the speed to stationary
         state.demandFwd = 127
         state.demandTurn = 127
-        
-        
-    state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
-    state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
-    
+
+
+    state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._lrChange )
+    state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange )
+
     f = open('motorCommands.txt', 'a')
 
-    
-    f.write("\n Forward command: %s" % state.currentFwd)
-    f.write("\n Turn command: %s" % state.currentTurn)
-    
-    f.close()
+    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
+
+#    f.close()
     if motorOutput:
-        state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
-    
+        state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board
+        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board
+
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
     if diff == 0: return startX
@@ -91,4 +95,3 @@ def rcChanToVsimTranslator( sourceState, destState, destQueue ):
                    'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
                    'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})
-
