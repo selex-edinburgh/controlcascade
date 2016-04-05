@@ -9,7 +9,8 @@
 #define PIN_LOW 0
 #define TICK 0.00001
 
-int detect_overflow(reading) {
+int detect_overflow(reading)
+{
 	reading = reading >> 6;
 	if (reading < 0)
 	{
@@ -22,7 +23,8 @@ int detect_overflow(reading) {
 	return reading;
 }
 
-int read_raw_val() {
+int read_raw_val()
+{
 	int a = 0;
 	int output = 0;
 	int readbit = 0;
@@ -35,7 +37,8 @@ int read_raw_val() {
 	time_sleep(TICK);
 	gpioWrite(CLOCK_PIN, PIN_LOW);
 	time_sleep(TICK);
-	while (a < 32) {
+	while (a < 32)
+	{
 		gpioWrite(CLOCK_PIN, PIN_HIGH);
 		time_sleep(TICK);
 		readbit = gpioRead(DATA_PIN);
@@ -58,11 +61,13 @@ int main(int argc, char *argv[])
       		fprintf(stderr, "pigpio initialisation failed\n");
       		return 1;
    	}
+
 	gpioSetMode(CHIP_SELECT_PIN, PI_OUTPUT);
    	gpioSetMode(DATA_PIN, PI_INPUT);
 	gpioSetMode(CLOCK_PIN, PI_OUTPUT);
 
-	while (1) {
+	while (1)
+	{
 		rawval = read_raw_val();
 		left = (rawval >> 16) & 0x0000ffff;
 		detect_overflow(left);
