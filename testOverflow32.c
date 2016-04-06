@@ -1,30 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <pigpio.h>
-#include <math.h>
-
-#define DATA_PIN 22
-#define CHIP_SELECT_PIN 17
-#define CLOCK_PIN 18
-#define PIN_HIGH 1
-#define PIN_LOW 0
-#define TICK 0.00001
-#define ROLLOVER_RANGE 1024
-
-int bit_reverse(reading)
-{
-	const uint16_t mask0 = 0x5555;
-	const uint16_t mask1 = 0x3333;
-	const uint16_t mask2 = 0x0F0F;
-	const uint16_t mask3 = 0x00FF;
-
-	reading = (((~mask0) & reading) >> 1) | ((mask0 & reading) << 1);
-	reading = (((~mask1) & reading) >> 2) | ((mask1 & reading) << 2);
-	reading = (((~mask2) & reading) >> 4) | ((mask2 & reading) << 4);
-	reading = (((~mask3) & reading) >> 8) | ((mask3 & reading) << 8);
-
-	return reading;
-}
+#include "pigpio.h"
 
 int check_rollover(rollover_count, total_pulse, prev_pulse, reading)
 {
@@ -36,6 +10,22 @@ int check_rollover(rollover_count, total_pulse, prev_pulse, reading)
 		total_pulse = reading + rollover_count * ROLLOVER_RANGE;
 	};
 	return total_pulse;
+}
+
+int get_decimal(int binary_number)
+{
+	long int decimal_number = 0;
+	int j = 1;
+	int remainder;
+
+	while (binary_number != 0)
+	{
+		remainder = binary_number % 10;
+		decimal_number = decimal_number + remainder * j;
+		j = j * 2;
+		binary_number = binary_number/10;
+	}
+	return decimal_number;
 }
 
 int read_raw_val()
@@ -52,7 +42,7 @@ int read_raw_val()
 	time_sleep(TICK);
 	gpioWrite(CLOCK_PIN, PIN_LOW);
 	time_sleep(TICK);
-	while (a < 32)
+	while (a < 34)
 	{
 		gpioWrite(CLOCK_PIN, PIN_HIGH);
 		time_sleep(TICK);
@@ -64,11 +54,14 @@ int read_raw_val()
 	};
 	return output;
 }
+
 int main(int argc, char *argv[])
 {
-	uint32_t rawval;
-	uint16_t left;
-	uint16_t right;
+	uint32_t rawdata;
+	uint16_t packet0;
+	uint16_t packet1;
+	int data0;
+	int data1;
 	int rollover_count = 0;
 	int total_pulse = 0;
 	int prev_pulse;
@@ -76,7 +69,6 @@ int main(int argc, char *argv[])
 	int total_pulseR;
 	int prev_pulseL;
 	int prev_pulseR;
-	double start = time_time();
 
 	if (gpioInitialise() < 0)
    	{
@@ -92,15 +84,23 @@ int main(int argc, char *argv[])
 	{
 		prev_pulseL = total_pulseL;
 		prev_pulseR = total_pulseR;
-		rawval = read_raw_val();
-		left = (rawval >> 16) & 0x0000ffff;
-		total_pulseL = check_rollover(rollover_count, total_pulseL, prev_pulseL, left);
-		right = rawval & 0x0000ffff;
-		bit_reverse(right);
-		total_pulseR = check_rollover(rollover_count, total_pulseR, prev_pulseR, right);
-		printf("read: %d \n",  rawval);
-		printf("raw rotation left: %d \n", (left));
-		printf("raw rotation right: %d \n", (right));
+
+		rawdata = read_raw_val();
+
+		packet0 = ((rawdata >> 17) & 0x0000ffff) >> 7;
+		packet1 = ((rawdata & 0x0000ffff) >> 7);
+
+		data0 = get_decimal(packet0);
+		data1 = get_decimal(packet1);
+
+		total_pulseL = check_rollover(rollover_count, total_pulseL, prev_pulseL, data0);
+		total_pulseR = check_rollover(rollover_count, total_pulseR, prev_pulseR, data1);
+
+//-----------------------------------READY TO SEND TO PIPE FOR PYTHON--------------------------------------
+
+		printf("read: %d \n",  rawdata);
+		printf("raw rotation left: %d \n", (data0));
+		printf("raw rotation right: %d \n", ~(data1));
 		printf("pulseL: %d \n",(total_pulseL));
 		printf("pulseR: %d \n",(total_pulseR));
 		time_sleep(1);

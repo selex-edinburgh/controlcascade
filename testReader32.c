@@ -9,19 +9,6 @@
 #define PIN_LOW 0
 #define TICK 0.00001
 
-int detect_overflow(reading) {
-	reading = reading >> 6;
-	if (reading < 0)
-	{
-		reading = reading + 1025;
-	}
-	else if(reading > 1024)
-	{
-		reading = reading - 1025;
-	}
-	return reading;
-}
-
 int read_raw_val() {
 	int a = 0;
 	int output = 0;
