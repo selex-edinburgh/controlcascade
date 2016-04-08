@@ -7,9 +7,11 @@
 #include <math.h>
 
 #define DATA_PIN_1 22
-#define DATA_PIN_2 21
-#define CHIP_SELECT_PIN 17
-#define CLOCK_PIN 18
+#define DATA_PIN_2 23
+#define CHIP_SELECT_PIN_1 17
+#define CHIP_SELECT_PIN_2 18
+#define CLOCK_PIN_1 9
+#define CLOCK_PIN_2 25
 #define PIN_HIGH 1
 #define PIN_LOW 0
 #define TICK 0.00001

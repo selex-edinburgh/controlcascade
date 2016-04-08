@@ -14,16 +14,21 @@ int* read_raw_val() {
 	int readbit1;
 	static int data[2];
 
-	gpioWrite(CHIP_SELECT_PIN, PIN_HIGH);
+	gpioWrite(CHIP_SELECT_PIN_1, PIN_HIGH);
+	gpioWrite(CHIP_SELECT_PIN_2, PIN_HIGH);
 	time_sleep(TICK);
-	gpioWrite(CLOCK_PIN, PIN_HIGH);
+	gpioWrite(CLOCK_PIN_1, PIN_HIGH);
+	gpioWrite(CLOCK_PIN_2, PIN_HIGH);
 	time_sleep(TICK);
-	gpioWrite(CHIP_SELECT_PIN, PIN_LOW);
+	gpioWrite(CHIP_SELECT_PIN_1, PIN_LOW);
+	gpioWrite(CHIP_SELECT_PIN_2, PIN_LOW);
 	time_sleep(TICK);
-	gpioWrite(CLOCK_PIN, PIN_LOW);
+	gpioWrite(CLOCK_PIN_1, PIN_LOW);
+	gpioWrite(CLOCK_PIN_2, PIN_LOW);
 	time_sleep(TICK);
 	while (a < (READING_BIT_LENGTH + READING_LOW_BIT)) {
-		gpioWrite(CLOCK_PIN, PIN_HIGH);
+		gpioWrite(CLOCK_PIN_1, PIN_HIGH);
+		gpioWrite(CLOCK_PIN_2, PIN_HIGH);
 		time_sleep(TICK);
 
 		readbit0 = gpioRead(DATA_PIN_1);
@@ -32,7 +37,8 @@ int* read_raw_val() {
 		packets[0] = ((packets[0] << 1) + readbit0);
 		packets[1] = ((packets[1] << 1) + readbit1);
 
-		gpioWrite(CLOCK_PIN, PIN_LOW);
+		gpioWrite(CLOCK_PIN_1, PIN_LOW);
+		gpioWrite(CLOCK_PIN_2, PIN_LOW);
 		time_sleep(TICK);
 		a += 1;
 	};
@@ -51,10 +57,12 @@ int main(int argc, char *argv[])
       		fprintf(stderr, "pigpio initialisation failed\n");
       		return 1;
    	}
-	gpioSetMode(CHIP_SELECT_PIN, PI_OUTPUT);
+	gpioSetMode(CHIP_SELECT_PIN_1, PI_OUTPUT);
+	gpioSetMode(CHIP_SELECT_PIN_2, PI_OUTPUT);
    	gpioSetMode(DATA_PIN_1, PI_INPUT);
    	gpioSetMode(DATA_PIN_2, PI_INPUT);
-	gpioSetMode(CLOCK_PIN, PI_OUTPUT);
+	gpioSetMode(CLOCK_PIN_1, PI_OUTPUT);
+	gpioSetMode(CLOCK_PIN_2, PI_OUTPUT);
 
 	while (1) {
 		int* data = read_raw_val();
