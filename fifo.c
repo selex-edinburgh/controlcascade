@@ -2,16 +2,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <time.h>
 
 int main (void)
 {
+
+	//Array to send
+	int arr[] = {2,4,5,6};
+	int len = 4;
+
 	//Create FIFO
-	char filename[] = "fifoY.tmp";
-	struct timespec ts;
-        struct timespec ts2;
-	ts.tv_sec = 1;
-	ts.tv_nsec = 0;
+	char filename[] = "fifo.tmp";
+
 	int s_fifo = mkfifo(filename, S_IRWXU);
 	if (s_fifo != 0)
 	{
@@ -26,23 +27,18 @@ int main (void)
 		return -1;
 	}
 
-	for (int many = 0; many<1000000; many+=10000)
+	// Write to FIFO
+	for (int i=0; i<len; i++)
 	{
-           int n;
-	   for ( n = 0; n <10000; n++) {
-		int s_write = fprintf(wfd, "%d\n", many+n);
+		int s_write = fprintf(wfd, "%d ", arr[i]);
+
 		if (s_write < 0)
 		{
 			printf("fprintf() error: %d\n", s_write);
 			break;
 		}
-           }
-   	   printf("%d\n", many);
-           fflush(wfd);
-
-   	   nanosleep(&ts,&ts2);
-	   //sleep(1);
 	}
+
 	// Close and delete FIFO
 	fclose(wfd);
 	unlink(filename);
