@@ -30,7 +30,8 @@ class RouteState(ObservableState):
         (1310.0,1110.0),                              
         (2140.0,1030.0),                        
         (2300.0,220.0)]
-            """       
+            """ 
+        
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
         self.nearWaypoint = False

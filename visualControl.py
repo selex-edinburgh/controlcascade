@@ -2,15 +2,18 @@ import pygame
 import math
 import sys
 import os
-from gamelib import *
-from  pygame import gfxdraw
+import subprocess
+
+from lib import *
+from pygame import gfxdraw
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 from pygame.locals import *
 
+
 progname = sys.argv[0]      # lib import for right-click menu
 progdir = os.path.dirname(progname)
-sys.path.append(os.path.join(progdir,'gamelib'))
+sys.path.append(os.path.join(progdir,'lib'))
 from popup_menu import NonBlockingPopupMenu
 
 BLACK = (  0,   0,   0)     # global constants
@@ -33,6 +36,8 @@ menu_data = (
     'Pause',
     'Resume',
     'Remove Pole',
+    'Timing Graph',
+    'Motor Graph',
     'Quit',
 )
 
@@ -122,8 +127,7 @@ class VisualState(ObservableState):
         for r in self.poleRecList:
             if chariotRec.colliderect(r):
                 pass
-
-
+                
     def drawObstacles(self,surface):
         for wall in self.wallList:      # draw the walls on the screen
             self.wall = (wall[0], self.screenHeight - wall[1],  wall[2], self.screenHeight - wall[3])
@@ -131,8 +135,8 @@ class VisualState(ObservableState):
 
         for pole in self.poleList:      # draw poles on the screen
             self.pole = ( pole[0], self.screenHeight - pole[1])
-            pygame.draw.circle(surface,BLUE,self.pole, 3,)
-            pygame.draw.circle(surface,BLACK,self.pole, 3, 2)
+            pygame.draw.circle(surface,BLUE,self.pole, 5,)
+            pygame.draw.circle(surface,BLACK,self.pole, 5, 2)
 
         for goal in self.goalList:
             self.goal = (goal[0], self.screenHeight - goal[1], goal[2], self.screenHeight - goal[3])
@@ -144,9 +148,11 @@ class VisualState(ObservableState):
         for ball in self.ballList:
             self.ball = (ball[0], self.screenHeight - ball[1])
             pygame.draw.circle(surface,ORANGE,self.ball, 7)
-
+            pygame.draw.circle(surface,BLACK,self.ball, 7, 1)
+            
         pygame.draw.polygon(surface,BLACK,((480,0),(442,0),(480,40)),0)     # corner of course
         pygame.draw.polygon(surface,BLACK,((0,0),(42,0),(0,40)),0)       # corner of course
+        
     def drawExtras(self,surface):
         pygame.draw.line(surface,WHITE, (5, 500), (5, self.screenHeight -5), 2)      # draw y axis
         surface.blit(self.font.render(("  North"), True, WHITE), (10,500))
@@ -157,8 +163,11 @@ class VisualState(ObservableState):
         surface.blit(self.fontTitle.render(("X"), True, WHITE), (50,(self.screenHeight - 22)))
 
         origin = pygame.Rect(-5,self.screenHeight - 25, 40,40)
-        pygame.draw.arc(surface, WHITE, origin, 0,2.2, 4)
-
+        pygame.draw.arc(surface, WHITE, origin, 0,2.2, 4)       # draw origin
+    
+        pygame.draw.line(surface,WHITE, (480, self.screenHeight - 0 ), (480, self.screenHeight- 10), 4) 
+        pygame.draw.line(surface,WHITE, (0, self.screenHeight - 710 ), (10, self.screenHeight- 710), 4) 
+        
     def distToPoint(self):
         a = (self.robotPos)
         b = (self.targetPos)
@@ -186,31 +195,30 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, WHITE), (505,(self.screenHeight -240)))
         surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, WHITE), (505,(self.screenHeight -220)))   # update the screen
         """
-        surface.blit(self.fontTitle.render(("Timing"), True, WHITE), (505,(self.screenHeight -390)))     # latency information panel
+        surface.blit(self.fontTitle.render(("Main Loop Timing"), True, WHITE), (505,(self.screenHeight -390)))     # latency information panel
         surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,self.screenHeight - 355))
         surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,self.screenHeight -335))
         surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,self.screenHeight -315))
-        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, WHITE), (505,self.screenHeight -295))
-        surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, WHITE), (505,self.screenHeight -275))
+        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, BLUE), (505,self.screenHeight -295))
+        surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,self.screenHeight -275))
 
         if self.pauseLoops:
-            surface.blit(self.font.render(("On Route..."), True, DARK_GREY), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("On Route..."), True, BLUE), (555, self.screenHeight - 20))
             surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 40))
         else:
-            surface.blit(self.font.render(("Paused..."), True, DARK_GREY), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Paused..."), True, BLUE), (555, self.screenHeight - 40))
             surface.blit(self.font.render(("On Route"), True, WHITE), (555, self.screenHeight - 20))
-
 
         pos = pygame.mouse.get_pos()        # cursor position
         pos = (pos[0], self.screenHeight - pos[1] )
-        surface.blit(self.font.render(("Cursor pos:  {0}".format(pos)),True, WHITE), (555, self.screenHeight - 200))
-
+        surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, self.screenHeight - 150))
+        surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, self.screenHeight - 130))
         if self.realMode:
             surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
-            surface.blit(self.font.render(("Simulated mode"), True, DARK_GREY),(555,(self.screenHeight - 120)))
+            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 120)))
         else:
             surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 120)))
-            surface.blit(self.font.render(("Non-Simulated mode"), True, DARK_GREY),(555,(self.screenHeight - 100)))
+            surface.blit(self.font.render(("Non-Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
@@ -232,9 +240,22 @@ def handle_menu(e, state):
                 if r.collidepoint(state.eventPress):
                     state.poleList.pop(index)
                     state.poleRecList.pop(index)
-    elif e.name == 'Things':
-        pass
+        if e.text == 'Motor Graph':
+            subprocess.Popen(['sh', 'runMotorGraphPy.sh'])
+            print "motorororooro"
+        if e.text == 'Timing Graph':
+            subprocess.Popen(['sh', 'runStatsGraphPy.sh'])
+            print "motorororooro"
+            
+    elif e.name == 'Graphs':
+        if e.text == 'Motor Graph':
+            os.system('py motorGraph.py')
+            print "motorororooro"
+        if e.text == 'Timing Graph':
+            os.system('statsGraph.py')
+            print "motorororooro"
     elif e.name == 'More Things':
+        
         pass
 
 def visualControlUpdate(state,batchdata):
@@ -273,7 +294,6 @@ def visualControlUpdate(state,batchdata):
     state.screen.fill(GREY, screenOutOfBounds1)         # fill the screen with colour
     state.screen.fill(GREY, screenOutOfBounds2)         # fill the screen with colour
 
-#    try:
     state.drawRobot(state.screen)       # draw the Robot to the screen
     state.drawObstacles(state.screen)   # draw the obstacles to the screen
     state.drawInfoPanel(state.screen )  # draw the information panel to the screen
@@ -283,8 +303,6 @@ def visualControlUpdate(state,batchdata):
     state.checkForCollision()       # check for possible collision
     state.menu.draw()     # menu draw *test*
     pygame.display.update()      # update the screen
-#    except:
-#        print "error"
 
     for item in batchdata:      # process data from batchdata
         if item['messageType'] == 'robot':

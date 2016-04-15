@@ -11,10 +11,10 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 try:        # delete log file
+    os.rename('motorCommands.txt','log/%s.old' % time.time())
     os.remove('motorCommands.txt')
 except OSError:
-    pass
-
+    print "os fail"
 
 class RcChanState(ObservableState):
     def __init__(self, lrChange, fwdbkChange, speedScaling):
@@ -27,7 +27,7 @@ class RcChanState(ObservableState):
         self._lrChange = lrChange * speedScaling
         self._fwdbkChange = fwdbkChange * speedScaling
         self.timeStamp    = time.time()
-        f = open('motorCommands.txt', 'a')
+        
         self.timeStampFlow["control"] = time.time()
         try:
             self.ser= serial.Serial(            #Set up Serial Interface
@@ -78,7 +78,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
 
     print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
 
-#    f.close()
+    f.close()
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board

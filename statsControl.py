@@ -10,6 +10,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 try:        # delete log file
+    os.rename('loopStats.txt','log/%s.old' %time.time())
     os.remove('loopStats.txt')
 except OSError:
     pass
@@ -23,9 +24,10 @@ class StatsState(ObservableState):
         self.min = 0
         self.length = 0
         self.variance = 0
-
         self.counter = 0
+
 def statsControlUpdate(state, batchdata):
+
     f = open('loopStats.txt','a')
 
     for item in batchdata:
@@ -46,7 +48,7 @@ def statsControlUpdate(state, batchdata):
 
     if state.max < 0.5:
         print >> f, time.time(), ",", state.average,",",state.max,",",state.min
-
+    f.close()
 def toStatsTranslator(sourceState, destState, destQueue):
     timeNow = time.time()
     deltaTs = {}
