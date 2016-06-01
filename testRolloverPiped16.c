@@ -13,7 +13,9 @@ int read_raw() {
 	int packets[2];
         static int data0;
 	static int data1;
+	//creates a mask of 16 bit length
         uint16_t mask = (1 << READING_BIT_LENGTH) - 1;
+	//Prepare for the read by bringing the CS and clock pins high then low
         gpioWrite(CHIP_SELECT_PIN_1, PIN_HIGH);
 	gpioDelay(TICK);
         gpioWrite(CLOCK_PIN_1, PIN_HIGH);
@@ -22,6 +24,7 @@ int read_raw() {
 	gpioDelay(TICK);
         gpioWrite(CLOCK_PIN_1, PIN_LOW);
 	gpioDelay(TICK);
+	// loop 16 times to get two 16 bit reads from the data pins
 	while (a < (READING_BIT_LENGTH + READING_LOW_0_BIT)) {
 		gpioWrite(CLOCK_PIN_1, PIN_HIGH);
                 gpioDelay(TICK);
@@ -41,15 +44,17 @@ int read_raw() {
 
 //	data0 = ((data0 + (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
 //      data1 = ((data1 - (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
+
+	//return as a 32 bit number
         return (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
 }
-
+//takes the 32 bit number and turns it into a 10 bit number
 int bit_slicer (uint32_t from, int lowBit, int count) {
         int range = 1 << count;
         uint32_t mask = range - 1;
         return (from >> lowBit) & mask;
 }
-
+//handles the rollovers with the bigJump
 int* handle_rollovers( int readings[2] ) {
         static int prevReadings[2];
         static int prevRollovers[2];
