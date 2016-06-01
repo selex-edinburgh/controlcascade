@@ -15,32 +15,35 @@ int read_raw() {
 	static int data1;
         uint16_t mask = (1 << READING_BIT_LENGTH) - 1;
         gpioWrite(CHIP_SELECT_PIN_1, PIN_HIGH);
+        gpioWrite(CHIP_SELECT_PIN_2, PIN_HIGH);
 	gpioDelay(TICK);
         gpioWrite(CLOCK_PIN_1, PIN_HIGH);
+        gpioWrite(CLOCK_PIN_2, PIN_HIGH);
 	gpioDelay(TICK);
         gpioWrite(CHIP_SELECT_PIN_1, PIN_LOW);
+        gpioWrite(CHIP_SELECT_PIN_2, PIN_LOW);
 	gpioDelay(TICK);
         gpioWrite(CLOCK_PIN_1, PIN_LOW);
+        gpioWrite(CLOCK_PIN_2, PIN_LOW);
 	gpioDelay(TICK);
 	while (a < (READING_BIT_LENGTH + READING_LOW_0_BIT)) {
 		gpioWrite(CLOCK_PIN_1, PIN_HIGH);
+                gpioWrite(CLOCK_PIN_2, PIN_HIGH);
                 gpioDelay(TICK);
 
-                readbit[0] = gpioRead(DATA_PIN_1);
-                readbit[1] = gpioRead(DATA_PIN_2);
+//                readbit[0] = gpioRead(DATA_PIN_1);
+//                readbit[1] = gpioRead(DATA_PIN_2);
 
-                packets[0] = ((packets[0] << 1) + readbit[0]);
-                packets[1] = ((packets[1] << 1) + readbit[1]);
+//                packets[0] = ((packets[0] << 1) + readbit[0]);
+//                packets[1] = ((packets[1] << 1) + readbit[1]);
 
                 gpioWrite(CLOCK_PIN_1, PIN_LOW);
+                gpioWrite(CLOCK_PIN_2, PIN_LOW);
                 gpioDelay(TICK);
                 a += 1;
         };
-	data0 = packets[0];
-	data1 = packets[1];
-
-//	data0 = ((data0 + (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
-//      data1 = ((data1 - (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
+	data0 = ((data0 + (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
+        data1 = ((data1 - (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
         return (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
 }
 
@@ -58,8 +61,8 @@ int* handle_rollovers( int readings[2] ) {
 	int bigJump = range / 2;
         int i, change;
         for ( i = 0; i < 2; i++) {
-//                printf ( "reading %d %d \n", idx, readings[i]);
-//                print_bits(sizeof(readings), &readings[i]);
+                //printf ( "reading %d %d \n", idx, readings[i]);
+                //print_bits(sizeof(readings), &readings[i]);
                 change = readings[i] - prevReadings[i];
                 prevReadings[i] = readings[i];
                 prevRollovers[i] += (change > bigJump) ? -1 : (change < -bigJump);
@@ -70,15 +73,17 @@ int* handle_rollovers( int readings[2] ) {
 }
 
 void gpio_setup() {
-        if (gpioInitialise() < 0)
-        {
-                fprintf(stderr, "pigpio initialisation failed\n");
-                return 1;
-        }
+	if (gpioInitialise() < 0)
+	{
+		fprintf(stderr, "pigpio initialisation failed\n");
+		return 1;
+	}
 	gpioSetMode(CHIP_SELECT_PIN_1, PI_OUTPUT);
+        gpioSetMode(CHIP_SELECT_PIN_2, PI_OUTPUT);
 	gpioSetMode(DATA_PIN_1, PI_INPUT);
         gpioSetMode(DATA_PIN_2, PI_INPUT);
         gpioSetMode(CLOCK_PIN_1, PI_OUTPUT);
+        gpioSetMode(CLOCK_PIN_2, PI_OUTPUT);
 }
 
 void writer(sleepValue) {
@@ -89,12 +94,14 @@ void writer(sleepValue) {
         ts.tv_nsec = 0;
 
 	int s_fifo = mkfifo(filename, S_IRWXU);
+
         FILE * wfd = fopen(filename, "w");
         if (wfd < 0)
         {
                 printf("open() error: %d\n", wfd);
                 return -1;
         }
+
         while (1) {
 		struct timeval tv;
 		time_t curtime;
@@ -102,16 +109,10 @@ void writer(sleepValue) {
 		curtime = tv.tv_sec;
 		int data = read_raw();
                 int readings[2];
-                int checkValue[2];
-		int differingValue[2];
-		readings[0] = bit_slicer ( data, READING_LOW_0_BIT, READING_BIT_LENGTH );
+                readings[0] = bit_slicer ( data, READING_LOW_0_BIT, READING_BIT_LENGTH );
                 readings[1] = bit_slicer ( data, READING_LOW_1_BIT, READING_BIT_LENGTH );
                 int* values = handle_rollovers( readings );
-		differingValue[0] = values[0] - checkValue[0];
-		differingValue[1] = values[1] - checkValue[1];
-		checkValue[0] = values[0];
-		checkValue[1] = values[1];
-		int s_write = fprintf(wfd, "%d,%d,%d,%d,%d,%d,%d,%d \n", values[0], values[1], tv.tv_usec, differingValue[0], differingValue[1], data, readings[0], readings[1]);
+		int s_write = fprintf(wfd, "%d,%d,%d\n", values[0], values[1], tv.tv_usec);
                	if (s_write < 0)
 		{
 			printf("fprintf() error: %d\n", s_write);
@@ -119,7 +120,9 @@ void writer(sleepValue) {
 		}
 		fflush(wfd);
                 usleep(sleepValue);
+                if (values[0]*reverse > 20000) reverse *= -1;
         }
+
 }
 
 int main(int argc, char *argv[]) {

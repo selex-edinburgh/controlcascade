@@ -11,13 +11,12 @@
 #include <math.h>
 #include <time.h>
 
-//GPIO pin setup
-#define DATA_PIN_1  4
-#define DATA_PIN_2 18
-#define CHIP_SELECT_PIN_1 24
-#define CLOCK_PIN_1 23
-
-//DO NOT CHANGE BELOW UNLESS YOU KNOW WHAT YOU'RE DOING
+#define DATA_PIN_1 22
+#define DATA_PIN_2 23
+#define CHIP_SELECT_PIN_1 17
+#define CHIP_SELECT_PIN_2 18
+#define CLOCK_PIN_1 9
+#define CLOCK_PIN_2 25
 #define PIN_HIGH 1
 #define PIN_LOW 0
 #define TICK 0.00001

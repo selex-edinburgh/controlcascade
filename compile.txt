@@ -1,0 +1,2 @@
+Compiling:
+	gcc -o fifo testReaderPiped16.c -lpthread -lpigpio
