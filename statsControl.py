@@ -24,30 +24,29 @@ def statsControlUpdate(state, batchdata):
             if 'delta' in item:
                 pass
 
-    state.max = max(item['delta']['control'] for item in batchdata)
-    state.min = min(item['delta']['control'] for item in batchdata)
-    state.average = sum(item['delta']['control'] for item in batchdata) / len(batchdata)
-    state.variance = sum((state.average - item['delta']['control']) ** 2 for item in batchdata) / len(batchdata)
-    state.length = len(batchdata)
+  #  state.max = max(item['delta']['control'] for item in batchdata)
+   # state.min = min(item['delta']['control'] for item in batchdata)
+   # state.average = sum(item['delta']['control'] for item in batchdata) / len(batchdata)
+    #state.variance = sum((state.average - item['delta']['control']) ** 2 for item in batchdata) / len(batchdata)
+    #state.length = len(batchdata)
     
 def toStatsTranslator(sourceState, destState, destQueue):
     timeNow = time.time()
     deltaTs = {}
+    
     for key, value in sourceState.timeStampFlow.iteritems():
       deltaTs[key] =  timeNow - value
       
-    message = {'messageType': 'time',
+    destQueue.put({'messageType': 'time',
                 'timeStamp': sourceState.timeStampFlow,
                 'delta': deltaTs,
-                'sourceState': sourceState.__class__.__name__}           
-    destQueue.put(message)
+                'sourceState': sourceState.__class__.__name__})        
     
 def statsToVisualTranslator(sourceState, destState, destQueue):
-    message = {'messageType': 'stats',
+    destQueue.put({'messageType': 'stats',
                 'average':sourceState.average,
                 'max':sourceState.max,
                 'min':sourceState.min,
                 'length':sourceState.length,
                 'variance':sourceState.variance
-                }
-    destQueue.put(message)
+                })

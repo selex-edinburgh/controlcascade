@@ -20,12 +20,10 @@ class VsimState(ObservableState):
         self.timeStamp= time.time()
      
 def vsimControlUpdate(state,batchdata):
-
     prevRcTurn = state.rcTurn
     prevRcFwd = state.rcFwd
  
     for item in batchdata:      # process items in batchdata
-    
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
             
@@ -46,7 +44,6 @@ def vsimControlUpdate(state,batchdata):
     state.speedL = speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
     state.speedR = speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)
 
-
 def speedUpdate( current, demanded, tDelta, fricPerSec):
     fricNow = fricPerSec * current * tDelta 
     fricTerminal = fricPerSec * demanded * tDelta
@@ -55,14 +52,16 @@ def speedUpdate( current, demanded, tDelta, fricPerSec):
 def vsimToOdoTranslator( sourceState, destState, destQueue ):
     deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulse ,0)
     deltaR = round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulse ,0)
+    
     rollover = destState._rolloverRange
     
     left = (destState.totalPulseL + deltaL) % rollover
     right = (destState.totalPulseR + deltaR) % rollover
-    message = {'messageType':'sense',
+    
+    destQueue.put({'messageType':'sense',
                'pulseL':left,
                'pulseR':right,
-               'timeStamp':sourceState.timeStampFlow["sense"]}
-    destQueue.put(message)
+               'timeStamp':sourceState.timeStampFlow["sense"]})
+
 
     

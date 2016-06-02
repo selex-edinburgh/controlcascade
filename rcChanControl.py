@@ -10,12 +10,13 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class RcChanState(ObservableState):
-    def __init__(self, limitChange, speedLimit):
+    def __init__(self, limitChange, speedLimit, serialDevice):
         super(RcChanState,self).__init__()
         self.currentTurn = 127
         self.currentFwd = 127
         self.demandTurn = 127
         self.demandFwd = 127
+        self.serialDevice = serialDevice
         self._limitChange = limitChange #80
         self.timeStamp    = time.time()
         self.minClip = 127 - speedLimit
@@ -25,7 +26,7 @@ class RcChanState(ObservableState):
 
         try:
             self.ser= serial.Serial(            #Set up Serial Interface    
-            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
+            port=self.serialDevice,                #UART using Tx pin 8, Rx pin 10, Gnd pin 6   
             baudrate=9600,                      #bits/sec      
             bytesize=8, parity='N', stopbits=1, #8-N-1  protocol     
             timeout=1                           #1 sec       
@@ -34,10 +35,8 @@ class RcChanState(ObservableState):
             print "Serial not connected..."
 
     def clip(self, x):
-        #if x < 0 or x >255: print "clip"
         return min(self.maxClip,max(self.minClip,x))
- 
-
+        
 def simMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, False)
 
@@ -61,13 +60,29 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
                 
         elif item['messageType'] == 'sense':
             pass
+            
+    if not batchdata:       # if no messages (loops paused) set the speed to stationary
+        state.demandFwd = 127
+        state.demandTurn = 127
+        
+
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._limitChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._limitChange )
+    print state.currentFwd
+    print state.currentTurn
+    f = open('motorCommands.txt', 'a')
+
     
-    if motorOutput:
-        state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
-        state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
+    f.write("\n Forward command: %s" % state.currentFwd)
+    f.write("\n Turn command: %s" % state.currentTurn)
     
+    f.close()
+    try:
+        if motorOutput:
+            state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board     
+            state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board   
+    except:
+        pass
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
     if diff == 0: return startX
