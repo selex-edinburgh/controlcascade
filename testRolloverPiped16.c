@@ -1,20 +1,34 @@
 #include "pigpio.h"
 
-int reverse = 1;
-
 struct timeval {
 	int tv_sec;
 	int tv_usec;
 };
 
+void printBits(size_t const size, void const * const ptr) {
+	unsigned char *b = (unsigned char*) ptr;
+	unsigned char byte;
+	int i, j;
+
+	for (i=size-1;i>=0;i--)
+	{
+		for (j=7;j>=0;j--)
+		{
+			byte = (b[i] >> j) & 1;
+			printf("%u", byte);
+		}
+	}
+	puts("");
+}
+
 int read_raw() {
         int a = 0;
 	int readbit[2];
-	int packets[2];
-        static int data0;
-	static int data1;
+	uint16_t packets[2];
+        static uint16_t data0;
+	static uint16_t data1;
 	//creates a mask of 16 bit length
-        uint16_t mask = (1 << READING_BIT_LENGTH) - 1;
+        uint16_t mask = (1 << READING_LOW_0_BIT) - 1;
 	//Prepare for the read by bringing the CS and clock pins high then low
         gpioWrite(CHIP_SELECT_PIN_1, PIN_HIGH);
 	gpioDelay(TICK);
@@ -22,11 +36,13 @@ int read_raw() {
 	gpioDelay(TICK);
         gpioWrite(CHIP_SELECT_PIN_1, PIN_LOW);
 	gpioDelay(TICK);
-        gpioWrite(CLOCK_PIN_1, PIN_LOW);
-	gpioDelay(TICK);
+
 	// loop 16 times to get two 16 bit reads from the data pins
 	while (a < (READING_BIT_LENGTH + READING_LOW_0_BIT)) {
-		gpioWrite(CLOCK_PIN_1, PIN_HIGH);
+		gpioWrite(CLOCK_PIN_1, PIN_LOW);
+                gpioDelay(TICK);
+
+                gpioWrite(CLOCK_PIN_1, PIN_HIGH);
                 gpioDelay(TICK);
 
                 readbit[0] = gpioRead(DATA_PIN_1);
@@ -34,19 +50,23 @@ int read_raw() {
 
                 packets[0] = ((packets[0] << 1) + readbit[0]);
                 packets[1] = ((packets[1] << 1) + readbit[1]);
-
-                gpioWrite(CLOCK_PIN_1, PIN_LOW);
-                gpioDelay(TICK);
                 a += 1;
         };
 	data0 = packets[0];
 	data1 = packets[1];
 
+//	printBits(sizeof(data0), &data0);
+//	printBits(sizeof(data1), &data1);
+
 //	data0 = ((data0 + (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
 //      data1 = ((data1 - (reverse)) % ( 1 << READING_BIT_LENGTH)) & mask;
 
 	//return as a 32 bit number
-        return (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
+//        uint32_t data32 = (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
+//        uint32_t data032 = (data0 << READING_LOW_0_BIT);
+//        uint32_t data132 = (data1 << READING_LOW_1_BIT);
+	return ((data1 << 16) | data0);
+        //return (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
 }
 //takes the 32 bit number and turns it into a 10 bit number
 int bit_slicer (uint32_t from, int lowBit, int count) {
@@ -86,8 +106,7 @@ void gpio_setup() {
         gpioSetMode(CLOCK_PIN_1, PI_OUTPUT);
 }
 
-void writer(sleepValue) {
-	char filename[] = "fifo.tmp";
+void writer(readTime, filename) {
         struct timespec ts;
         struct timespec ts2;
         ts.tv_sec = 1;
@@ -100,6 +119,7 @@ void writer(sleepValue) {
                 printf("open() error: %d\n", wfd);
                 return -1;
         }
+
         while (1) {
 		struct timeval tv;
 		time_t curtime;
@@ -117,28 +137,34 @@ void writer(sleepValue) {
 		checkValue[0] = values[0];
 		checkValue[1] = values[1];
 		int s_write = fprintf(wfd, "%d,%d,%d,%d,%d,%d,%d,%d \n", values[0], values[1], tv.tv_usec, differingValue[0], differingValue[1], data, readings[0], readings[1]);
-               	if (s_write < 0)
-		{
-			printf("fprintf() error: %d\n", s_write);
-			break;
-		}
-		fflush(wfd);
-                usleep(sleepValue);
+                if (s_write < 0)
+                {
+                        printf("fprintf() error: %d\n", s_write);
+                        break;
+                }
+                fflush(wfd);
+
+//		printf("%d,%d,%d,%d,%d,%d,%d,%d \n", values[0], values[1], tv.tv_usec, differingValue[0], differingValue[1], data, readings[0], readings[1]);
+                //usleep(sleepValue);
+		gpioSleep(PI_TIME_RELATIVE, 0, readTime);
         }
 }
 
 int main(int argc, char *argv[]) {
-	int sleepValue;
+	int readTime;
+	char *filename;
 	char *ptr;
 
 	gpio_setup();
-	if (argc < 2)
+	if (argc < 3)
 	{
-		sleepValue = 1000;
+		readTime = 16000;
+		filename = "fifo.tmp";
 	}
 	else
 	{
-		sleepValue = strtol(argv[1], &ptr, 10);
+		readTime = strtol(argv[1], &ptr, 10);
+		filename = argv[2];
 	}
-	writer(sleepValue);
+	writer(readTime, filename);
 }

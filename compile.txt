@@ -1,2 +1,5 @@
 Compiling:
-	gcc -o fifo testReaderPiped16.c -lpthread -lpigpio
+	gcc -o fifo testReaderPiped16.c -w -lpthread -lpigpio
+
+Running in realtime:
+	sudo chrt -f 98 ./fifo

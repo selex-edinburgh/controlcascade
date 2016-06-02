@@ -21,7 +21,7 @@
 #define PIN_HIGH 1
 #define PIN_LOW 0
 //#define TICK 0.00001
-#define TICK 1
+#define TICK 15
 #define READING_LOW_0_BIT 6
 #define READING_LOW_1_BIT 22
 #define READING_BIT_LENGTH 10
