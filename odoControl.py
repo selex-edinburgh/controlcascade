@@ -2,13 +2,13 @@ import time
 import math
 import threading
 import sys
+import subprocess as sub
 
-from subprocess import call
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,rolloverRange=32768,rolloverCountL=0,rolloverCountR=0,initAngle=90, odoFilename="fifo.tmp", odoReadRate=16000):
+    def __init__(self,mmPerPulse=0.1,rolloverRange=32768,rolloverCountL=0,rolloverCountR=0,initAngle=90, odoFilename="fifo.tmp", odoReadRate="16000"):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -27,9 +27,9 @@ class OdoState(ObservableState):
         self.rr = 0
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
-        self.generator = generatorFunction(self.odoFilename)
+        self.generator = generatorFunction(self._odoFilename)
         
-        call(["./fifo",self.odoReadRate,self.odoFilename]) #Run the C exe - Odometer Reader
+        sub.Popen(["./fifo",self._odoReadRate,self._odoFilename]) #Run the C exe - Odometer Reader
         
 def simUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, False)
@@ -39,18 +39,23 @@ def realUpdate(state,batchdata):
     
 def generatorFunction(filename): 
     isOpen = False
+    previousJ = (0,0)
     while True:
         if(isOpen):
-            j = f.readline()
-            j = j.strip().split(",")
-            yield (int(j[0]),int(j[1]))
+            try:
+	    	j = f.readline()
+            	j = j.strip().split(",")
+            	yield (int(j[0]),int(j[1]))
+		previousJ = j
+	    except:
+		yield previousJ 	
         else:    
             try:
                 f = open(filename, 'r')
                 isOpen = True
             except IOError:
                 isOpen = False
-                yield (0,0)
+                yield previousJ
 
 def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
@@ -69,7 +74,7 @@ def odoControlUpdate(state,batchdata, doRead):
         state.realMode = True # so visualiser knows real chariot is running      
 
         #RxBytes = state.bus.read_i2c_block_data(state.address, state.control, state.numbytes) # tell the sensor board to read the odometers
-        readings = generatorFunction.next()
+        readings = state.generator.next()
         leftReading = readings[0]
         rightReading = readings[1]
         
@@ -78,6 +83,8 @@ def odoControlUpdate(state,batchdata, doRead):
         
         state.totalPulseL = leftReading     
         state.totalPulseR = rightReading
+
+	print readings
 
         state.prevDistTravel = state.distTravel
         state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
