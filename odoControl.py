@@ -27,13 +27,30 @@ class OdoState(ObservableState):
         self.rr = 0
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
+        self.generator = generatorFunction(self.odoFilename)
+        
         call(["./fifo",self.odoReadRate,self.odoFilename]) #Run the C exe - Odometer Reader
-
+        
 def simUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, False)
     
 def realUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, True )
+    
+def generatorFunction(filename): 
+    isOpen = False
+    while True:
+        if(isOpen):
+            j = f.readline()
+            j = j.strip().split(",")
+            yield (int(j[0]),int(j[1]))
+        else:    
+            try:
+                f = open(filename, 'r')
+                isOpen = True
+            except IOError:
+                isOpen = False
+                yield (0,0)
 
 def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
@@ -52,9 +69,9 @@ def odoControlUpdate(state,batchdata, doRead):
         state.realMode = True # so visualiser knows real chariot is running      
 
         #RxBytes = state.bus.read_i2c_block_data(state.address, state.control, state.numbytes) # tell the sensor board to read the odometers
-        
-        leftReading = 
-        rightReading = 
+        readings = generatorFunction.next()
+        leftReading = readings[0]
+        rightReading = readings[1]
         
     try:
         state.timeStampFlow["sense"] = time.time()    
