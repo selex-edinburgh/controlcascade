@@ -8,7 +8,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,initAngle=90, odoPipename="./fifo", odoFilename="fifo.tmp", odoReadRate="16000"):
+    def __init__(self,mmPerPulse=0.1,initAngle=90, driver="./fifo", odoPipename="fifo.tmp", odoReadRate="16000"):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -18,22 +18,25 @@ class OdoState(ObservableState):
         self.distTravel = 0
         self._initAngle = initAngle         # 0
         self._mmPerPulse = mmPerPulse       # 1
-        self._odoFilename = odoFilename     # "./fifo"
+        self._driver = driver               # "./fifo"
         self._odoPipename = odoPipename     # "fifo.tmp"
         self._odoReadRate = odoReadRate     # 16000
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
-        self.generator = generatorFunction(self._odoFilename)
-        cmd = ['sudo', 'chrt', '-f', '98', self.odoFilename,self._odoReadRate,self._odoFilename]
-        sub.Popen(cmd, shell=True, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE) #Run the C exe - Odometer Reader
-        
+        cmd = ['sudo', 'chrt', '-f', '98', self._driver,self._odoReadRate,self._odoPipename] # sudo chrt -f 98 ./fifo 16000 fifo.tmp
+        try: 
+            sub.Popen(cmd, shell=True, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE) #Run the C exe - Odometer Reader
+        except Exception as err:
+            print err.errno
+            print err.strerr
+        self.generator = generatorFunction(self._odoPipename)
 def simUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, False)
     
 def realUpdate(state,batchdata):
     odoControlUpdate(state, batchdata, True )
     
-def generatorFunction(filename): 
+def generatorFunction(pipename): 
     isOpen = False
     previousJ = (0,0)
     while True:
@@ -47,7 +50,7 @@ def generatorFunction(filename):
 		yield previousJ 	
         else:    
             try:
-                f = open(filename, 'r')
+                f = open(pipename, 'r')
                 isOpen = True
             except IOError as err:
                 isOpen = False
@@ -83,6 +86,7 @@ def odoControlUpdate(state,batchdata, doRead):
         state.totalPulseL = leftReading     
         state.totalPulseR = rightReading
         print state.totalPulseL, state.totalPulseR
+        state.prevDistTravel = state.distTravel
         state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
                                 (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
     except:
@@ -97,7 +101,7 @@ def odoToTrackTranslator( sourceState, destState, destQueue ):
                    'sensedMove' :sourceState.distTravel - sourceState.prevDistTravel,
                    'sensedAngle':angle,
                    'timeStamp'  :sourceState.timeStampFlow["sense"]}) 
-    state.prevDistTravel = state.distTravel
+    
 
 def odoToVisualTranslator(sourceState, destState, destQueue):
     destQueue.put({'messageType':'odo',

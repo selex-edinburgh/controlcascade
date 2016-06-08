@@ -31,7 +31,7 @@ def runControlLoops():
     vsimSpeedMax = 0.06
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
-    odoState    = odoControl.OdoState(0.3,32768,0,0,0, "fifo.tmp", "16000")    #OdoState(mmPerPulse,rolloverRange,rolloverCountL,rolloverCountR,initTheta, odoFilename, odoReadRate)
+    odoState    = odoControl.OdoState(0.46,0,"./fifo", "fifo.tmp", "16000")    #OdoState(mmPerPulse,initTheta, driver, odoPipename, odoReadRate)
     rcChanState = rcChanControl.RcChanState(40, 80, "/dev/ttyAMA0")    #RcChanState(limitChange, speedLimit, serialDevice)
     trackState  = trackControl.TrackState(155,500)      #TrackState(trackWidth,movementBudget)
     vsimState   = vsimControl.VsimState(1.5,1.0,600.0) #VsimState(fricEffectPerSec,lrBias,speedMax)

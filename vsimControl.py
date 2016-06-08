@@ -53,10 +53,8 @@ def vsimToOdoTranslator( sourceState, destState, destQueue ):
     deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulse ,0)
     deltaR = round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulse ,0)
     
-    rollover = destState._rolloverRange
-    
-    left = (destState.totalPulseL + deltaL) % rollover
-    right = (destState.totalPulseR + deltaR) % rollover
+    left = (destState.totalPulseL + deltaL)
+    right = (destState.totalPulseR + deltaR)
     
     destQueue.put({'messageType':'sense',
                'pulseL':left,
