@@ -23,7 +23,11 @@ class OdoState(ObservableState):
         self._odoReadRate = odoReadRate     # 16000
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
-        cmd = ['sudo', 'chrt', '-f', '98', self._driver,self._odoReadRate,self._odoPipename] # sudo chrt -f 98 ./fifo 16000 fifo.tmp
+        try:
+            cmd = ['sudo', 'chrt', '-f', '98', "./fifo",self._odoReadRate,self._odoPipename] # sudo chrt -f 98 ./fifo 16000 fifo.tmp
+        except Exception as err:
+            print err.errno
+            print err.strerr
         try: 
             sub.Popen(cmd, shell=True, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE) #Run the C exe - Odometer Reader
         except Exception as err:

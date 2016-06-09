@@ -23,6 +23,7 @@ void printBits(size_t const size, void const * const ptr) {
 
 int read_raw() {
         int a = 0;
+	int reverse = 0;
 	int readbit[2];
 	uint16_t packets[2];
         static uint16_t data0;
@@ -49,7 +50,7 @@ int read_raw() {
                 readbit[1] = gpioRead(DATA_PIN_2);
 
                 packets[0] = ((packets[0] << 1) + readbit[0]);
-                packets[1] = ((packets[1] << 1) + readbit[1]);
+		packets[1] = ((packets[1] << 1) + readbit[1]);
                 a += 1;
         };
 	data0 = packets[0];
@@ -65,6 +66,8 @@ int read_raw() {
 //        uint32_t data32 = (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
 //        uint32_t data032 = (data0 << READING_LOW_0_BIT);
 //        uint32_t data132 = (data1 << READING_LOW_1_BIT);
+	//int test = ((data1 << 16) | data0);
+	//printBits(sizeof(test), &test);
 	return ((data1 << 16) | data0);
         //return (data1 << READING_LOW_1_BIT) | (data0 << READING_LOW_0_BIT);
 }
@@ -106,11 +109,13 @@ void gpio_setup() {
         gpioSetMode(CLOCK_PIN_1, PI_OUTPUT);
 }
 
-void writer(readTime, filename) {
+void writer(readTime, filename, is_first) {
         struct timespec ts;
         struct timespec ts2;
         ts.tv_sec = 1;
         ts.tv_nsec = 0;
+	int init_reading_1;
+	int init_reading_2;
 
 	int s_fifo = mkfifo(filename, S_IRWXU);
         FILE * wfd = fopen(filename, "w");
@@ -125,18 +130,31 @@ void writer(readTime, filename) {
 		time_t curtime;
 		gettimeofday(&tv, NULL);
 		curtime = tv.tv_sec;
-		int data = read_raw();
                 int readings[2];
                 int checkValue[2];
 		int differingValue[2];
+		int data = read_raw();
+
 		readings[0] = bit_slicer ( data, READING_LOW_0_BIT, READING_BIT_LENGTH );
-                readings[1] = bit_slicer ( data, READING_LOW_1_BIT, READING_BIT_LENGTH );
-                int* values = handle_rollovers( readings );
+		readings[1] = bit_slicer ( data, READING_LOW_1_BIT, READING_BIT_LENGTH );
+		int* values = handle_rollovers( readings );
+		if (is_first == 0) {
+			init_reading_1 = values[0];
+			init_reading_2 = values[1];
+			is_first = 1;
+		}else {
+			//printf("value 0: %d\n", values[0]);
+			//printf("init 0: %d\n", init_readings[0]);
+			//printf("value 1: %d\n", values[1]);
+			//printf("init 1: %d\n", init_readings[1]);
+			values[0] = values[0] - init_reading_1;
+			values[1] = values[1] - init_reading_2;
+		}		
 		differingValue[0] = values[0] - checkValue[0];
 		differingValue[1] = values[1] - checkValue[1];
 		checkValue[0] = values[0];
 		checkValue[1] = values[1];
-		int s_write = fprintf(wfd, "%d,%d,%d,%d,%d,%d,%d,%d \n", values[0], values[1], tv.tv_usec, differingValue[0], differingValue[1], data, readings[0], readings[1]);
+		int s_write = fprintf(wfd, "%d,%d,%d,%d,%d,%d,%d,%d \n", values[0], -values[1], tv.tv_usec, differingValue[0], differingValue[1], data, readings[0], readings[1]);
                 if (s_write < 0)
                 {
                         printf("fprintf() error: %d\n", s_write);
@@ -154,7 +172,7 @@ int main(int argc, char *argv[]) {
 	int readTime;
 	char *filename;
 	char *ptr;
-
+	int is_first = 0;
 	gpio_setup();
 	if (argc < 3)
 	{
@@ -166,5 +184,5 @@ int main(int argc, char *argv[]) {
 		readTime = strtol(argv[1], &ptr, 10);
 		filename = argv[2];
 	}
-	writer(readTime, filename);
+	writer(readTime, filename, is_first);
 }
