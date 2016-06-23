@@ -96,10 +96,10 @@ def handle_rollovers(readings, constants):
     return values
 
 '''
-This function will initialise the pins.
-It is passed in constants from the main() and uses them to set the pins
-to either input to output after initially clearing the pins to their
-default state.
+    This function will initialise the pins.
+    It is passed in constants from the main() and uses them to set the pins
+    to either input to output after initially clearing the pins to their
+    default state.
 '''
 def init_pins(constants):
     
