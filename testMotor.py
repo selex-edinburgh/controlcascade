@@ -28,10 +28,10 @@ font = pygame.font.SysFont('Avenir Next', 20)		# preset font to use
 	call the function versionCheck() to get the port value. This function 
 	is called from main(). Line 115.
 '''
-def setSerial():
+def set_serial():
     try:
         ser= serial.Serial(                     #Set up Serial Interface
-            port=versionCheck(),                #UART using Tx pin 8, Rx pin 10, Ground pin 6 
+            port=version_check(),                #UART using Tx pin 8, Rx pin 10, Ground pin 6 
             baudrate=38400,                     #bits/sec
             bytesize=8, parity='N', stopbits=1, #8-N-1  protocal
             timeout=1                           #1 sec
@@ -49,23 +49,23 @@ def setSerial():
 	look for the Revision Number. If found it will return it. This function
 	is called from versionCheck(). Line 78.
 '''
-def getRevision():
+def get_revision():
 	# initialise local variables
-	cpurevision = "0"
+	cpuRevision = "0"
 	
 	try:		# try to open the file with the cpuinfo in it
 		f = open('/proc/cpuinfo','r')
 		for line in f:
 			if line[0:8]=='Revision':		# if the characters from 0-8 == "Revision"
-				cpurevision = line[11:17]		# then set the cpu revision number to characters 11-17
+				cpuRevision = line[11:17]		# then set the cpu revision number to characters 11-17
 		f.close()		# always close the file at the end
 	
 	except Exception as err:		# catch any exceptions that may occur when trying to open the file
                 print err		# print the error that is caught and output the revision number as 0
                 print "Failed to open file"
-		cpurevision = "0"
+		cpuRevision = "0"
 	
-	return cpurevision		# return the revision number to where the function was called from originally
+	return cpuRevision		# return the revision number to where the function was called from originally
 
 '''
 	This function will take the Revision Number it is passed when it calls
@@ -75,13 +75,13 @@ def getRevision():
 	determine the port value to return. This function is called from
 	setSerial(). Line 30.
 '''
-def versionCheck():
+def version_check():
 	# initialise local variables
 	port = "0"
 	
-	if getRevision() == 'a02082' or getRevision() == 'a22082':
+	if get_revision() == 'a02082' or get_revision() == 'a22082':
 		port = '/dev/ttyS0'
-	elif getRevision() == 'a01041' or getRevision() == 'a21041':		
+	elif get_revision() == 'a01041' or get_revision() == 'a21041':		
 		port = '/dev/ttyAMA0'
 	return port
 	
@@ -92,7 +92,7 @@ def versionCheck():
 	it receives from the read into the integer value of that character.
 	This function is called from main(). Line 115.
 '''
-def getTelemetry(ser):
+def get_telemetry(ser):
 	try:
 		telemetry = ser.read(4)
 		return ord(telemetry[0]),ord(telemetry[1]) 	
@@ -118,7 +118,7 @@ def main():
     turn = 127
     crashed = False
     
-    ser = setSerial()		# setup the serial
+    ser = set_serial()		# setup the serial
 
     # infinite loop / main loop / game loop
     while not crashed:
@@ -147,7 +147,7 @@ def main():
 
         # display text to the screen, blit can also render images and draw on the screen
         screen.blit(font.render("Telemetry: (forward, turn)",True,white),(15,5))
-        screen.blit(font.render(str(getTelemetry(ser)),True,white),(110,25))
+        screen.blit(font.render(str(get_telemetry(ser)),True,white),(110,25))
         
         pygame.display.update()		# update the display on each loop
 

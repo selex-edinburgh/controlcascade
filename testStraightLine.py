@@ -1,38 +1,32 @@
 #!/usr/bin/env python
 
-# import libraries
+#import libraries
 import time
 import sys
 import pygame
+import serial
 import operator
 
-try:		# try and import the GPIO library and catch a RunTimeError on fail
-    import RPi.GPIO as GPIO
-except RunTimeError as err:		# catch the RunTimeError and output a substitute response
-    print err
-    print ("Error: Can't import RPi.GPIO")
-   
-pygame.init()		# initialise pygame
+try:
+	import RPi.GPIO as GPIO
+except RunTimeError as err:
+	print err
+	print "Error: Can't import RPi.GPIO"
+	
+pygame.init()
 
 displayWidth = 190
-displayHeight = 50
-screen = pygame.display.set_mode((displayWidth,displayHeight))		# set display parameters of the window
+displayHeight = 100
+screen = pygame.display.set_mode((displayWidth,displayHeight))
 
-pygame.display.set_caption("Odo Test")		# set title of the window
+pygame.display.set_caption("Line Test")
 
-# preset colours to use
 black = (0,0,0)
 white = (255,255,255)
 red = (255,0,0)
 
-font = pygame.font.SysFont('Avenir Next', 20)		# preset font to use
+font = pygame.font.SysFont('Avenir Next', 20)
 
-'''    
-   This function will read from the odometers directly and pass the
-   result back to the main(). It uses the GPIO libraries to clock the 
-   pins high and low to tell the odometers when to start outputting data.
-    
-'''
 def read_raw(constants):
 	# initialise local variables
     a = 0
@@ -111,6 +105,84 @@ def init_pins(constants):
     GPIO.setup(constants['CLOCK_PIN'], GPIO.OUT)
     
 '''
+	This function will set up the serial interface. This setup uses a try
+	and catch (except) that will catch any errors that may come up and 
+	output a more verbose error to the user. During the setup it will 
+	call the function versionCheck() to get the port value. This function 
+	is called from main(). Line 115.
+'''
+def set_serial():
+    try:
+        ser= serial.Serial(                     #Set up Serial Interface
+            port=version_check(),                #UART using Tx pin 8, Rx pin 10, Ground pin 6 
+            baudrate=38400,                     #bits/sec
+            bytesize=8, parity='N', stopbits=1, #8-N-1  protocal
+            timeout=1                           #1 sec
+        )
+        return ser
+    except Exception as err:
+        print err
+        print "Failed to setup serial"
+        
+'''
+	Get the Revision Number of the Raspberry Pi. The Revision Number is 
+	a unique number given to each Raspberry Pi model to distinguish each
+	model. So all Raspberry Pi 2's will have the same Revision Number etc.
+	This function will open up the cpuinfo file on the Raspberry Pi and
+	look for the Revision Number. If found it will return it. This function
+	is called from versionCheck(). Line 78.
+'''
+def get_revision():
+	# initialise local variables
+	cpuRevision = "0"
+	
+	try:		# try to open the file with the cpuinfo in it
+		f = open('/proc/cpuinfo','r')
+		for line in f:
+			if line[0:8]=='Revision':		# if the characters from 0-8 == "Revision"
+				cpuRevision = line[11:17]		# then set the cpu revision number to characters 11-17
+		f.close()		# always close the file at the end
+	
+	except Exception as err:		# catch any exceptions that may occur when trying to open the file
+                print err		# print the error that is caught and output the revision number as 0
+                print "Failed to open file"
+		cpuRevision = "0"
+	
+	return cpuRevision		# return the revision number to where the function was called from originally
+
+'''
+	This function will take the Revision Number it is passed when it calls
+	the getRevision() function and will determine if it is either a 
+	Raspberry Pi 2 or a Raspberry Pi 3. It will compare the value given
+	with the two known Revision Numbers for either Pi. This will then
+	determine the port value to return. This function is called from
+	setSerial(). Line 30.
+'''
+def version_check():
+	# initialise local variables
+	port = "0"
+	
+	if get_revision() == 'a02082' or get_revision() == 'a22082':
+		port = '/dev/ttyS0'
+	elif get_revision() == 'a01041' or get_revision() == 'a21041':		
+		port = '/dev/ttyAMA0'
+	return port
+	
+'''
+	This is a short function that is passed the serial interface so that
+	it can simply read from the serial and output the results back to the
+	call point. The ord function on the output changes ascii characters
+	it receives from the read into the integer value of that character.
+	This function is called from main(). Line 115.
+'''
+def get_telemetry(ser):
+	try:
+		telemetry = ser.read(4)
+		return ord(telemetry[0]),ord(telemetry[1]) 	
+	except Exception as err:
+		print err
+    
+'''
 This function will be the main function of the program. It creates a
 Dictionary of constants that can be used in other functions.
 The function will setup the GPIO pins and then run an infinite loop that
@@ -121,8 +193,13 @@ result.
 def main():
 	# initialise local variables
 	crashed = False
+	checkValue = [0,0]
 	values = [0,0]
+	fwd = 127
+	turn = 127
+	avgPos = 0
 	readings = [0,0]
+	differingValue = [0,0]
 	
 	# initialise the Dictionary
 	constants = {
@@ -138,6 +215,7 @@ def main():
 	}
 
 	init_pins(constants)		# initialise and setup the pins to use
+	ser = set_serial()		# setup the serial
 
 	while not crashed:		# infinite loop with a catch variable
 		for event in pygame.event.get():
@@ -154,14 +232,26 @@ def main():
 		readings[0] = bit_slicer(data,constants['READING_LOW_0_BIT'],constants['READING_BIT_LENGTH'])
 		readings[1] = bit_slicer(data,constants['READING_LOW_1_BIT'],constants['READING_BIT_LENGTH'])
 
-		
 		values = handle_rollovers(readings,constants)		# handle rollovers
+		
+		leftReading = int(values[0])
+		rightReading = int(constants['ROLLOVER_RANGE'] - values[1])
+		
+		avgPos = (leftReading + rightReading) / 2
+		
+		if fwd < 180:
+			fwd = fwd + 1 
+			
+		ser.write(chr(fwd))
 		
 		screen.fill(black)		# set the screen background
 
 		screen.blit(font.render("Odometers: (left, right)",True,white),(15,5))
-		screen.blit(font.render(str((int(values[0]), int(constants['ROLLOVER_RANGE']-values[1]))),True,white),(95,25))
-
+		screen.blit(font.render(str((leftReading, rightReading)),True,white),(95,25))
+		
+		screen.blit(font.render("Telemetry: (forward, turn)",True,white),(15,45))
+		screen.blit(font.render(str(get_telemetry(ser)),True,white),(110,65))
+        
 		pygame.display.update()        # update the display on each loop
 
 main()		# start of the program
