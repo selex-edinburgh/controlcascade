@@ -22,8 +22,8 @@ def rotate_stepper(busData, controlCodes):
 	except Exception as err:
 		print err
 	
-def read_angle(busData):
-	rxBytes = bus.read_i2c_block_data(busData['address'], controlCode['readAngle'],0)
+def read_angle(busData, controlCodes):
+	rxBytes = bus.read_i2c_block_data(busData['address'], controlCodes['readAngle'],0)
 	return rxBytes
 	
 def main():
@@ -45,8 +45,5 @@ def main():
 	init_stepper(busData,controlCodes)
 	time.sleep(5)
 	rotate_stepper(busData,controlCodes)
-	busData['rxBytes'] = read_angle(busData)
-	
-	print busData['rxBytes']
 	
 main()

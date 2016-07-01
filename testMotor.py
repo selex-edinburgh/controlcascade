@@ -6,21 +6,6 @@ import sys
 import serial
 import pygame
 
-pygame.init()		# initialise pygame
-
-displayWidth = 190
-displayHeight = 50
-screen = pygame.display.set_mode((displayWidth,displayHeight))		# set display parameters of the window
-
-pygame.display.set_caption("Motor Test")		# set title of the window
-
-# preset colours to use
-black = (0,0,0)
-white = (255,255,255)
-red = (255,0,0)
-
-font = pygame.font.SysFont('Avenir Next', 20)		# preset font to use
-
 '''
 	This function will set up the serial interface. This setup uses a try
 	and catch (except) that will catch any errors that may come up and 
@@ -29,17 +14,17 @@ font = pygame.font.SysFont('Avenir Next', 20)		# preset font to use
 	is called from main(). Line 115.
 '''
 def set_serial():
-    try:
-        ser= serial.Serial(                     #Set up Serial Interface
-            port=version_check(),                #UART using Tx pin 8, Rx pin 10, Ground pin 6 
-            baudrate=38400,                     #bits/sec
-            bytesize=8, parity='N', stopbits=1, #8-N-1  protocal
-            timeout=1                           #1 sec
-        )
-        return ser
-    except Exception as err:
-        print err
-        print "Failed to setup serial"
+	try:
+		ser= serial.Serial(                     #Set up Serial Interface
+			port=version_check(),               #UART using Tx pin 8, Rx pin 10, Ground pin 6 
+			baudrate=38400,                     #bits/sec
+			bytesize=8, parity='N', stopbits=1, #8-N-1  protocal
+			timeout=1                           #1 sec
+		)
+		return ser
+	except Exception as err:
+		print err
+		print "Failed to setup serial"
 
 '''
 	Get the Revision Number of the Raspberry Pi. The Revision Number is 
@@ -61,10 +46,10 @@ def get_revision():
 		f.close()		# always close the file at the end
 	
 	except Exception as err:		# catch any exceptions that may occur when trying to open the file
-                print err		# print the error that is caught and output the revision number as 0
-                print "Failed to open file"
+		print err		# print the error that is caught and output the revision number as 0
+		print "Failed to open file"
 		cpuRevision = "0"
-	
+		
 	return cpuRevision		# return the revision number to where the function was called from originally
 
 '''
@@ -114,46 +99,76 @@ def get_telemetry(ser):
 '''
 def main():
 	# initialise local variables
-    fwd = 127
-    turn = 127
-    crashed = False
-    
-    ser = set_serial()		# setup the serial
+	fwd = 127
+	turn = 127
+	crashed = False
+	displayWidth = 190
+	displayHeight = 50
+	
+	pygame.init()		# initialise pygame
+	screen = pygame.display.set_mode((displayWidth,displayHeight))		# set display parameters of the window
+	pygame.display.set_caption("Motor Test")		# set title of the window
+	
+	# preset colours to use
+	black = (0,0,0)
+	white = (255,255,255)
+	red = (255,0,0)
+	
+	font = pygame.font.SysFont('Avenir Next', 20)		# preset font to use
+	
+	ser = set_serial()		# setup the serial
 
-    # infinite loop / main loop / game loop
-    while not crashed:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:		# safe quit on closing the window
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:		# look for key presses
-                if event.key == pygame.K_UP:
-                    fwd += 10		# increase forward motion on arrow up
-                elif event.key == pygame.K_DOWN:
-                    fwd -= 10		# decrease forward motion on arrow down
-                elif event.key == pygame.K_RIGHT:
-                    turn += 10		# increase/decrease right/left turn on arrow key right
-                elif event.key == pygame.K_LEFT:
-                    turn -= 10		# increase/decrease left/right turn on arrow key left
-                elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:		# safe quit on "q" press or "ESC" press
-                    pygame.quit()
-                    sys.exit()
-        
-        # write the resulting fwd and turn to the motors via serial
-        ser.write(chr(fwd))
-        ser.write(chr(turn))
+	# infinite loop / main loop / game loop
+	while not crashed:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:		# safe quit on closing the window
+				fwd, turn = 127, 127
+				ser.write(chr(fwd))
+				ser.write(chr(turn))
+				pygame.quit()
+				sys.exit()
+			if event.type == pygame.KEYDOWN:		# look for key presses
+				if event.key == pygame.K_UP:
+					fwd += 10		# increase forward motion on arrow up
+				elif event.key == pygame.K_DOWN:
+					fwd -= 10		# decrease forward motion on arrow down
+				elif event.key == pygame.K_RIGHT:
+					turn += 10		# increase/decrease right/left turn on arrow key right
+				elif event.key == pygame.K_LEFT:
+					turn -= 10		# increase/decrease left/right turn on arrow key left
+				elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:		# safe quit on "q" press or "ESC" press
+					fwd, turn = 127, 127
+					ser.write(chr(fwd))
+					ser.write(chr(turn))
+					pygame.quit()
+					sys.exit()
+		
+		# write the resulting fwd and turn to the motors via serial
+		if (fwd < 227) && (fwd > 27):
+			ser.write(chr(fwd))
+		else:
+			fwd = 127
+			ser.write(chr(fwd))
+			print "Too much fwd has been applied. Stopping the wheels"
+		if (turn < 227) && (turn > 27):
+			ser.write(chr(turn))
+		else:
+			turn = 127
+			ser.write(chr(turn))
+			print "Too much turn has been applied. Stopping the wheels"
+			
+		screen.fill(black)		# set the screen background to black (should be anyway as default)
 
-        screen.fill(black)		# set the screen background to black (should be anyway as default)
+		# display text to the screen, blit can also render images and draw on the screen
+		screen.blit(font.render("Telemetry: (forward, turn)",True,white),(15,5))
+		screen.blit(font.render(str(get_telemetry(ser)),True,white),(110,25))
+		
+		pygame.display.update()		# update the display on each loop
 
-        # display text to the screen, blit can also render images and draw on the screen
-        screen.blit(font.render("Telemetry: (forward, turn)",True,white),(15,5))
-        screen.blit(font.render(str(get_telemetry(ser)),True,white),(110,25))
-        
-        pygame.display.update()		# update the display on each loop
-
-        time.sleep(0.016)		# sleep for 0.016 seconds
+		time.sleep(0.016)		# sleep for 0.016 seconds
 
 # program start
-main()
-pygame.quit()
-quit()
+if __name__ == "__main__":
+	main()
+	pygame.quit()
+	quit()
