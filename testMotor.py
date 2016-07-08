@@ -3,8 +3,8 @@
 # import libraries
 import time
 import sys
-import serial
 import pygame
+import serial
 
 '''
 	This function will set up the serial interface. This setup uses a try
@@ -144,13 +144,13 @@ def main():
 					sys.exit()
 		
 		# write the resulting fwd and turn to the motors via serial
-		if (fwd < 227) && (fwd > 27):
+		if (fwd < 227) and (fwd > 27):
 			ser.write(chr(fwd))
 		else:
 			fwd = 127
 			ser.write(chr(fwd))
 			print "Too much fwd has been applied. Stopping the wheels"
-		if (turn < 227) && (turn > 27):
+		if (turn < 227) and (turn > 27):
 			ser.write(chr(turn))
 		else:
 			turn = 127

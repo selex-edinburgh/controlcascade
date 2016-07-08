@@ -120,7 +120,7 @@ def init_pins():
 def main():
 	# initialise local variables
 	crashed = False
-	mode = "Rollover"
+	mode = "Continuous"
 	values = [0,0]
 	readings = [0,0]
 	prevReadings = [0,0]
@@ -130,7 +130,7 @@ def main():
 	pygame.init()		# initialise pygame
 
 	displayWidth = 190
-	displayHeight = 75
+	displayHeight = 100
 	screen = pygame.display.set_mode((displayWidth,displayHeight))		# set display parameters of the window
 
 	pygame.display.set_caption("Odo Test")		# set title of the window
@@ -158,7 +158,7 @@ def main():
 						mode = "Continuous"
 					elif mode == "Continuous":
 						mode = "Rollover"
-						
+
 		data = read_raw(constants)		# read from odometers
 
 		readings[0] = bit_slicer(data,constants['READING_LOW_0_BIT'],constants['READING_BIT_LENGTH'])
@@ -173,7 +173,8 @@ def main():
 
 		screen.blit(font.render("Odometers: (left, right)",True,white),(15,5))
 		screen.blit(font.render(str((int(values[0]), int(constants['ROLLOVER_RANGE']-values[1]))),True,white),(95,25))
-		screen.blit(font.render(str(("Mode: ", mode)),True,white), (15,45)) 
+		screen.blit(font.render(str(("Mode: ", mode)),True,white), (15,45))
+		screen.blit(font.render("Press 'c' to change mode",True,white),(15,65))
 
 		pygame.display.update()        # update the display on each loop
 
