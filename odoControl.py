@@ -2,15 +2,21 @@ import time
 import math
 import threading
 import sys
+
+# Set up GPIO pins
 try:
-    import smbus
-except:
-    print "I2C not connected"
+    import RPi.GPIO as GPIO
+    GPIO_Present = True
+except RunTimeError as err: # catch the RunTimeError and output a response
+    GPIO_Present= False
+    print err
+    print ("Error: Can't import RPi.GPIO")
+
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=0.1,rolloverRange=32768,rolloverCountL=0,rolloverCountR=0,initAngle=90):
+    def __init__(self,mmPerPulse=0.1,initAngle=90):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -20,37 +26,133 @@ class OdoState(ObservableState):
         self.distTravel = 0
         self._initAngle = initAngle
         self._mmPerPulse = mmPerPulse       # 1
-        self._rolloverRange = rolloverRange         # 32768
-        self._rolloverCountL = rolloverCountL       # 0
-        self._rolloverCountR = rolloverCountR        # 0
-        self.address = 4       	    # Seven bit Byte: as bit 8 is used for READ/WRITE designation.
-        self.control = 176   	    # Tells sensor board slave to read odometers
-        self.numbytes = 4      
-        self.lr = 0
-        self.rr = 0
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
+        self.firstTime = True
+
+        if GPIO_Present:
+            #Initialise GPIO
+            GPIO.setwarnings(False)
+            GPIO.cleanup()
+            GPIO.setmode(GPIO.BCM)      #GPIO number designation (not pin nos)
+            GPIO.setup(18, GPIO.IN)     #Data pin left Odometer
+            GPIO.setup(22, GPIO.IN)     #Data pin Right Odometer
+            GPIO.setup(24, GPIO.OUT)    #Chip Select
+            GPIO.setup(23, GPIO.OUT)    #Clock pin comm
+
+'''
+   The read_odometers function will read angle and status data from the two
+   odometers directly and pass the result back to the main().
+ 
+   The Odometers use a simple synchronised two way data link.
+   The GPIO Chip Select pins on both odometers are connected together
+   so that both odometers are triggered to start simultaneously.
+   The GPIO Clock pins on both odometers are also connected together
+   so that the 16 data bits are clocked out simultaneously.
+   The Odometer Data output pins are connected to separate GPIO pins
+   and the bit values are read separately.
+   We assemble these individual bits of data into separate 16 bit words.
+   Each 360 degree rotation of the wheel is divided up into 1024 steps.
+   During every rotation the data counts from 0 to 1024 and then starts again.
+   The step change between 0 and 1024 and visa versa is called a rollover
+'''
+def read_Odometers():
+    
+    # initialise local variables
+    TICK = 0.000005     #Half Odom Serial clock period 5us=100K bits/s(Max 1MHz)
+    i = 15              #bit count index number
+    readBitLt = 0       #Lt Odom Data bit
+    readBitRt = 0       #Rt Odom Data bit
+    angDataLt = 0       #Lt Odom angular data in 10 bit word
+    angDataRt = 0       #Rt Odom angular data in 10 bit word
+    statusLt = 0        #Lt Odom status in 6 bit word
+    statusRt = 0        #Rt Odom status in 6 bit word   
+
+    # Read the Odometers
+    # Bring the chip select pin high and then low before reading data.
+    GPIO.output(24, True)   #Chip Select pin High (normal state)
+    time.sleep(TICK)        #Half odom Serial clock period
+    GPIO.output(23, True)   #Clock pin High (normal state)
+    time.sleep(TICK)
+    GPIO.output(24, False)  #Chip Select pin Low (both odom triggered to output data)
+    time.sleep(TICK)        #Wait min of 500ns
+    
+    # bit data changes on each rising edge of clock 
+    while i >= 0:   # loop 16 times to read 16 bits of data from the odometers
+                    # the most significant bit (msb) is first (bit 15) 
+                    # the least significant bit (lsb) is last (bit 0)   
+        # pulse the clock pin Low and High and then read the two data pins
+        GPIO.output(23, False)  #Clock pin Low
+        time.sleep(TICK)
+        GPIO.output(23, True)   #Clock pin High 
+        time.sleep(TICK)        #Wait half clock period and then read bit data        
+        readBitLt = GPIO.input(18)    #read a bit from Lt odometer Data pin
+        readBitRt = GPIO.input(22)    #read a bit from Rt odometer Data pin
+
+        # shift each bit left to form two 10 bit binary words for angle data
+        # and two 5 bit binary words for odometer chip and magnet status 
+        #The first bit received is the most significant bit (msb bit 15)
+        if i > 5:  #first 10 bits contain angular rotation data (0 to 1024)
+            angDataLt =((angDataLt << 1) + readBitLt)   #bits 15 to 6
+            angDataRt =((angDataRt << 1) + readBitRt) 
+        else:      #last 6 bits contain odometer status data for analysis
+            statusLt = ((statusLt << 1) + readBitLt)    #bits 5 to 0
+            statusRt = ((statusRt << 1) + readBitLt)
+
+        i -= 1      #decrement bit count index number
+
+    time.sleep(TICK)        #Complete clock cycle
+    GPIO.output(24, True)   #Chip Select pin High (back to normal state)
+    return (angDataLt, angDataRt, statusLt, statusRt)   #return values to main()
+
+'''
+    The read_correct_odo function corrects 
+'''
+def read_correct_odo():
+    (angDataLt,angDataRt, statusLt,statusRt) = read_Odometers()
+    return (angDataLt,1024-angDataRt, statusLt,statusRt)
+
+'''    
+    The handle_rollovers function will detect any rollovers that may
+    occur during runtime and thereby achieve a continuous distance count
+    A rollover is a jump in angDataLt or angDataRt between 0 and 1024
+    One wheel rotation is divided into 3 equal sectors (1024/3 = 341 bits)
+    if the new angle & the previous angles are in sectors adjacent to the jump
+    a rollover has occurred and 1024 is added or subtracted from odom distance
+    Note: Time interval between odometer reads must be less than time taken
+    for wheel to rotate 2/3 of turn (this determines max wheel speed allowed)
+    This function is called from main().
+'''
+def handle_rollovers(angDataLt,angDataRt,prevAngDataLt,prevAngDataRt,\
+    odomDistLt,odomDistRt):
+    # Calculate change in odometer angles
+    changeLt = angDataLt - prevAngDataLt  #change in dataLt since last reading
+    changeRt = angDataRt - prevAngDataRt  #change in dataRt since last reading
+
+    if (angDataLt <341) and (prevAngDataLt >683):  #adjacent rollover sectors
+        odomDistLt = odomDistLt + 1024 + changeLt  #positive rollover
+    elif (angDataLt >683) and (prevAngDataLt <341):#adjacent rollover sectors
+        odomDistLt = odomDistLt - 1024 + changeLt  #negative rollover 
+    else:
+        odomDistLt = odomDistLt + changeLt         #no rollover 
+
+    if (angDataRt <341) and (prevAngDataRt >683):  #adjacent rollover sectors
+        odomDistRt = odomDistRt + 1024 + changeRt  #positive rollover
+    elif (angDataRt >683) and (prevAngDataRt <341):#adjacent rollover sectors
+        odomDistRt = odomDistRt - 1024 + changeRt  #negative rollover
+    else:
+        odomDistRt = odomDistRt + changeRt         #no rollover
+    
+    prevAngDataLt = angDataLt     #load new dataLt into prevDataLt for next loop
+    prevAngDataRt = angDataRt     #load new dataRt into prevDataRt for next loop
+            
+    return(odomDistLt,odomDistRt,prevAngDataLt,prevAngDataRt)
+
 def simUpdate(state,batchdata)    :
     odoControlUpdate(state, batchdata, False)
     
 def realUpdate(state,batchdata)    :
-    odoControlUpdate(state, batchdata, True )
-    
-def run_once(f):
-    def wrapper(*args, **kwargs):
-        if not wrapper.has_run:
-            wrapper.has_run = True
-            return f(*args, **kwargs)
-    wrapper.has_run = False
-    return wrapper 
-
-@run_once  
-def resetOdometers(state):
-    Txbyte0 = 0              #Center
-    Txbyte1 = 0              #Center
-    Txbytes = [Txbyte0, Txbyte1 ]
-    bus = smbus.SMBus(1)
-    bus.write_block_data(state.address,state.control,Txbytes )
+    odoControlUpdate(state, batchdata, GPIO_Present )
 
 def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
@@ -66,49 +168,66 @@ def odoControlUpdate(state,batchdata, doRead):
     
     if len(batchdata)==0 : return
    
-    if doRead :     # read items from the i2c interface   
+    if doRead :     # read items from GPIO Pins
         state.realMode = True # so visualiser knows real chariot is running
-        resetOdometers(state)        # reset the odometers (only once)
-        bus = smbus.SMBus(1)      
-        RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
-        
-        leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
-        rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
-        
-    try:
-        state.timeStampFlow["sense"] = time.time()    
-        
-        state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange      
-        state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
+        state.timeStampFlow["sense"] = time.time() #Keeping track of latency to be passed to stats loop
 
-        if  (abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange * 0.95):        # apply rollover to odometer readings
-            sign = math.copysign(1, state.totalPulseL - state.prevPulseL  )
-            print "sign: ", sign
-            state._rolloverCountL -= sign
-            state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
-            print "#################### rollover l", state.totalPulseL, state.prevPulseL   
-            
-        elif ((abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
-            (abs(state.totalPulseL - state.prevPulseL  ) < state._rolloverRange *  0.95)):
-            print "erraneous value"
+        # read odometers for raw angle data and status then correct right odometer
+        (angDataLt,angDataRt,statusLt,statusRt) = read_correct_odo()
 
+        if firstTime == True:           #First time setup for prevAngData
+            prevAngDataLt = angDataLt   #start condition for prevAngDataLt
+            prevAngDataRt = angDataRt   #start condition for prevAngDataRt
+            firstTime = False
 
-        if ( abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange * 0.95 ) :      # apply rollover to odometer readings
-            sign = math.copysign(1, state.totalPulseR - state.prevPulseR  )
-            state._rolloverCountR -= sign
-            state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
-            print "#################### rollover r", state.totalPulseR, state.prevPulseR 
-            
-        elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
-            (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
-            print "erraneous value"
-               
+        # calculate odometer distances by actioning rollovers
+        (odomDistLt,odomDistRt,prevAngDataLt,prevAngDataRt)= handle_rollovers\
+            (angDataLt,angDataRt,prevAngDataLt,prevAngDataRt,\
+             odomDistLt,odomDistRt)
 
         state.prevDistTravel = state.distTravel
         state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
                                 (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
-    except:
-        pass
+
+##        
+##        resetOdometers(state)        # reset the odometers (only once)
+##        bus = smbus.SMBus(1)      
+##        RxBytes = bus.read_i2c_block_data(state.address, state.control, state.numbytes)     # read odo from i2c
+##        
+##        leftReading = RxBytes[0]*256 + RxBytes[1] - 5000
+##        rightReading = RxBytes[2]*256 + RxBytes[3] - 5000
+##        
+##    try:
+##            
+##        
+##        state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange      
+##        state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
+##
+##        if  (abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange * 0.95):        # apply rollover to odometer readings
+##            sign = math.copysign(1, state.totalPulseL - state.prevPulseL  )
+##            print "sign: ", sign
+##            state._rolloverCountL -= sign
+##            state.totalPulseL = leftReading + state._rolloverCountL * state._rolloverRange
+##            print "#################### rollover l", state.totalPulseL, state.prevPulseL   
+##            
+##        elif ((abs(state.totalPulseL - state.prevPulseL  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
+##            (abs(state.totalPulseL - state.prevPulseL  ) < state._rolloverRange *  0.95)):
+##            print "erraneous value"
+##
+##
+##        if ( abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange * 0.95 ) :      # apply rollover to odometer readings
+##            sign = math.copysign(1, state.totalPulseR - state.prevPulseR  )
+##            state._rolloverCountR -= sign
+##            state.totalPulseR = rightReading + state._rolloverCountR * state._rolloverRange
+##            print "#################### rollover r", state.totalPulseR, state.prevPulseR 
+##            
+##        elif ((abs(state.totalPulseR - state.prevPulseR  ) > state._rolloverRange *  0.05) and      # check for erranous value from the odometers
+##            (abs(state.totalPulseR - state.prevPulseR  ) < state._rolloverRange *  0.95)):
+##            print "erraneous value"
+##               
+##
+##    except:
+##        pass
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
           
