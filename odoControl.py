@@ -16,7 +16,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=150.0 * math.pi/1024.0,initAngle=90):
+    def __init__(self,mmPerPulse=150.0 * math.pi/1024.0,initAngle=0):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -24,6 +24,7 @@ class OdoState(ObservableState):
         self.prevPulseR = 0
         self.offsetL = 0
         self.offsetR = 0
+        self._rolloverRange = 1024
         self.prevDistTravel = 0
         self.distTravel = 0
         self._initAngle = initAngle
@@ -44,7 +45,7 @@ class OdoState(ObservableState):
 
 '''
    The read_odometers function will read angle and status data from the two
-   odometers directly and pass the result back to the main().
+   odometers directly and pass the result back to the odoControlUpdate().
  
    The Odometers use a simple synchronised two way data link.
    The GPIO Chip Select pins on both odometers are connected together
@@ -123,7 +124,7 @@ def read_correct_odo():
     a rollover has occurred and 1024 is added or subtracted from odom distance
     Note: Time interval between odometer reads must be less than time taken
     for wheel to rotate 2/3 of turn (this determines max wheel speed allowed)
-    This function is called from main().
+    This function is called from odoControlUpdate().
 '''
 def handle_rollovers(angDataLt,angDataRt,prevAngDataLt,prevAngDataRt,\
     odomDistLt,odomDistRt):
@@ -160,17 +161,20 @@ def odoControlUpdate(state,batchdata, doRead):
     state.prevPulseL = state.totalPulseL
     state.prevPulseR = state.totalPulseR
 
+    simDataAvailable = False
     for item in batchdata:          # process items in batchdata
         if item['messageType'] == 'control':
             pass
         elif item['messageType'] == 'sense':
             angDataLt = item['pulseL']  #from simulation
             angDataRt = item['pulseR'] #from simulation
+            simDataAvailable = True
 
     
     if not doRead: #simulated or no odometers available
         # angDataLt and angDataRt are assigned to the latest values from batchdata above
-        if len(batchdata)==0 : return # no data to assign from -> return
+        state.realMode = False
+        if not simDataAvailable : return # no data to assign from -> return
     else :  # doRead == true   # read items from GPIO Pins
         state.realMode = True # so visualiser knows real chariot is running
 
