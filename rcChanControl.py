@@ -10,11 +10,11 @@ except:
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
-try:        # delete log file
-    os.rename('motorCommands.txt','log/%s.old' % time.time())
-    os.remove('motorCommands.txt')
-except OSError:
-    print "os fail"
+##try:        # delete log file
+##    os.rename('motorCommands.txt','log/%s.old' % time.time())
+##    os.remove('motorCommands.txt')
+##except OSError:
+##    print "os fail"
 
 class RcChanState(ObservableState):
     def __init__(self, lrChange, fwdbkChange, speedScaling):
@@ -31,8 +31,8 @@ class RcChanState(ObservableState):
         self.timeStampFlow["control"] = time.time()
         try:
             self.ser= serial.Serial(            #Set up Serial Interface
-            port="/dev/ttyAMA0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6
-            baudrate=9600,                      #bits/sec
+            port="/dev/ttyS0",                #UART using Tx pin 8, Rx pin 10, Gnd pin 6
+            baudrate=38400,                      #bits/sec
             bytesize=8, parity='N', stopbits=1, #8-N-1  protocol
             timeout=1                           #1 sec
             )
@@ -74,15 +74,18 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._lrChange )
     state.currentFwd = limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange )
 
-    f = open('motorCommands.txt', 'a')
-
-    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
-
-    f.close()
+##    f = open('motorCommands.txt', 'a')
+##
+##    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
+##
+##    f.close()
+    
     if motorOutput:
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board
 
+    #print state.currentFwd, state.currentTurn, state.demandFwd, state.demandTurn
+        
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
     if diff == 0: return startX
