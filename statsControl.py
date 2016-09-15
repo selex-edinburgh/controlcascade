@@ -44,7 +44,8 @@ def statsControlUpdate(state, batchdata):
         state.length = len(batchdata)
         print "success"
     except:
-        print "stats error"
+        pass
+        #print "stats error"
 
     if state.max < 0.5:
         print >> f, time.time(), ",", state.average,",",state.max,",",state.min
