@@ -10,6 +10,10 @@ except:
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
+'''
+    Uncomment this section and motorCommand file open part further down to
+    get back motor date to put in Graphs
+'''
 ##try:        # delete log file
 ##    os.rename('motorCommands.txt','log/%s.old' % time.time())
 ##    os.remove('motorCommands.txt')
