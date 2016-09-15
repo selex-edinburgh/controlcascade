@@ -34,11 +34,12 @@ def trackControlUpdate(state,batchdata):
             state.timeStampFlow[item['messageType']] = item['timeStamp']
 
         if item['messageType'] == 'control':
-            state.noLegSet = False
             state.legGoal = item['legGoal']
             state.legOrigin = item['legOrigin']
             state.nearWaypoint = item['nearWaypoint']
-
+            if state.noLegSet:
+                state.currentPos = state.legOrigin
+            state.noLegSet = False
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
 
@@ -131,6 +132,7 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
                       sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
     brakingPct = round(min(100.0, dtgFactor)  ,0)
     if brakingPct < 15.0 : brakingPct = 0
+    #TODO
     turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
     move = max ( 1 - abs(turn), 0 )
 
