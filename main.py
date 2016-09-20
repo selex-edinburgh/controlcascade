@@ -77,15 +77,15 @@ def runControlLoops():
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
 
 
-    visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to pause loops
+    visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to stop loops
     visualController.connectTo(odoController, visualControl.visualToAppManager)
-#    visualController.connectTo(statsController, visualControl.visualToAppManager)
-   # visualController.connectTo(rcChanController, visualControl.visualToAppManager)
-   # visualController.connectTo(envSimController, visualControl.visualToAppManager)
-   # visualController.connectTo(sensorController, visualControl.visualToAppManager)
-   # visualController.connectTo(routeController, visualControl.visualToAppManager)
-   # visualController.connectTo(scanSimController, visualControl.visualToAppManager)
-   # visualController.connectTo(routeController, visualControl.visualToAppManager)
+    #visualController.connectTo(statsController, visualControl.visualToAppManager)
+    #visualController.connectTo(rcChanController, visualControl.visualToAppManager)
+    #visualController.connectTo(envSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(sensorController, visualControl.visualToAppManager)
+    #visualController.connectTo(routeController, visualControl.visualToAppManager)
+    #visualController.connectTo(scanSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(routeController, visualControl.visualToAppManager)
 
     routeController.start()
     trackController.start()
