@@ -70,7 +70,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         elif item['messageType'] == 'sense':
             pass
 
-    if not batchdata:       # if no messages (loops paused) set the speed to stationary
+    if not batchdata:       # if no messages (loops stopped) set the speed to stationary
         state.demandFwd = 127
         state.demandTurn = 127
 
