@@ -15,7 +15,8 @@ class TrackState(ObservableState):
         self.legGoal = (0.0,0.0)
         self.legOrigin = (0.0,0.0)
         self.currentAngle = 0
-        self.currentPos = (2390.0,4630.0,0)
+        #self.currentPos = (2390.0,4630.0,0) # Uncomment this line to have RC draw at centre of screen
+        self.currentPos = (-100.0,-100.0,0)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)
         self._trackWidth = trackWidth       # 310.0 mm between wheels
@@ -37,7 +38,7 @@ def trackControlUpdate(state,batchdata):
             state.legGoal = item['legGoal']
             state.legOrigin = item['legOrigin']
             state.nearWaypoint = item['nearWaypoint']
-            if state.noLegSet:
+            if state.noLegSet:      #This sets the starting position equal to the first waypoint
                 state.currentPos = state.legOrigin
             state.noLegSet = False
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
