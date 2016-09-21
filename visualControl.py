@@ -33,8 +33,10 @@ menu_data = (
     'Main',
     'Add Waypoint',
     'Remove Last Waypoint',
-    'Pause',
-    'Resume',
+    'Wait Waypoint',
+    'Normal Waypoint',
+    'Stop',
+    'Start',
     'Remove Pole',
     'Timing Graph',
     'Motor Graph',
@@ -85,7 +87,8 @@ class VisualState(ObservableState):
 
         self.realMode = False
 
-        self.pauseLoops = True      # initialized to true to pause at beginning
+        self.stopLoops = True       # initialized to true to stop at beginning
+        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in wait
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
 
         self.eventPress = 0
@@ -202,23 +205,30 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, BLUE), (505,self.screenHeight -295))
         surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,self.screenHeight -275))
 
-        if self.pauseLoops:
-            surface.blit(self.font.render(("On Route..."), True, BLUE), (555, self.screenHeight - 20))
-            surface.blit(self.font.render(("Paused..."), True, WHITE), (555, self.screenHeight - 40))
+        if self.stopLoops:
+            surface.blit(self.font.render(("Running..."), True, BLUE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Stopped..."), True, WHITE), (555, self.screenHeight - 40))
         else:
-            surface.blit(self.font.render(("Paused..."), True, BLUE), (555, self.screenHeight - 40))
-            surface.blit(self.font.render(("On Route"), True, WHITE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Stopped..."), True, BLUE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Running..."), True, WHITE), (555, self.screenHeight - 20))
 
+        if self.waitLoops:
+            surface.blit(self.font.render(("On Route..."), True, BLUE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting..."), True, WHITE), (555, self.screenHeight - 160))
+        else:
+            surface.blit(self.font.render(("Waiting..."), True, BLUE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("On Route..."), True, WHITE), (555, self.screenHeight - 140))
+        
         pos = pygame.mouse.get_pos()        # cursor position
         pos = (pos[0], self.screenHeight - pos[1] )
         surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, self.screenHeight - 150))
         surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, self.screenHeight - 130))
         if self.realMode:
-            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
-            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 120)))
+            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
         else:
-            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 120)))
-            surface.blit(self.font.render(("Non-Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
+            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
+            surface.blit(self.font.render(("Non-Simulated mode"), True, BLUE),(555,(self.screenHeight - 80)))
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
@@ -229,10 +239,14 @@ def handle_menu(e, state):
     elif e.name == 'Main':
         if e.text == 'Quit':
             pygame.quit()
-        if e.text == 'Pause':
-            state.pauseLoops = True
-        if e.text == 'Resume':
-            state.pauseLoops = False
+        if e.text == 'Stop':
+            state.stopLoops = True
+        if e.text == 'Start':
+            state.stopLoops = False
+        if e.text == 'Wait Waypoint':
+            state.waitLoops = True
+        if e.text == 'Normal Waypoint':
+            state.waitLoops = False
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
         if e.text == 'Remove Pole':
@@ -267,7 +281,7 @@ def visualControlUpdate(state,batchdata):
 
     try:
         if state.targetPos == state.waypointList[-1]:
-            state.pauseLoops = True
+            state.stopLoops = True
     except:
         print "error"
 
@@ -354,8 +368,8 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
 
     a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))
     b = sourceState.targetPos[0], sourceState.targetPos[1]
-    if destState.nearWaypoint and b == a:       # pause if at last waypoint
-        sourceState.pauseLoops = True
+    if destState.nearWaypoint and b == a:       # stop if at last waypoint
+        sourceState.stopLoops = True
 
     if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
         sourceState.prevWaypoint = sourceState.waypoint
@@ -365,7 +379,7 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
         destQueue.put(message)
 
 def visualToAppManager(sourceState, destState, destQueue):
-   # if sourceState.pauseLoops == True:
-    message = {'messageType': 'pause',
-                'pauseLoops': sourceState.pauseLoops}
+   # if sourceState.stopLoops == True:
+    message = {'messageType': 'stop',
+                'stopLoops': sourceState.stopLoops}
     destQueue.put(message)
