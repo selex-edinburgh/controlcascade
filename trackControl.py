@@ -20,13 +20,10 @@ class TrackState(ObservableState):
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)
         self._trackWidth = trackWidth                   # nominal 237.0 mm between wheels l/r
-        self._halfTW = trackWidth/2                     # for ease of use in calculations
         self._wheelBase = wheelBase                     # nominal 200.0 mm between wheels f/b
-        self._halfWB = wheelBase/2                      # for ease of use in calculations
-        self.turnRadius = math.sqrt((_halfWB)^2+(_halfTW)^2) # value should be aroudn 155.0 mm
-        self.thatThing = (_halfTW/turnRadius)^2         # takes into account the turning component
-        # and the turn radius to create a correction value that can be applied to the heading
-        self.cosTheta = _halfTW/turnRadius              # component of Odometer when turning
+        self.turnRadius = math.hypot(self._trackWidth, self._wheelBase)/2.0 # value should be around 155.0 mm
+        self.turnFactor = ((self._trackWidth/2.0)/self.turnRadius)**2.0 # takes into account the turning component
+        # and the turn radius to create a correction value that can be applied to the heading (0.58)
         self._movementBudget = movementBudget       # 500.0 mm
         self.timeStamp = time.time()
         self.pole = (1200,0)
@@ -138,8 +135,8 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
     dtgFactor = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
                       sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
-    brakingPct = round(min(100.0, dtgFactor)  ,0)
-    if brakingPct < 15.0 : brakingPct = 0
+    brakingPct = round(min(100.0, dtgFactor)  ,0) # 100% = full speed
+    if brakingPct < 10.0 : brakingPct = 0
     #TODO
     turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
     move = max ( 1 - abs(turn), 0 )
