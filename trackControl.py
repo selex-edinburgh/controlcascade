@@ -7,7 +7,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class TrackState(ObservableState):
-    def __init__(self, trackWidth, movementBudget):
+    def __init__(self, wheelBase, trackWidth, movementBudget):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
@@ -19,7 +19,14 @@ class TrackState(ObservableState):
         self.currentPos = (-100.0,-100.0,0)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
         self.demandPos = (0.0,0,0)
-        self._trackWidth = trackWidth       # 310.0 mm between wheels
+        self._trackWidth = trackWidth                   # nominal 237.0 mm between wheels l/r
+        self._halfTW = trackWidth/2                     # for ease of use in calculations
+        self._wheelBase = wheelBase                     # nominal 200.0 mm between wheels f/b
+        self._halfWB = wheelBase/2                      # for ease of use in calculations
+        self.turnRadius = math.sqrt((_halfWB)^2+(_halfTW)^2) # value should be aroudn 155.0 mm
+        self.thatThing = (_halfTW/turnRadius)^2         # takes into account the turning component
+        # and the turn radius to create a correction value that can be applied to the heading
+        self.cosTheta = _halfTW/turnRadius              # component of Odometer when turning
         self._movementBudget = movementBudget       # 500.0 mm
         self.timeStamp = time.time()
         self.pole = (1200,0)

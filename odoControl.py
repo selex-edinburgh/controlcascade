@@ -32,7 +32,7 @@ class OdoState(ObservableState):
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
         self.firstTime = True
-
+        self.
         if GPIO_Present:
             #Initialise GPIO
             GPIO.setwarnings(False)
@@ -200,7 +200,9 @@ def odoControlUpdate(state,batchdata, doRead):
 
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
-          
+
+    (lrDifferenceMm/dest.turnRadius)*dest.thatThing
+    
     angle =  (math.degrees(lrDifferenceMm / destState._trackWidth) %360   )+ sourceState._initAngle      # correct (y) **depends on if trackwidth is correct**
                 
     destQueue.put({'messageType':'sense',
