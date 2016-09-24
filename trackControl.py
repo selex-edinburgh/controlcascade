@@ -138,7 +138,7 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
     brakingPct = round(min(100.0, dtgFactor)  ,0) # 100% = full speed
     if brakingPct < 10.0 : brakingPct = 0
     #TODO
-    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
+    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90.0 #TODO 45 degress error = full turn demand
     move = max ( 1 - abs(turn), 0 )
 
 
