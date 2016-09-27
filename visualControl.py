@@ -71,7 +71,8 @@ class VisualState(ObservableState):
         self.prevWaypoint = (0,0)       # previous waypoints
         self.waypointList = []
         self.scrBuff = None
-        self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
+        self.sensorID = ''
+        self.scanCone = ((0,0),(0,0),(0,0))   # scan used for collison range [((0,0),(0,0),(0,0)),((0,0),(0,0),(0,0))]     
         self.isCollision = False    # bool to check if pole in collision range
         self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
@@ -93,6 +94,8 @@ class VisualState(ObservableState):
 
         self.eventPress = 0
 
+        self.scanSensors = {}  # add dictionary for sensorID's
+
     def drawRobot(self, surface):
         if self.scrBuff == None:
                 self.scrBuff = surface.copy()
@@ -104,11 +107,14 @@ class VisualState(ObservableState):
         surface.blit(rotImg, ((self.robotPos[0] ) - rotImg.get_rect().width/2.0,
                               self.robotPos[1] - rotImg.get_rect().height/2.0))
 
-        if self.isCollision == False:
-            pygame.draw.lines(surface, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
-        else:
-            pygame.draw.lines(surface, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
-
+        for key in self.scanSensors: # scanSensors is filled in the visualControlUpdate method by the scan MessageType.
+            #print self.scanSensors
+            #print key, self.scanSensors[key][0], self.scanSensors[key][1][0]
+            if self.scanSensors[key][0]: # scanSensors[key][0] is a Collision boolean.
+                pygame.draw.lines(surface,   RED, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][1], self.scanSensors[key][1][2]), 2)
+            else:
+                pygame.draw.lines(surface, BLACK, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][1], self.scanSensors[key][1][2]), 2)
+                         
     def drawPath(self,surface):
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
         pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)
@@ -345,8 +351,11 @@ def visualControlUpdate(state,batchdata):
             state.lengthOfBatch = (item['length'])
             state.varianceOfLatency = (item['variance'])
         elif item['messageType'] == 'scan':
-            state.scanCone = (item['scanCone'])
-            state.isCollision = (item['collision'])
+            # check dictionary with the passed in sensorID
+##            state.sensorID = (item['sensorID'])
+##            state.scanCone = (item['scanCone'])
+##            state.isCollision = (item['collision'])
+            state.scanSensors[item['sensorID']] = [item['collision'], item['scanCone']]
 
         elif item['messageType'] == 'control':
             state.rcFwd = abs((item['rcFwd']*127.0  ))
