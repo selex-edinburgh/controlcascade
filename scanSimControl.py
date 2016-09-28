@@ -5,12 +5,13 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class ScanSimState(ObservableState):
-    def __init__(self, sensorID, pointAOffset, pointB, pointC, scanRange, turnSpeed):
+    def __init__(self, sensorID, pointAOffset, pointB, pointC, scanAngle, scanRange, turnSpeed):
         super(ScanSimState,self).__init__()
         self.sensorID = sensorID
         self.pointAOffset = pointAOffset
         self.pointB = pointB
         self.pointC = pointC
+        self.scanAngle = scanAngle
         self.scanRange = scanRange
         self.turnSpeed = turnSpeed
         self.robotPos = (1200.0,0.0)
@@ -36,7 +37,7 @@ def scanSimControlUpdate(state, batchdata):
     if len(batchdata) == 0: return
     
     state.angleIncrementor += state.increment # used to change pointB and pointC so that scanCone moves left to right
-    if state.angleIncrementor >= 45 or state.angleIncrementor <= -45: # test with 135 and 45
+    if state.angleIncrementor >= state.scanAngle or state.angleIncrementor <= -state.scanAngle: # test with 135 and 45
         state.increment *= -1
         
     a = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10) + state.pointAOffset)# determine the points of the scanning cone
