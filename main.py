@@ -30,6 +30,10 @@ def runControlLoops():
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
 
+    '''
+    Explaination of the next block
+    Green block
+    '''
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState()    #OdoState(mmPerPulse,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 40, 0.4)    #RcChanState(lrChange, fwdbkChange, speedScaling)
@@ -39,15 +43,19 @@ def runControlLoops():
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
-    scanSimState  = scanSimControl.ScanSimState('IR', 0,  135,  45, 45, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - FrontCone, pointC - FrontCone, scanAngle, scanRange, turnSpeed)
-    scanSimState2 = scanSimControl.ScanSimState('US', 0, -112, -68, 67, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - BackCone,  pointC - BackCone,  scanAngle, scanRange, turnSpeed)
+    scanSimState  = scanSimControl.ScanSimState('IR', 0,  135,  45,  90, 90, 45, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - FrontCone, pointC - FrontCone, pointD - FrontLine, pointE - FrontLine, scanAngle, scanRange, turnSpeed)
+    scanSimState2 = scanSimControl.ScanSimState('US', 0, -112, -68, -90, -90, 21, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - BackCone,  pointC - BackCone,  pointD - FrontLine, pointE - FrontLine, scanAngle, scanRange, turnSpeed)
 
+    '''
+    Explaination of next block
+    Amber block
+    '''
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
-#    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-#    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+#    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+#    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     vsimUpdateRateMin * timeScale,  vsimUpdateRateMax * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
@@ -56,6 +64,10 @@ def runControlLoops():
     scanSimController = plumbing.controlloop.ControlLoop( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
     scanSimController2 = plumbing.controlloop.ControlLoop( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
 
+    '''
+    Explaination of next block
+    Green block
+    '''
     routeController.connectTo(trackController,  routeControl.routeToTrackTranslator)
     trackController.connectTo(rcChanController, trackControl.trackToRcChanTranslator)
     rcChanController.connectTo(vsimController, rcChanControl.rcChanToVsimTranslator)
@@ -91,6 +103,10 @@ def runControlLoops():
     #visualController.connectTo(scanSimController, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
 
+    '''
+    sets going the loops for all the different controllers
+    Green block
+    '''
     routeController.start()
     trackController.start()
     rcChanController.start()

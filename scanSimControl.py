@@ -5,12 +5,14 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class ScanSimState(ObservableState):
-    def __init__(self, sensorID, pointAOffset, pointB, pointC, scanAngle, scanRange, turnSpeed):
+    def __init__(self, sensorID, pointAOffset, pointB, pointC, pointD, pointE, scanAngle, scanRange, turnSpeed):
         super(ScanSimState,self).__init__()
         self.sensorID = sensorID
         self.pointAOffset = pointAOffset
         self.pointB = pointB
         self.pointC = pointC
+        self.pointD = pointD
+        self.pointE = pointE
         self.scanAngle = scanAngle
         self.scanRange = scanRange
         self.turnSpeed = turnSpeed
@@ -20,7 +22,7 @@ class ScanSimState(ObservableState):
         self.scanCone = []
         self.isCollision = False
         self.angleIncrementor = 0
-        self.increment = 5
+        self.increment = 3
         self.sensorID = sensorID
         
 def scanSimControlUpdate(state, batchdata):
@@ -40,19 +42,28 @@ def scanSimControlUpdate(state, batchdata):
     if state.angleIncrementor >= state.scanAngle or state.angleIncrementor <= -state.scanAngle: # test with 135 and 45
         state.increment *= -1
         
-    a = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10) + state.pointAOffset)# determine the points of the scanning cone
+    a = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10) + state.pointAOffset)# determine the point of origin on chariot for the scanning cone
     
-    b = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- (state.pointB+state.angleIncrementor)))), \
-        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- (state.pointB+state.angleIncrementor)))))
+    b = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- (state.pointB)))), \
+        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- (state.pointB))))) # determine the left most point(relative to rotation) for the scanning cone
     
-    c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  - (state.pointC+state.angleIncrementor)))), \
-        (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - (state.pointC+state.angleIncrementor))))))
+    c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  - (state.pointC)))), \
+        (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - (state.pointC)))))) # determine the right most point(relative to rotation) for the scanning cone
+
+    d = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- (state.pointD+state.angleIncrementor)))), \
+        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- (state.pointD+state.angleIncrementor))))) # determine the left most point(relative to rotation) for the scanning line
+
+    e = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- (state.pointE+state.angleIncrementor)))), \
+        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- (state.pointE+state.angleIncrementor))))) # determine the right most point(relative to rotation) for the scanning line
     
-    state.scanCone = [a,b,c]        # three points of scan cone
+    state.scanCone = [a,b,c,d,e]        # first three points are scan cone. fourth and fifth are scan line
     
     newA = (a[0], (720 - a[1]))     # adjustment for screen height 
     newB = (b[0], (720 - b[1]))
     newC = (c[0], (720 - c[1]))
+
+    newD = (d[0], (720 - d[1]))
+    newE = (e[0], (720 - e[1]))
     
     anyCollisions = False 
     

@@ -110,10 +110,12 @@ class VisualState(ObservableState):
         for key in self.scanSensors: # scanSensors is filled in the visualControlUpdate method by the scan MessageType.
             #print self.scanSensors
             #print key, self.scanSensors[key][0], self.scanSensors[key][1][0]
+            pygame.draw.lines(surface, BLACK, False, (self.scanSensors[key][1][1], self.scanSensors[key][1][0], self.scanSensors[key][1][2]), 2)
+            
             if self.scanSensors[key][0]: # scanSensors[key][0] is a Collision boolean.
-                pygame.draw.lines(surface,   RED, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][1], self.scanSensors[key][1][2]), 2)
+                pygame.draw.lines(surface,   RED, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][3], self.scanSensors[key][1][4]), 2)
             else:
-                pygame.draw.lines(surface, BLACK, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][1], self.scanSensors[key][1][2]), 2)
+                pygame.draw.lines(surface, WHITE, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][3], self.scanSensors[key][1][4]), 2)
                          
     def drawPath(self,surface):
         pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
@@ -212,29 +214,29 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,self.screenHeight -275))
 
         if self.stopLoops:
-            surface.blit(self.font.render(("Running..."), True, BLUE), (555, self.screenHeight - 20))
-            surface.blit(self.font.render(("Stopped..."), True, WHITE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Program Running"), True, BLUE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, WHITE), (555, self.screenHeight - 40))
         else:
-            surface.blit(self.font.render(("Stopped..."), True, BLUE), (555, self.screenHeight - 40))
-            surface.blit(self.font.render(("Running..."), True, WHITE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, BLUE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Program Running"), True, WHITE), (555, self.screenHeight - 20))
 
         if self.waitLoops:
-            surface.blit(self.font.render(("On Route..."), True, BLUE), (555, self.screenHeight - 140))
-            surface.blit(self.font.render(("Waiting..."), True, WHITE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, BLUE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, WHITE), (555, self.screenHeight - 160))
         else:
-            surface.blit(self.font.render(("Waiting..."), True, BLUE), (555, self.screenHeight - 160))
-            surface.blit(self.font.render(("On Route..."), True, WHITE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, BLUE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, WHITE), (555, self.screenHeight - 140))
         
         pos = pygame.mouse.get_pos()        # cursor position
         pos = (pos[0], self.screenHeight - pos[1] )
         surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, self.screenHeight - 150))
         surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, self.screenHeight - 130))
         if self.realMode:
-            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Real mode"), True, WHITE),(555,(self.screenHeight - 80)))
             surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
         else:
             surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
-            surface.blit(self.font.render(("Non-Simulated mode"), True, BLUE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Real mode"), True, BLUE),(555,(self.screenHeight - 80)))
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
