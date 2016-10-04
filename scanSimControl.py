@@ -36,7 +36,7 @@ def scanSimControlUpdate(state, batchdata):
         (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
     
     state.scanCone = [a,b,c]        # three points of scan cone
-    
+
     newA = (a[0], (720 - a[1]))     # adjustment for screen height 
     newB = (b[0], (720 - b[1]))
     newC = (c[0], (720 - c[1]))

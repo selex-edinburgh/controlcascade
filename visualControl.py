@@ -31,7 +31,6 @@ pygame.init()
 
 menu_data = (
     'Main',
-    'Add Waypoint',
     'Remove Last Waypoint',
     'Wait Waypoint',
     'Normal Waypoint',

@@ -1,11 +1,12 @@
 import time
 import math
 import threading
+import datetime
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class RouteState(ObservableState):
-    def __init__(self, near):
+    def __init__(self, near, waitPeriod):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         self.waypoints    = [
@@ -19,7 +20,7 @@ class RouteState(ObservableState):
 ##        (1460.0,1030.0),
 ##        (1480.0,1920.0),
 ##        (2250.0,2010.0),
-##        (2300,2850), 
+##        (2300.0,2850.0), 
 ##        (1240.0,2840.0),
 ##        (470.0,6560.0),
 ##        (1850.0,6750.0),
@@ -45,6 +46,9 @@ class RouteState(ObservableState):
         self.nearWaypoint = False
         self.timeStampFlow["control"]    = time.time()
         self.finalWaypoint = False
+        self.goalTime = 0
+        self.waitPeriod = waitPeriod
+        self.waiting = False
 def routeControlUpdate(state,batchdata):
     for item in batchdata:
         if item['messageType'] == 'waypoint':
@@ -61,11 +65,21 @@ def routeControlUpdate(state,batchdata):
             distToWPx = sensedPos[0] - state.waypoints[state.nextWaypoint][0]
             distToWPy = sensedPos[1] - state.waypoints[state.nextWaypoint][1]
             dist = math.hypot( distToWPx , distToWPy )
-            if dist < state._near:                
-                state.nearWaypoint = True
-                if ( state.nextWaypoint+1 < len(state.waypoints)):
-                    state.nextWaypoint += 1 
+            if dist < state._near:
 
+                currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
+                if not(state.waiting): # Check to see if wait has started if not start waiting
+                    state.waiting = True
+                    state.goalTime = currentTime + datetime.timedelta(0,state.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
+
+                # THERE IS TEST PRINT IN SCAMSIM THAT NEEDS REMOVING AFTER TESTING
+
+                if state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
+                    state.waiting = False # Reseting the wait 
+                    state.nearWaypoint = True
+                    if ( state.nextWaypoint+1 < len(state.waypoints)):
+                        state.nextWaypoint += 1
+                
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     nextID = sourceState.nextWaypoint
 
