@@ -42,7 +42,7 @@ def statsControlUpdate(state, batchdata):
         state.average = sum(item['delta']['control'] for item in batchdata) / len(batchdata)
         state.variance = sum((state.average - item['delta']['control']) ** 2 for item in batchdata) / len(batchdata)
         state.length = len(batchdata)
-        print "success"
+        #print "success"
     except:
         pass
         #print "stats error"
