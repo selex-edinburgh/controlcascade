@@ -43,13 +43,15 @@ class RouteState(ObservableState):
         ]
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
-        self.nearWaypoint = False
+        self.nearWaypoint = True
         self.timeStampFlow["control"]    = time.time()
         self.finalWaypoint = False
         self.goalTime = 0
+        #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
         self.waitPeriod = waitPeriod
         self.waiting = False
 def routeControlUpdate(state,batchdata):
+    #nearWaypointLocal = state.nearWaypoint
     for item in batchdata:
         if item['messageType'] == 'waypoint':
             newWaypoint = tuple(10*x for x in item['newWaypoint'])
@@ -67,22 +69,23 @@ def routeControlUpdate(state,batchdata):
             dist = math.hypot( distToWPx , distToWPy )
             if dist < state._near:
 
-                currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
-                if not(state.waiting): # Check to see if wait has started if not start waiting
-                    state.waiting = True
-                    state.goalTime = currentTime + datetime.timedelta(0,state.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
+                if state.waitPeriod!=0: 
+                    currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
+                    if not(state.waiting): # Check to see if wait has started if not start waiting
+                        state.waiting = True
+                        state.goalTime = currentTime + datetime.timedelta(0,state.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
 
-                # THERE IS TEST PRINT IN SCAMSIM THAT NEEDS REMOVING AFTER TESTING
+                    if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
+                        state.waiting = False # Reseting the wait
 
-                if state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
-                    state.waiting = False # Reseting the wait 
+                if not(state.waiting):    
                     state.nearWaypoint = True
                     if ( state.nextWaypoint+1 < len(state.waypoints)):
                         state.nextWaypoint += 1
+
                 
 def routeToTrackTranslator( sourceState, destState, destQueue ):
-    nextID = sourceState.nextWaypoint
-
+    nextID = sourceState.nextWaypoint      
     
     message = {'messageType':'control',
                'legGoal'    :sourceState.waypoints[nextID],
@@ -90,8 +93,21 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
                'timeStamp'  :sourceState.timeStampFlow["control"],
                'nearWaypoint' :sourceState.nearWaypoint
                }
-              
   
     destQueue.put(message)
 
-
+def routeToVisualTranslator( sourceState, destState, destQueue ):
+    #if sourceState.routeChanged:
+    #    sourceState.routeChanged = False ## ??
+        #send waypoint list etc
+        pass
+    #nextID = sourceState.nextWaypoint      
+    
+    #message = {'messageType':'control',
+    #           'legGoal'    :sourceState.waypoints[nextID],
+    #           'legOrigin'  :sourceState.waypoints[nextID-1],
+    #           'timeStamp'  :sourceState.timeStampFlow["control"],
+    #           'nearWaypoint' :sourceState.nearWaypoint
+    #           }
+  
+    #destQueue.put(message)
