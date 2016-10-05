@@ -32,8 +32,8 @@ pygame.init()
 menu_data = (
     'Main',
     'Remove Last Waypoint',
-    'Wait Waypoint',
-    'Normal Waypoint',
+    'Waiting Waypoint',
+    'Continuous Waypoint',
     'Stop',
     'Start',
     'Remove Pole',
@@ -63,12 +63,12 @@ class VisualState(ObservableState):
         self.barrierList= []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
-        self.waypoint = (0,0)       # list of waypoints
+        self.waypoint = (0,0)       # temp waypoint when adding new waypoints to list
         self.robotPos = (0,0)       # current position of robot
         self.robotAngle = 0     # current angle of robot
         self.targetPos = (0,0)      # next waypoint
         self.prevWaypoint = (0,0)       # previous waypoints
-        self.waypointList = []
+        self.waypointList = []  # list of waypoints
         self.scrBuff = None
         self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
         self.isCollision = False    # bool to check if pole in collision range
@@ -87,7 +87,7 @@ class VisualState(ObservableState):
         self.realMode = False
 
         self.stopLoops = True       # initialized to true to stop at beginning
-        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in wait
+        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in wait in wait
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
 
         self.eventPress = 0
@@ -205,29 +205,29 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,self.screenHeight -275))
 
         if self.stopLoops:
-            surface.blit(self.font.render(("Running..."), True, BLUE), (555, self.screenHeight - 20))
-            surface.blit(self.font.render(("Stopped..."), True, WHITE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Program Running"), True, BLUE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, WHITE), (555, self.screenHeight - 40))
         else:
-            surface.blit(self.font.render(("Stopped..."), True, BLUE), (555, self.screenHeight - 40))
-            surface.blit(self.font.render(("Running..."), True, WHITE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, BLUE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Program Running"), True, WHITE), (555, self.screenHeight - 20))
 
         if self.waitLoops:
-            surface.blit(self.font.render(("On Route..."), True, BLUE), (555, self.screenHeight - 140))
-            surface.blit(self.font.render(("Waiting..."), True, WHITE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, BLUE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, WHITE), (555, self.screenHeight - 160))
         else:
-            surface.blit(self.font.render(("Waiting..."), True, BLUE), (555, self.screenHeight - 160))
-            surface.blit(self.font.render(("On Route..."), True, WHITE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, BLUE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, WHITE), (555, self.screenHeight - 140))
         
         pos = pygame.mouse.get_pos()        # cursor position
         pos = (pos[0], self.screenHeight - pos[1] )
         surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, self.screenHeight - 150))
         surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, self.screenHeight - 130))
         if self.realMode:
-            surface.blit(self.font.render(("Non-Simulated mode"), True, WHITE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Real mode"), True, WHITE),(555,(self.screenHeight - 80)))
             surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
         else:
             surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
-            surface.blit(self.font.render(("Non-Simulated mode"), True, BLUE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Real mode"), True, BLUE),(555,(self.screenHeight - 80)))
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
@@ -242,9 +242,9 @@ def handle_menu(e, state):
             state.stopLoops = True
         if e.text == 'Start':
             state.stopLoops = False
-        if e.text == 'Wait Waypoint':
+        if e.text == 'Waiting Waypoint':
             state.waitLoops = True
-        if e.text == 'Normal Waypoint':
+        if e.text == 'Continuous Waypoint':
             state.waitLoops = False
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
@@ -289,11 +289,11 @@ def visualControlUpdate(state,batchdata):
             pygame.quit()       # quit the screen
             sys.exit()
         elif e.type == MOUSEBUTTONDOWN and e.button ==1:
-            pressPosition = (e.pos[0], e.pos[1])        # pin point press location
+            pressPosition = (e.pos[0], e.pos[1])        # sets screen coordinates to MouseButtonDown coordinates
             if (screenAreaTop.collidepoint(pressPosition)) or \
-                (screenAreaBottom.collidepoint(pressPosition)):
-                pressPosition = (e.pos[0], state.screenHeight - e.pos[1])
-                state.waypoint = pressPosition      # create new waypoint from press
+                (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
+                pressPosition = (e.pos[0], state.screenHeight - e.pos[1]) # converts screen coordinates to arena coordinates
+                state.waypoint = pressPosition      # create new waypoint from arena coordinates
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
             state.eventPress = (e.pos[0], e.pos[1])
