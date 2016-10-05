@@ -36,9 +36,9 @@ class RouteState(ObservableState):
              
         #Square
         (2000, 4000),
-        (2000, 5000),
-        (3000, 5000),
-        (3000, 4000),
+        (2000, 6000),
+        (4000, 6000),
+        (4000, 4000),
         (2000, 4000)
         ]
         self.currentPos   = self.waypoints[0]
