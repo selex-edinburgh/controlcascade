@@ -88,7 +88,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.ser.write(chr((int(state.currentFwd))))  #Output to Motor Drive Board
         state.ser.write(chr((int(state.currentTurn))) )      #Output to Motor Drive Board
         
-    if time.time() - int(time.time()) < 0.05: print state.currentFwd, state.currentTurn#, state.demandFwd, state.demandTurn
+##    if time.time() - int(time.time()) < 0.05: print state.currentFwd, state.currentTurn#, state.demandFwd, state.demandTurn
         
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
