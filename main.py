@@ -30,7 +30,7 @@ def runControlLoops():
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
 
-    routeState  = routeControl.RouteState(120.0, 5)        #RouteState(near, waitPeriod - seconds)
+    routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState()    #OdoState(mmPerPulse,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 40, 0.5)    #RcChanState(lrChange, fwdbkChange, speedScaling)
     trackState  = trackControl.TrackState(155,500)      #TrackState(trackWidth,movementBudget)

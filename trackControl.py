@@ -5,6 +5,7 @@ import threading
 
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
+from waypoint import *
 
 class TrackState(ObservableState):
     def __init__(self, trackWidth, movementBudget):
@@ -12,13 +13,13 @@ class TrackState(ObservableState):
 
         self.noLegSet = True
         self.legCoeff  = (0.0,0.0,0.0)
-        self.legGoal = (0.0,0.0)
-        self.legOrigin = (0.0,0.0)
+        self.legGoal = WaypointManager.createWaypoint(0.0,0.0)
+        self.legOrigin = WaypointManager.createWaypoint(0.0,0.0)
         self.currentAngle = 0
-        #self.currentPos = (2390.0,4630.0,0) # Uncomment this line to have RC draw at centre of screen
-        self.currentPos = (-500.0,-500.0,0)  # This draws the RC off screen before clicking Start
+        #self.currentPos = (2390.0,4630.0) # Uncomment this line to have RC draw at centre of screen
+        self.currentPos = (-500.0,-500.0)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
-        self.demandPos = (0.0,0,0)
+        self.demandPos = (0.0,0.0)
         self._trackWidth = trackWidth       # 310.0 mm between wheels
         self._movementBudget = movementBudget       # 500.0 mm
         self.timeStamp = time.time()
@@ -39,7 +40,7 @@ def trackControlUpdate(state,batchdata):
             state.legOrigin = item['legOrigin']
             state.nearWaypoint = item['nearWaypoint']
             if state.noLegSet:      #This sets the starting position equal to the first waypoint
-                state.currentPos = state.legOrigin
+                state.currentPos = state.legOrigin.getPosition()
             state.noLegSet = False
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
@@ -74,32 +75,33 @@ def trackControlUpdate(state,batchdata):
         state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
         print "Collision"
         return
-
+    legGoalPos = state.legGoal.getPosition()
+    legOriginPos = state.legOrigin.getPosition()
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
     # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )
     # line  : ax + by + c = 0
     # coefficients
     # a=(yB−yA) , b=(xA−xB) and c=(xByA - xAyB)
-    a = state.legGoal[1] - state.legOrigin[1]
-    b = state.legOrigin[0] - state.legGoal[0]
-    c = (state.legGoal[0] * state.legOrigin[1]) - (state.legOrigin[0] * state.legGoal[1])
+    a = legGoalPos[1] - legOriginPos[1]
+    b = legOriginPos[0] - legGoalPos[0]
+    c = (legGoalPos[0] * legOriginPos[1]) - (legOriginPos[0] * legGoalPos[1])
     abDist = math.hypot(a,b)
-    state.demandPos = state.legGoal
-    if abDist < 1e-10 or state.currentPos == state.legGoal: return #avoid divide by zero
+    state.demandPos = legGoalPos
+    if abDist < 1e-10 or state.currentPos == legGoalPos: return #avoid divide by zero
     distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist
     # along perpendicular vector ( a , b )
     deltaXfromLeg = a * distToLeg / abDist
     deltaYfromLeg = b * distToLeg / abDist
     closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg)
-    distToGoal = math.hypot( state.legGoal[0] - closePointOnLeg[0], state.legGoal[1] - closePointOnLeg[1] )
+    distToGoal = math.hypot( legGoalPos[0] - closePointOnLeg[0], legGoalPos[1] - closePointOnLeg[1] )
     absToLeg =  abs(distToLeg)
     moveAmount = distToGoal
     if absToLeg > distToGoal: moveAmount =  0
     #print "absToLeg", absToLeg, "dist: ", distToGoal
     # demandPos is a point on the Leg, maxMove along from closePointOnLeg
-    state.demandPos = ( (state.legGoal[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
-                    (state.legGoal[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
+    state.demandPos = ( (legGoalPos[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
+                    (legGoalPos[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
 
     #state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
     state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))

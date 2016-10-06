@@ -115,8 +115,8 @@ class VisualState(ObservableState):
 
     def drawWaypoints(self, surface):
         for w in self.waypointList:
-            pygame.draw.circle(surface,WHITE,(int(w[0] /10), int(self.screenHeight - w[1] /10)), 4,)
-            pygame.draw.circle(surface,BLACK,(int(w[0] /10), int(self.screenHeight - w[1] /10)),4,2)
+            pygame.draw.circle(surface,WHITE,(int(w.getPosition()[0] /10), int(self.screenHeight - w.getPosition()[1] /10)), 4,)
+            pygame.draw.circle(surface,BLACK,(int(w.getPosition()[0] /10), int(self.screenHeight - w.getPosition()[1] /10)),4,2)
 
     def checkForCollision(self):
         self.poleRecList = []
@@ -321,11 +321,11 @@ def visualControlUpdate(state,batchdata):
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
             currentAngle = (item['robotAngle'])
-            goalPos = (item['goal'])
+            goal = (item['goal'])
             state.nearWaypoint = (item['nearWaypoint'])
             state.robotPos = (currentPos[0]/10.0, state.screenHeight -currentPos[1]/10.0)
             state.robotAngle = currentAngle
-            state.targetPos = (goalPos[0]/10.0, state.screenHeight - goalPos[1]/10.0)
+            state.targetPos = (goal.getPosition()[0]/10.0, state.screenHeight - goal.getPosition()[1]/10.0) # Oh god more 10's TODO(Move to print or make PosScreen coordinates)
 
         elif item['messageType'] == 'obstacle':
             state.barrierList = (item['barrierList'])
@@ -365,7 +365,7 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
     if sourceState.removeLastWP:
         destState.waypoints.pop()
 
-    a = (sourceState.waypointList[-1][0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1][1] /10)))
+    a = (sourceState.waypointList[-1].getPosition()[0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1].getPosition()[1] /10)))
     b = sourceState.targetPos[0], sourceState.targetPos[1]
     if destState.nearWaypoint and b == a:       # stop if at last waypoint
         sourceState.stopLoops = True
