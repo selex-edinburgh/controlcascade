@@ -310,7 +310,6 @@ def visualControlUpdate(state,batchdata):
             pressPosition = (e.pos[0], e.pos[1])        # sets screen coordinates to MouseButtonDown coordinates
             if (screenAreaTop.collidepoint(pressPosition)) or \
                 (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
-                #pressPosition = (fromScreenX(e.pos[0]), fromScreenY(e.pos[1])) # converts screen coordinates to arena coordinates
                 state.waypointTemp = WaypointManager.createWaypoint(fromScreenX(e.pos[0]), fromScreenY(e.pos[1]))      # create new temp waypoint position from arena coordinates
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
@@ -343,7 +342,6 @@ def visualControlUpdate(state,batchdata):
             state.nearWaypoint = (item['nearWaypoint'])
             state.robotPos = currentPos
             state.robotAngle = currentAngle
-            #state.targetPos = (goal.getPosition()[0]/10.0, SCREENHEIGHT - goal.getPosition()[1]/10.0) # Oh god more 10's TODO(Move to print or make PosScreen coordinates)
 
         elif item['messageType'] == 'obstacle':
             state.barrierList = (item['barrierList'])
@@ -393,7 +391,7 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
         destQueue.put(message)
 
 def visualToAppManager(sourceState, destState, destQueue):
-   # if sourceState.stopLoops == True:
+
     message = {'messageType': 'stop',
                 'stopLoops': sourceState.stopLoops}
     destQueue.put(message)
