@@ -4,7 +4,7 @@ import threading
 import datetime
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
-from waypoint import *
+from lib.navigation import *
 
 class RouteState(ObservableState):
     def __init__(self, near):
@@ -62,7 +62,7 @@ def routeControlUpdate(state,batchdata):
                     state.waypoints.pop()
                     print "Waypoint Removed"
 
-        elif item['messageType'] == 'sense':
+        elif item['messageType'] == 'sense': # TODO
             state.nearWaypoint = False
             sensedPos = item['sensedPos']
             tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
@@ -96,7 +96,7 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
   
     destQueue.put(message)
 
-def routeToVisualTranslator( sourceState, destState, destQueue ):
+def routeToVisualTranslator( sourceState, destState, destQueue ): #TODO
     #if sourceState.routeChanged:
     #    sourceState.routeChanged = False ## ??
         #send waypoint list etc

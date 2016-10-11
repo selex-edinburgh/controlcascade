@@ -5,7 +5,7 @@ import threading
 
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
-from waypoint import *
+from lib.navigation import *
 
 class TrackState(ObservableState):
     def __init__(self, wheelBase, trackWidth, movementBudget):
@@ -160,7 +160,7 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     message = {'messageType':'robot',
     'robotPos':sourceState.currentPos,
     'robotAngle':sourceState.currentAngle,
-    'goal':sourceState.legGoal,
+    'nextWaypoint':sourceState.legGoal,
     'demandPos':sourceState.demandPos,
     'nearWaypoint':sourceState.nearWaypoint}
     destQueue.put(message)

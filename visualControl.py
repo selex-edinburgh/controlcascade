@@ -9,7 +9,7 @@ from pygame import gfxdraw
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 from pygame.locals import *
-
+from lib.navigation import *
 
 progname = sys.argv[0]      # lib import for right-click menu
 progdir = os.path.dirname(progname)
@@ -27,6 +27,9 @@ TRAIL_GREY = (34,167,240)
 MARGIN = 200
 DARK_GREY = (34,49,63)
 ORANGE = (230,126,34)
+SCREENWIDTH = 682      # set screen height and width
+SCREENHEIGHT = 720
+SCREENSCALE = 10       # set screen scaling amount (mm per pixel)
 pygame.init()
 
 menu_data = (
@@ -42,13 +45,34 @@ menu_data = (
     'Quit',
 )
 
+def scaleToScreen(D):           #scales to SCREENSCALE
+    return int(D/SCREENSCALE)
+    
+def toScreenX(X):               #transform X coordinate to screen coordinate
+    return scaleToScreen(X)
+    
+def toScreenY(Y):               #transform Y coordinate to screen coordinate
+    return SCREENHEIGHT - scaleToScreen(Y)
+    
+def toScreenPos((X,Y)):         #transform X & Y coordinates to screen coordinates
+    return((toScreenX(X),toScreenY(Y)))  
+
+def scaleFromScreen(D):           #scales from SCREENSCALE
+    return (D*SCREENSCALE)
+    
+def fromScreenX(X):               #transformscreen coordinate to X coordinate
+    return scaleFromScreen(X)
+    
+def fromScreenY(Y):               #transformscreen coordinate to Y coordinate
+    return scaleFromScreen(SCREENHEIGHT - Y)
+    
+def fromScreenPos((X,Y)):         #transform screen coordinates to X & Y coordinates
+    return((fromScreenX(X),fromScreenY(Y)))
+
 class VisualState(ObservableState):
     def __init__(self):
         super(VisualState,self).__init__()
-
-        self.screenWidth = 682      # set screen height and width
-        self.screenHeight = 720
-        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
+        self.screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
         pygame.display.set_caption('\t \t \tVisualiser')       # screen caption
 
         self.font = pygame.font.SysFont('Avenir Next', 16)        # different fonts used in the program
@@ -63,11 +87,11 @@ class VisualState(ObservableState):
         self.barrierList= []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
-        self.waypoint = (0,0)       # temp waypoint when adding new waypoints to list
+        self.waypointTemp = WaypointManager.createWaypoint(0,0)       # temp waypoint when adding new waypoints to list
         self.robotPos = (0,0)       # current position of robot
         self.robotAngle = 0     # current angle of robot
-        self.targetPos = (0,0)      # next waypoint
-        self.prevWaypoint = (0,0)       # previous waypoints
+        self.nextWaypoint = WaypointManager.createWaypoint(0,0)  # next waypoint
+        self.prevWaypoint = WaypointManager.createWaypoint(0,0)       # previous waypoint
         self.waypointList = []  # list of waypoints
         self.scrBuff = None
         self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
@@ -100,8 +124,8 @@ class VisualState(ObservableState):
         rotImg = pygame.transform.rotate(self.image, 90.0 - self.robotAngle)
         rotImg.get_rect().center = loc
 
-        surface.blit(rotImg, ((self.robotPos[0] ) - rotImg.get_rect().width/2.0,
-                              self.robotPos[1] - rotImg.get_rect().height/2.0))
+        surface.blit(rotImg, ((toScreenX(self.robotPos[0]) ) - rotImg.get_rect().width/2.0,
+                              toScreenY(self.robotPos[1]) - rotImg.get_rect().height/2.0))
 
         if self.isCollision == False:
             pygame.draw.lines(surface, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
@@ -109,22 +133,23 @@ class VisualState(ObservableState):
             pygame.draw.lines(surface, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
 
     def drawPath(self,surface):
-        pygame.draw.circle(surface,BLACK,(int(self.targetPos[0] ), int(self.targetPos[1])), 4)                # draw the red dot on the current waypoint and previously met ones
-        pygame.draw.line(surface,TRAIL_GREY, self.robotPos,self.robotPos, 4)
+        pygame.draw.circle(surface,BLACK,toScreenPos(self.nextWaypoint.getPosition()), scaleToScreen(40))                # draw the red dot on the current waypoint and previously met ones
+        pygame.draw.line(surface,TRAIL_GREY,toScreenPos(self.robotPos),toScreenPos(self.robotPos), scaleToScreen(40))
 
 
     def drawWaypoints(self, surface):
         for w in self.waypointList:
-            pygame.draw.circle(surface,WHITE,(int(w.getPosition()[0] /10), int(self.screenHeight - w.getPosition()[1] /10)), 4,)
-            pygame.draw.circle(surface,BLACK,(int(w.getPosition()[0] /10), int(self.screenHeight - w.getPosition()[1] /10)),4,2)
+
+            pygame.draw.circle(surface,WHITE,toScreenPos(w.getPosition()), scaleToScreen(40),)
+            pygame.draw.circle(surface,BLACK,toScreenPos(w.getPosition()), scaleToScreen(40),2)
 
     def checkForCollision(self):
         self.poleRecList = []
         for p in self.poleList:
-            poleRec = pygame.Rect(p[0] - 10, (self.screenHeight - p[1] ) - 10 , 20,20)
+            poleRec = pygame.Rect(p[0] - 10, (SCREENHEIGHT - p[1] ) - 10 , 20,20)
             self.poleRecList.append(poleRec)
 
-        chariotRec = pygame.Rect((self.robotPos[0] - 5, (self.screenHeight - self.robotPos[1])+ 5), (65,65))
+        chariotRec = pygame.Rect((self.robotPos[0] - 5, (SCREENHEIGHT - self.robotPos[1])+ 5), (65,65))
 
         for r in self.poleRecList:
             if chariotRec.colliderect(r):
@@ -132,102 +157,101 @@ class VisualState(ObservableState):
                 
     def drawObstacles(self,surface):
         for wall in self.wallList:      # draw the walls on the screen
-            self.wall = (wall[0], self.screenHeight - wall[1],  wall[2], self.screenHeight - wall[3])
+            self.wall = (wall[0], SCREENHEIGHT - wall[1],  wall[2], SCREENHEIGHT - wall[3])
             pygame.draw.line(surface, BLACK, (self.wall[0], self.wall[1]), (self.wall[2], self.wall[3]), 4 )
 
         for pole in self.poleList:      # draw poles on the screen
-            self.pole = ( pole[0], self.screenHeight - pole[1])
+            self.pole = ( pole[0], SCREENHEIGHT - pole[1])
             pygame.draw.circle(surface,BLUE,self.pole, 5,)
             pygame.draw.circle(surface,BLACK,self.pole, 5, 2)
 
         for goal in self.goalList:
-            self.goal = (goal[0], self.screenHeight - goal[1], goal[2], self.screenHeight - goal[3])
+            self.goal = (goal[0], SCREENHEIGHT - goal[1], goal[2], SCREENHEIGHT - goal[3])
             pygame.draw.line(surface,BLACK,(self.goal[0],self.goal[1]),(self.goal[2],self.goal[3]), 4)
 
         for barrier in self.barrierList:
-            self.barrier = (barrier[0], self.screenHeight - barrier[1], barrier[2], self.screenHeight - barrier[3])
+            self.barrier = (barrier[0], SCREENHEIGHT - barrier[1], barrier[2], SCREENHEIGHT - barrier[3])
             pygame.draw.line(surface,BLACK,(self.barrier[0],self.barrier[1]),(self.barrier[2], self.barrier[3]), 2)
         for ball in self.ballList:
-            self.ball = (ball[0], self.screenHeight - ball[1])
+            self.ball = (ball[0], SCREENHEIGHT - ball[1])
             pygame.draw.circle(surface,ORANGE,self.ball, 7)
             pygame.draw.circle(surface,BLACK,self.ball, 7, 1)
             
-        pygame.draw.polygon(surface,BLACK,((480,0),(442,0),(480,40)),0)     # corner of course
-        pygame.draw.polygon(surface,BLACK,((0,0),(42,0),(0,40)),0)       # corner of course
+        pygame.draw.polygon(surface,BLACK,(toScreenPos((4800,7200)),toScreenPos((4420,7200)),toScreenPos((4800,6800))),0)     # corner of course
+        pygame.draw.polygon(surface,BLACK,(toScreenPos((0,7200)),toScreenPos((420,7200)),toScreenPos((0,6800))),0)       # corner of course
         
     def drawExtras(self,surface):
-        pygame.draw.line(surface,WHITE, (5, 500), (5, self.screenHeight -5), 2)      # draw y axis
+        pygame.draw.line(surface,WHITE, (5, 500), (5, SCREENHEIGHT -5), 2)      # draw y axis
         surface.blit(self.font.render(("  North"), True, WHITE), (10,500))
         surface.blit(self.fontTitle.render(("Y"), True, WHITE), (10,600))
 
-        pygame.draw.line(surface,WHITE, (5, self.screenHeight - 5 ), (100, self.screenHeight- 5), 2)      # draw x axis
-        surface.blit(self.font.render(("East"), True, WHITE), (80,(self.screenHeight - 22)))
-        surface.blit(self.fontTitle.render(("X"), True, WHITE), (50,(self.screenHeight - 22)))
+        pygame.draw.line(surface,WHITE, (5, SCREENHEIGHT - 5 ), (100, SCREENHEIGHT- 5), 2)      # draw x axis
+        surface.blit(self.font.render(("East"), True, WHITE), (80,(SCREENHEIGHT - 22)))
+        surface.blit(self.fontTitle.render(("X"), True, WHITE), (50,(SCREENHEIGHT - 22)))
 
-        origin = pygame.Rect(-5,self.screenHeight - 25, 40,40)
+        origin = pygame.Rect(-5,SCREENHEIGHT - 25, 40,40)
         pygame.draw.arc(surface, WHITE, origin, 0,2.2, 4)       # draw origin
     
-        pygame.draw.line(surface,WHITE, (480, self.screenHeight - 0 ), (480, self.screenHeight- 10), 4) 
-        pygame.draw.line(surface,WHITE, (0, self.screenHeight - 710 ), (10, self.screenHeight- 710), 4) 
+        pygame.draw.line(surface,WHITE, (480, SCREENHEIGHT - 0 ), (480, SCREENHEIGHT- 10), 4) 
+        pygame.draw.line(surface,WHITE, (0, SCREENHEIGHT - 710 ), (10, SCREENHEIGHT- 710), 4) 
         
     def distToPoint(self):
         a = (self.robotPos)
-        b = (self.targetPos)
+        b = (self.nextWaypoint.getPosition())
         return int(math.hypot(b[0] - a[0], b[1] - a[1]))        # find distance between the two points
 
     def drawInfoPanel(self,surface):
-        surface.blit(self.fontTitle.render(("Robot Position"), True, WHITE), (505,(self.screenHeight -710)))     # robotPos information panel
-        surface.blit(self.font.render(("X,Y (mm):  ({0},{1})".format(int(self.robotPos[0]), self.screenHeight - int(self.robotPos[1]))), True, WHITE), (505,self.screenHeight - 675))
-        surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,self.screenHeight -655))
+        surface.blit(self.fontTitle.render(("Robot Position"), True, WHITE), (505,(SCREENHEIGHT -710)))     # robotPos information panel
+        surface.blit(self.font.render(("X,Y (mm):  ({0},{1})".format(int(self.robotPos[0]), int(self.robotPos[1]))), True, WHITE), (505,SCREENHEIGHT - 675))
+        surface.blit(self.font.render(("Heading:   {0}".format(int(self.robotAngle))), True, WHITE), (505,SCREENHEIGHT -655))
 
-        surface.blit(self.fontTitle.render(("Route"), True, WHITE), (505,(self.screenHeight -600)))     # latency information panel
-        surface.blit(self.font.render(("Next Waypoint:  ({0},{1})".format(int(self.targetPos[0]), self.screenHeight - int(self.targetPos[1]))), True, WHITE), (505,self.screenHeight -565))
-        surface.blit(self.font.render(("No. of Waypoints:  {0}".format(len(self.waypointList) -1)), True, WHITE), (505,self.screenHeight -545))
-        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint)), True, WHITE), (505,self.screenHeight -525))
-        surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,self.screenHeight -505))
+        surface.blit(self.fontTitle.render(("Route"), True, WHITE), (505,(SCREENHEIGHT -600)))     # latency information panel
+        surface.blit(self.font.render(("Next Waypoint:  ({0},{1})".format(int(self.nextWaypoint.getPosition()[0]), int(self.nextWaypoint.getPosition()[1]))), True, WHITE), (505,SCREENHEIGHT -565))
+        surface.blit(self.font.render(("No. of Waypoints:  {0}".format(len(self.waypointList) -1)), True, WHITE), (505,SCREENHEIGHT -545))
+        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint)), True, WHITE), (505,SCREENHEIGHT -525))
+        surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,SCREENHEIGHT -505))
 
-        surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(self.screenHeight -475)))     # collision information panel
-        surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(self.screenHeight -440)))
+        surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(SCREENHEIGHT -475)))     # collision information panel
+        surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(SCREENHEIGHT -440)))
         """
-        surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(self.screenHeight -390)))     # motor information panel
-        surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(self.screenHeight -355)))
-        surface.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, WHITE), (505,(self.screenHeight -335)))
+        surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(SCREENHEIGHT -390)))     # motor information panel
+        surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(SCREENHEIGHT -355)))
+        surface.blit(self.font.render(("Fwd Command: %s" % int((self.rcFwd))), True, WHITE), (505,(SCREENHEIGHT -335)))
 
-        surface.blit(self.fontTitle.render(("Odometer"), True, WHITE), (505,(self.screenHeight -285)))     # odometer information panel
-        surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, WHITE), (505,(self.screenHeight -240)))
-        surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, WHITE), (505,(self.screenHeight -220)))   # update the screen
+        surface.blit(self.fontTitle.render(("Odometer"), True, WHITE), (505,(SCREENHEIGHT -285)))     # odometer information panel
+        surface.blit(self.font.render(("Left Reading: %s" % int((self.leftReading))), True, WHITE), (505,(SCREENHEIGHT -240)))
+        surface.blit(self.font.render(("Right Reading: %s" % int((self.rightReading))), True, WHITE), (505,(SCREENHEIGHT -220)))   # update the screen
         """
-        surface.blit(self.fontTitle.render(("Main Loop Timing"), True, WHITE), (505,(self.screenHeight -390)))     # latency information panel
-        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,self.screenHeight - 355))
-        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,self.screenHeight -335))
-        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,self.screenHeight -315))
-        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, BLUE), (505,self.screenHeight -295))
-        surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,self.screenHeight -275))
+        surface.blit(self.fontTitle.render(("Main Loop Timing"), True, WHITE), (505,(SCREENHEIGHT -390)))     # latency information panel
+        surface.blit(self.font.render(("Max (s):        {0:.3f}".format(self.maxLatency)), True, WHITE), (505,SCREENHEIGHT - 355))
+        surface.blit(self.font.render(("Min (s):         {0:.3f}".format(self.minLatency)), True, WHITE), (505,SCREENHEIGHT -335))
+        surface.blit(self.font.render(("Average (s):  {0:.3f}".format(self.averageLatency)), True, WHITE), (505,SCREENHEIGHT -315))
+        surface.blit(self.font.render(("Msg Length:  {0}".format(self.lengthOfBatch)), True, BLUE), (505,SCREENHEIGHT -295))
+        surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,SCREENHEIGHT -275))
 
         if self.stopLoops:
-            surface.blit(self.font.render(("Program Running"), True, BLUE), (555, self.screenHeight - 20))
-            surface.blit(self.font.render(("Program Stopped"), True, WHITE), (555, self.screenHeight - 40))
+            surface.blit(self.font.render(("Program Running"), True, BLUE), (555, SCREENHEIGHT - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, WHITE), (555, SCREENHEIGHT - 40))
         else:
-            surface.blit(self.font.render(("Program Stopped"), True, BLUE), (555, self.screenHeight - 40))
-            surface.blit(self.font.render(("Program Running"), True, WHITE), (555, self.screenHeight - 20))
+            surface.blit(self.font.render(("Program Stopped"), True, BLUE), (555, SCREENHEIGHT - 40))
+            surface.blit(self.font.render(("Program Running"), True, WHITE), (555, SCREENHEIGHT - 20))
 
         if self.waitLoops:
-            surface.blit(self.font.render(("Continuous WP"), True, BLUE), (555, self.screenHeight - 140))
-            surface.blit(self.font.render(("Waiting WP"), True, WHITE), (555, self.screenHeight - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, BLUE), (555, SCREENHEIGHT - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, WHITE), (555, SCREENHEIGHT - 160))
         else:
-            surface.blit(self.font.render(("Waiting WP"), True, BLUE), (555, self.screenHeight - 160))
-            surface.blit(self.font.render(("Continuous WP"), True, WHITE), (555, self.screenHeight - 140))
+            surface.blit(self.font.render(("Waiting WP"), True, BLUE), (555, SCREENHEIGHT - 160))
+            surface.blit(self.font.render(("Continuous WP"), True, WHITE), (555, SCREENHEIGHT - 140))
         
-        pos = pygame.mouse.get_pos()        # cursor position
-        pos = (pos[0], self.screenHeight - pos[1] )
-        surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, self.screenHeight - 150))
-        surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, self.screenHeight - 130))
+        pos = fromScreenPos(pygame.mouse.get_pos())        # cursor position
+        surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, SCREENHEIGHT - 150))
+        surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, SCREENHEIGHT - 130))
         if self.realMode:
-            surface.blit(self.font.render(("Real mode"), True, WHITE),(555,(self.screenHeight - 80)))
-            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(self.screenHeight - 100)))
+            surface.blit(self.font.render(("Real mode"), True, WHITE),(555,(SCREENHEIGHT - 80)))
+            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(SCREENHEIGHT - 100)))
         else:
-            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(self.screenHeight - 100)))
-            surface.blit(self.font.render(("Real mode"), True, BLUE),(555,(self.screenHeight - 80)))
+            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(SCREENHEIGHT - 100)))
+            surface.blit(self.font.render(("Real mode"), True, BLUE),(555,(SCREENHEIGHT - 80)))
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
@@ -278,12 +302,6 @@ def visualControlUpdate(state,batchdata):
     screenOutOfBounds1 = pygame.Rect(360,480,120,360)
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
 
-    try:
-        if state.targetPos == state.waypointList[-1]:
-            state.stopLoops = True
-    except:
-        print "error"
-
     for e in state.menu.handle_events(pygame.event.get()):
         if e.type == pygame.QUIT:
             pygame.quit()       # quit the screen
@@ -292,8 +310,8 @@ def visualControlUpdate(state,batchdata):
             pressPosition = (e.pos[0], e.pos[1])        # sets screen coordinates to MouseButtonDown coordinates
             if (screenAreaTop.collidepoint(pressPosition)) or \
                 (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
-                pressPosition = (e.pos[0], state.screenHeight - e.pos[1]) # converts screen coordinates to arena coordinates
-                state.waypoint = pressPosition      # create new waypoint from arena coordinates
+                #pressPosition = (fromScreenX(e.pos[0]), fromScreenY(e.pos[1])) # converts screen coordinates to arena coordinates
+                state.waypointTemp = WaypointManager.createWaypoint(fromScreenX(e.pos[0]), fromScreenY(e.pos[1]))      # create new temp waypoint position from arena coordinates
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
             state.eventPress = (e.pos[0], e.pos[1])
@@ -321,11 +339,11 @@ def visualControlUpdate(state,batchdata):
         if item['messageType'] == 'robot':
             currentPos = (item['robotPos'])
             currentAngle = (item['robotAngle'])
-            goal = (item['goal'])
+            state.nextWaypoint = (item['nextWaypoint'])
             state.nearWaypoint = (item['nearWaypoint'])
-            state.robotPos = (currentPos[0]/10.0, state.screenHeight -currentPos[1]/10.0)
+            state.robotPos = currentPos
             state.robotAngle = currentAngle
-            state.targetPos = (goal.getPosition()[0]/10.0, state.screenHeight - goal.getPosition()[1]/10.0) # Oh god more 10's TODO(Move to print or make PosScreen coordinates)
+            #state.targetPos = (goal.getPosition()[0]/10.0, SCREENHEIGHT - goal.getPosition()[1]/10.0) # Oh god more 10's TODO(Move to print or make PosScreen coordinates)
 
         elif item['messageType'] == 'obstacle':
             state.barrierList = (item['barrierList'])
@@ -364,16 +382,13 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
     sourceState.waypointList = destState.waypoints
     if sourceState.removeLastWP:
         destState.waypoints.pop()
-
-    a = (sourceState.waypointList[-1].getPosition()[0] / 10, (sourceState.screenHeight - (sourceState.waypointList[-1].getPosition()[1] /10)))
-    b = sourceState.targetPos[0], sourceState.targetPos[1]
-    if destState.nearWaypoint and b == a:       # stop if at last waypoint
+    if destState.nearWaypoint and sourceState.nextWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
         sourceState.stopLoops = True
 
-    if sourceState.waypoint != (0,0) and sourceState.waypoint != sourceState.prevWaypoint:
-        sourceState.prevWaypoint = sourceState.waypoint
+    if sourceState.waypointTemp.getPosition() != (0,0) and sourceState.waypointTemp != sourceState.prevWaypoint:
+        sourceState.prevWaypoint = sourceState.waypointTemp
         message = {'messageType':'waypoint',
-                   'newWaypoint'    :sourceState.waypoint,
+                   'newWaypoint'    :sourceState.waypointTemp,
                    'removeWaypoint' :sourceState.removeLastWP}
         destQueue.put(message)
 
