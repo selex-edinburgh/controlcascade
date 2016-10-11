@@ -43,8 +43,8 @@ def runControlLoops():
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
-    scanSimState  = scanSimControl.ScanSimState('IR', 0,  135,  45,  90, 90, 45, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - FrontCone, pointC - FrontCone, pointD - FrontLine, pointE - FrontLine, scanAngle, scanRange, turnSpeed)
-    scanSimState2 = scanSimControl.ScanSimState('US', 0, -112, -68, -90, -90, 21, 65, 10)  # scanSimState (sensorID, pointAOffset, pointB - BackCone,  pointC - BackCone,  pointD - FrontLine, pointE - FrontLine, scanAngle, scanRange, turnSpeed)
+    scanSimState  = scanSimControl.ScanSimState('IR', 0,  45,  0, 45, 65, 10)  # scanSimState (sensorID, pointAOffset, frontConeWidth, frontLineWidth,  scanAngle, scanRange, turnSpeed)
+    scanSimState2 = scanSimControl.ScanSimState('US', 0, -202, -180, 21, 65, 10)  # scanSimState (sensorID, pointAOffset,  backConeWidth,  backLineWidth, scanAngle, scanRange, turnSpeed)
 
     '''
     Explaination of next block
@@ -52,10 +52,10 @@ def runControlLoops():
     '''
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
-#    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-#    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
-    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+#    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+#    rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
     vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     vsimUpdateRateMin * timeScale,  vsimUpdateRateMax * timeScale)
     envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
     sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
