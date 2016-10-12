@@ -2,10 +2,14 @@ import math
 import threading
 from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
+from lib.navigation import *
 
 class ScanSimState(ObservableState):
-    def __init__(self, scanRange, turnSpeed):
+    def __init__(self, sensorPosOffset, sensorHdgOffset, scanAngle, scanRange, turnSpeed):
         super(ScanSimState,self).__init__()
+        self.sensorPosOffset = sensorPosOffset
+        self.sensorHdgOffset = sensorHdgOffset
+        self.scanAngle = scanAngle
         self.scanRange = scanRange
         self.turnSpeed = turnSpeed
         self.robotPos = (1200.0,0.0)
@@ -26,25 +30,25 @@ def scanSimControlUpdate(state, batchdata):
             state.poleList = (item['poleList'])
             
     if len(batchdata) == 0: return
+    
+    a = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(0,0))
+    b = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,-state.scanAngle/2))
+    c = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,state.scanAngle/2))
         
-    a = ((state.robotPos[0] / 10), (720 -( state.robotPos[1]) / 10))        # determine the points of the scanning cone
+    #a = ((state.robotPos[0]), (state.robotPos[1]))        # determine the points of the scanning cone
     
-    b = ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle- 135))), \
-        (a[1] + state.scanRange * math.sin(math.radians(state.robotAngle- 135))))
+    #b = ((a[0] + state.scanRange * math.cos(-math.radians(state.robotAngle- 135))), \
+    #    (a[1] + state.scanRange * math.sin(-math.radians(state.robotAngle- 135))))
     
-    c =   ((a[0] + state.scanRange * math.cos(math.radians(state.robotAngle  -45))), \
-        (a[1] + state.scanRange * math.sin((math.radians(state.robotAngle - 45)))))
+    #c =   ((a[0] + state.scanRange * math.cos(-math.radians(state.robotAngle- 45))), \
+    #    (a[1] + state.scanRange * math.sin(-math.radians(state.robotAngle- 45))))
     
     state.scanCone = [a,b,c]        # three points of scan cone
-
-    newA = (a[0], (720 - a[1]))     # adjustment for screen height 
-    newB = (b[0], (720 - b[1]))
-    newC = (c[0], (720 - c[1]))
     
     anyCollisions = False 
     
     for p in state.poleList:        # check for collision against each pole
-       if collisionWarn(newA,newB,newC,p):
+       if collisionWarn(a,b,c,p):
            anyCollisions = True
            break 
     state.isCollision = anyCollisions

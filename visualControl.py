@@ -49,10 +49,10 @@ def scaleToScreen(D):           #scales to SCREENSCALE
     return int(D/SCREENSCALE)
     
 def toScreenX(X):               #transform X coordinate to screen coordinate
-    return scaleToScreen(X)
+    return int(scaleToScreen(X))
     
 def toScreenY(Y):               #transform Y coordinate to screen coordinate
-    return SCREENHEIGHT - scaleToScreen(Y)
+    return int(SCREENHEIGHT - scaleToScreen(Y))
     
 def toScreenPos((X,Y)):         #transform X & Y coordinates to screen coordinates
     return((toScreenX(X),toScreenY(Y)))  
@@ -94,7 +94,7 @@ class VisualState(ObservableState):
         self.prevWaypoint = WaypointManager.createWaypoint(0,0)       # previous waypoint
         self.waypointList = []  # list of waypoints
         self.scrBuff = None
-        self.scanCone = ((0,0),(0,0),(0.0))     # scan used for collison range
+        self.scanCone = ((0,0),(0,0),(0,0))     # scan used for collison range
         self.isCollision = False    # bool to check if pole in collision range
         self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
@@ -127,11 +127,8 @@ class VisualState(ObservableState):
         surface.blit(rotImg, ((toScreenX(self.robotPos[0]) ) - rotImg.get_rect().width/2.0,
                               toScreenY(self.robotPos[1]) - rotImg.get_rect().height/2.0))
 
-        if self.isCollision == False:
-            pygame.draw.lines(surface, BLACK, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
-        else:
-            pygame.draw.lines(surface, RED, True, ((self.scanCone[0]), self.scanCone[1], self.scanCone[2]), 2)
-
+        pygame.draw.lines(surface, RED if self.isCollision else BLACK , True, (toScreenPos(self.scanCone[0]), toScreenPos(self.scanCone[1]), toScreenPos(self.scanCone[2])), 2)
+        
     def drawPath(self,surface):
         pygame.draw.circle(surface,BLACK,toScreenPos(self.nextWaypoint.getPosition()), scaleToScreen(40))                # draw the red dot on the current waypoint and previously met ones
         pygame.draw.line(surface,TRAIL_GREY,toScreenPos(self.robotPos),toScreenPos(self.robotPos), scaleToScreen(40))
@@ -157,25 +154,25 @@ class VisualState(ObservableState):
                 
     def drawObstacles(self,surface):
         for wall in self.wallList:      # draw the walls on the screen
-            self.wall = (wall[0], SCREENHEIGHT - wall[1],  wall[2], SCREENHEIGHT - wall[3])
-            pygame.draw.line(surface, BLACK, (self.wall[0], self.wall[1]), (self.wall[2], self.wall[3]), 4 )
+            #self.wall = (wall[0], SCREENHEIGHT - wall[1],  wall[2], SCREENHEIGHT - wall[3])
+            pygame.draw.line(surface, BLACK, toScreenPos((wall[0], wall[1])), toScreenPos((wall[2], wall[3])), 4 )
 
         for pole in self.poleList:      # draw poles on the screen
-            self.pole = ( pole[0], SCREENHEIGHT - pole[1])
-            pygame.draw.circle(surface,BLUE,self.pole, 5,)
-            pygame.draw.circle(surface,BLACK,self.pole, 5, 2)
+            poleTemp = toScreenPos(pole)
+            pygame.draw.circle(surface,BLUE,poleTemp, 5,)
+            pygame.draw.circle(surface,BLACK,poleTemp, 5, 2)
 
         for goal in self.goalList:
-            self.goal = (goal[0], SCREENHEIGHT - goal[1], goal[2], SCREENHEIGHT - goal[3])
-            pygame.draw.line(surface,BLACK,(self.goal[0],self.goal[1]),(self.goal[2],self.goal[3]), 4)
+            #self.goal = (goal[0], SCREENHEIGHT - goal[1], goal[2], SCREENHEIGHT - goal[3])
+            pygame.draw.line(surface,BLACK,toScreenPos((goal[0],goal[1])),toScreenPos((goal[2],goal[3])), 4)
 
         for barrier in self.barrierList:
-            self.barrier = (barrier[0], SCREENHEIGHT - barrier[1], barrier[2], SCREENHEIGHT - barrier[3])
-            pygame.draw.line(surface,BLACK,(self.barrier[0],self.barrier[1]),(self.barrier[2], self.barrier[3]), 2)
+            #self.barrier = (barrier[0], SCREENHEIGHT - barrier[1], barrier[2], SCREENHEIGHT - barrier[3])
+            pygame.draw.line(surface,BLACK,toScreenPos((barrier[0],barrier[1])),toScreenPos((barrier[2], barrier[3])), 2)
         for ball in self.ballList:
-            self.ball = (ball[0], SCREENHEIGHT - ball[1])
-            pygame.draw.circle(surface,ORANGE,self.ball, 7)
-            pygame.draw.circle(surface,BLACK,self.ball, 7, 1)
+            ballTemp = toScreenPos(ball)
+            pygame.draw.circle(surface,ORANGE,ballTemp, 7)
+            pygame.draw.circle(surface,BLACK,ballTemp, 7, 1)
             
         pygame.draw.polygon(surface,BLACK,(toScreenPos((4800,7200)),toScreenPos((4420,7200)),toScreenPos((4800,6800))),0)     # corner of course
         pygame.draw.polygon(surface,BLACK,(toScreenPos((0,7200)),toScreenPos((420,7200)),toScreenPos((0,6800))),0)       # corner of course

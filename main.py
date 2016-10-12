@@ -39,7 +39,7 @@ def runControlLoops():
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
-    scanSimState = scanSimControl.ScanSimState(65, 10)        # scanSimState (scanRange, turnSpeed)
+    scanSimState = scanSimControl.ScanSimState((0,170), 0, 90, 650, 10)     # scanSimState (sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
 
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
