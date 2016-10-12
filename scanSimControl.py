@@ -5,8 +5,9 @@ from plumbing.controlloop import ControlObserverTranslator
 from lib.navigation import *
 
 class ScanSimState(ObservableState):
-    def __init__(self, sensorPosOffset, sensorHdgOffset, scanAngle, scanRange, turnSpeed):
+    def __init__(self, sensorID, sensorPosOffset, sensorHdgOffset, scanAngle, scanRange, turnSpeed):
         super(ScanSimState,self).__init__()
+        self.sensorID = sensorID
         self.sensorPosOffset = sensorPosOffset
         self.sensorHdgOffset = sensorHdgOffset
         self.scanAngle = scanAngle
@@ -30,18 +31,11 @@ def scanSimControlUpdate(state, batchdata):
             state.poleList = (item['poleList'])
             
     if len(batchdata) == 0: return
-    
-    a = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(0,0))
+
+    # determine the points of the scanning cone
+    a = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(0,0)) 
     b = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,-state.scanAngle/2))
     c = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,state.scanAngle/2))
-        
-    #a = ((state.robotPos[0]), (state.robotPos[1]))        # determine the points of the scanning cone
-    
-    #b = ((a[0] + state.scanRange * math.cos(-math.radians(state.robotAngle- 135))), \
-    #    (a[1] + state.scanRange * math.sin(-math.radians(state.robotAngle- 135))))
-    
-    #c =   ((a[0] + state.scanRange * math.cos(-math.radians(state.robotAngle- 45))), \
-    #    (a[1] + state.scanRange * math.sin(-math.radians(state.robotAngle- 45))))
     
     state.scanCone = [a,b,c]        # three points of scan cone
     
@@ -65,12 +59,14 @@ def collisionWarn(p0,p1,p2,p):      # helper function that returns if pole falls
 
 def scanSimToSensorTranslator( sourceState, destState, destQueue):
     message = {'messageType':'sense',
+               'sensorID':sourceState.sensorID,
                 'scanCone': sourceState.scanCone,
                 'collision': sourceState.isCollision}
     destQueue.put(message)
 
 def scanSimToVisualTranslator(sourceState, destState, destQueue):
     message = {'messageType':'scan',
+               'sensorID':sourceState.sensorID,
                 'scanCone': sourceState.scanCone,
                 'collision': sourceState.isCollision}
     destQueue.put(message)

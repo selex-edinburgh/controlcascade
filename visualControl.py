@@ -94,8 +94,8 @@ class VisualState(ObservableState):
         self.prevWaypoint = WaypointManager.createWaypoint(0,0)       # previous waypoint
         self.waypointList = []  # list of waypoints
         self.scrBuff = None
-        self.scanCone = ((0,0),(0,0),(0,0))     # scan used for collison range
-        self.isCollision = False    # bool to check if pole in collision range
+        #self.scanCone = ((0,0),(0,0),(0,0))     # scan used for collison range
+        #self.isCollision = False    # bool to check if pole in collision range
         self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
         self.rcFwd = 0      #information panel data for motors
@@ -116,6 +116,8 @@ class VisualState(ObservableState):
 
         self.eventPress = 0
 
+        self.scanSensors = {} # add dictionary for sensorID's
+
     def drawRobot(self, surface):
         if self.scrBuff == None:
                 self.scrBuff = surface.copy()
@@ -126,8 +128,8 @@ class VisualState(ObservableState):
 
         surface.blit(rotImg, ((toScreenX(self.robotPos[0]) ) - rotImg.get_rect().width/2.0,
                               toScreenY(self.robotPos[1]) - rotImg.get_rect().height/2.0))
-
-        pygame.draw.lines(surface, RED if self.isCollision else BLACK , True, (toScreenPos(self.scanCone[0]), toScreenPos(self.scanCone[1]), toScreenPos(self.scanCone[2])), 2)
+        for sensorID in self.scanSensors:
+            pygame.draw.lines(surface, RED if self.scanSensors[sensorID][0] else BLACK , True, (toScreenPos(self.scanSensors[sensorID][1][1]), toScreenPos(self.scanSensors[sensorID][1][0]), toScreenPos(self.scanSensors[sensorID][1][2])), 2)
         
     def drawPath(self,surface):
         pygame.draw.circle(surface,BLACK,toScreenPos(self.nextWaypoint.getPosition()), scaleToScreen(40))                # draw the red dot on the current waypoint and previously met ones
@@ -209,7 +211,11 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,SCREENHEIGHT -505))
 
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(SCREENHEIGHT -475)))     # collision information panel
-        surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(SCREENHEIGHT -440)))
+        if len(self.scanSensors) >= 1:
+            displacement = 440
+            for sensorID in self.scanSensors:
+                surface.blit(self.font.render(("Obstacle in Range of %s: %s" % (sensorID, self.scanSensors[sensorID][0])), True, WHITE), (505,(SCREENHEIGHT -displacement)))
+                displacement -= 20
         """
         surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(SCREENHEIGHT -390)))     # motor information panel
         surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(SCREENHEIGHT -355)))
@@ -357,9 +363,9 @@ def visualControlUpdate(state,batchdata):
             state.lengthOfBatch = (item['length'])
             state.varianceOfLatency = (item['variance'])
         elif item['messageType'] == 'scan':
-            state.scanCone = (item['scanCone'])
-            state.isCollision = (item['collision'])
-
+            #state.scanCone = (item['scanCone'])
+            #state.isCollision = (item['collision'])
+            state.scanSensors[item['sensorID']] = [item['collision'], item['scanCone']]
         elif item['messageType'] == 'control':
             state.rcFwd = abs((item['rcFwd']*127.0  ))
             state.rcTurn = abs((item['rcTurn']*127.0 ))

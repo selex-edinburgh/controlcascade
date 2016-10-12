@@ -30,6 +30,10 @@ def runControlLoops():
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
 
+    '''
+    Explaination of the next block
+    Green Block
+    ''' 
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState()    #OdoState(mmPerPulse,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 40, 0.5)    #RcChanState(lrChange, fwdbkChange, speedScaling)
@@ -39,8 +43,13 @@ def runControlLoops():
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
-    scanSimState = scanSimControl.ScanSimState((0,170), 0, 90, 650, 10)     # scanSimState (sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
+    scanSimState  = scanSimControl.ScanSimState('IR', (0, 170), 0, 90, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
+    scanSimState2 = scanSimControl.ScanSimState('US', (0,-170), 180, 45, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
 
+    '''
+    Explaination of next block
+    Amber Block
+    '''
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
     trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
 #    odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
@@ -53,7 +62,12 @@ def runControlLoops():
     visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
     statsController  = plumbing.controlloop.ControlLoop( statsState,  statsControl.statsControlUpdate,   0.5 * timeScale,  0.5 * timeScale)
     scanSimController = plumbing.controlloop.ControlLoop( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
+    scanSimController2 = plumbing.controlloop.ControlLoop( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
 
+    '''
+    Explaination of next block
+    Green Block
+    '''
     routeController.connectTo(trackController,  routeControl.routeToTrackTranslator)
     trackController.connectTo(rcChanController, trackControl.trackToRcChanTranslator)
     rcChanController.connectTo(vsimController, rcChanControl.rcChanToVsimTranslator)
@@ -73,6 +87,10 @@ def runControlLoops():
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
+    trackController.connectTo(scanSimController2, trackControl.trackToScanSimTranslator)
+    envSimController.connectTo(scanSimController2, envSimControl.envToScanSimControl)
+    scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
+    scanSimController2.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
 
@@ -85,8 +103,13 @@ def runControlLoops():
     #visualController.connectTo(sensorController, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
     #visualController.connectTo(scanSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(scanSimController2, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
 
+    '''
+    Explaination of next block
+    Green Block
+    '''
     routeController.start()
     trackController.start()
     rcChanController.start()
@@ -96,6 +119,12 @@ def runControlLoops():
     sensorController.start()
     statsController.start()
     scanSimController.start()
+    scanSimController2.start()
+
+    '''
+    Explaination of next block
+    Amber Block
+    '''
     visualController.run()
 
 
