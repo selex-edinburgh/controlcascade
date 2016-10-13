@@ -58,10 +58,7 @@ def routeControlUpdate(state,batchdata):
             newWaypoint = item['newWaypoint']
             state.waypoints.append(newWaypoint)
         elif item['messageType'] == 'removeWaypoint':
-            print len(state.waypoints)
             state.waypoints.pop()
-            print "Waypoint Removed"
-            print len(state.waypoints)
         elif item['messageType'] == 'sense': # TODO
             state.nearWaypoint = False
             sensedPos = item['sensedPos']
