@@ -7,7 +7,7 @@ import sys
 try:
     import RPi.GPIO as GPIO
     GPIO_Present = True
-except RunTimeError as err: # catch the RunTimeError and output a response
+except ImportError as err: # catch the RunTimeError and output a response
     GPIO_Present= False
     print err
     print ("Error: Can't import RPi.GPIO")
