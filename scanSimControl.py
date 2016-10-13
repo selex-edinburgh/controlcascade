@@ -21,7 +21,6 @@ class ScanSimState(ObservableState):
         self.isCollision = False
         self.angleIncrementor = 0
         self.increment = 3
-        self.sensorID = sensorID
         
 def scanSimControlUpdate(state, batchdata):
     for item in batchdata:

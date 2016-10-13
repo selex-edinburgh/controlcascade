@@ -7,6 +7,7 @@ from plumbing.controlloop import ControlObserverTranslator
 class SensorState(ObservableState):
     def __init__(self, scanDist, scanRange):
         super(SensorState,self).__init__()
+        self.sensorID = ''
         self.scanRange = 100.0
         self.turnSpeed = 0.0
         self.scanCone = [(0.0)]
@@ -19,6 +20,7 @@ def sensorControlUpdate(state,batchdata):
             pass
             
         elif item['messageType'] == 'sense':
+            state.sensorID = item['sensorID']
             state.scanCone = item['scanCone']
             state.isCollision = item['collision']
             

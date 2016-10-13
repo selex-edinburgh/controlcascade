@@ -71,9 +71,9 @@ class VisualState(ObservableState):
         self.prevWaypoint = (0,0)       # previous waypoints
         self.waypointList = []
         self.scrBuff = None
-        self.sensorID = ''
-        self.scanCone = ((0,0),(0,0),(0,0))   # scan used for collison range [((0,0),(0,0),(0,0)),((0,0),(0,0),(0,0))]     
-        self.isCollision = False    # bool to check if pole in collision range
+        #self.sensorID = ''
+        #self.scanCone = ((0,0),(0,0),(0,0))   # scan used for collison range [((0,0),(0,0),(0,0)),((0,0),(0,0),(0,0))]     
+        #self.isCollision = False    # bool to check if pole in collision range
         self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
         self.rcFwd = 0      #information panel data for motors
@@ -110,7 +110,7 @@ class VisualState(ObservableState):
         for key in self.scanSensors: # scanSensors is filled in the visualControlUpdate method by the scan MessageType.
             #print self.scanSensors
             #print key, self.scanSensors[key][0], self.scanSensors[key][1][0]
-            pygame.draw.lines(surface, BLACK, False, (self.scanSensors[key][1][1], self.scanSensors[key][1][0], self.scanSensors[key][1][2]), 2)
+            pygame.draw.lines(surface, BLACK, False, ((self.scanSensors[key][1][1]), self.scanSensors[key][1][0], self.scanSensors[key][1][2]), 2)
             
             if self.scanSensors[key][0]: # scanSensors[key][0] is a Collision boolean.
                 pygame.draw.lines(surface,   RED, True, (self.scanSensors[key][1][0], self.scanSensors[key][1][3], self.scanSensors[key][1][4]), 2)
@@ -196,7 +196,11 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,self.screenHeight -505))
 
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(self.screenHeight -475)))     # collision information panel
-        surface.blit(self.font.render(("Obstacle in Range: %s" % (self.isCollision)), True, WHITE), (505,(self.screenHeight -440)))
+        if len(self.scanSensors) >= 1:
+            displacement = 440
+            for sensorID in self.scanSensors:
+                surface.blit(self.font.render(("Obstacle in Range of %s: %s" % (sensorID, self.scanSensors[sensorID][0])), True, WHITE), (505,(self.screenHeight -displacement)))
+                displacement -= 20
         """
         surface.blit(self.fontTitle.render(("Motor"), True, WHITE), (505,(self.screenHeight -390)))     # motor information panel
         surface.blit(self.font.render(("Turn Command: %s" % int((self.rcTurn))), True, WHITE), (505,(self.screenHeight -355)))

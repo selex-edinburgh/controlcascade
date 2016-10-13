@@ -44,7 +44,7 @@ def runControlLoops():
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
     scanSimState  = scanSimControl.ScanSimState('IR', 0,  45,  0, 45, 65, 10)  # scanSimState (sensorID, pointAOffset, frontConeWidth, frontLineWidth,  scanAngle, scanRange, turnSpeed)
-    scanSimState2 = scanSimControl.ScanSimState('US', 0, -202, -180, 21, 65, 10)  # scanSimState (sensorID, pointAOffset,  backConeWidth,  backLineWidth, scanAngle, scanRange, turnSpeed)
+    scanSimState2 = scanSimControl.ScanSimState('US', 0, 202, 180, 21, 65, 10)  # scanSimState (sensorID, pointAOffset,  backConeWidth,  backLineWidth, scanAngle, scanRange, turnSpeed)
 
     '''
     Explaination of next block
@@ -87,11 +87,13 @@ def runControlLoops():
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     #scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
-    rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
-    odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
-    scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     trackController.connectTo(scanSimController2, trackControl.trackToScanSimTranslator)
     envSimController.connectTo(scanSimController2, envSimControl.envToScanSimControl)
+    scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
+    #scanSimController2.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
+    rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
+    odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
+
     
     visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to stop loops
     visualController.connectTo(odoController, visualControl.visualToAppManager)
@@ -101,6 +103,7 @@ def runControlLoops():
     #visualController.connectTo(sensorController, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
     #visualController.connectTo(scanSimController, visualControl.visualToAppManager)
+    #visualController.connectTo(scanSimController2, visualControl.visualToAppManager)
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
 
     '''
