@@ -69,6 +69,7 @@ def runControlLoops():
     Green Block
     '''
     routeController.connectTo(trackController,  routeControl.routeToTrackTranslator)
+    routeController.connectTo(visualController,  routeControl.routeToVisualTranslator)
     trackController.connectTo(rcChanController, trackControl.trackToRcChanTranslator)
     rcChanController.connectTo(vsimController, rcChanControl.rcChanToVsimTranslator)
     vsimController.connectTo(odoController, vsimControl.vsimToOdoTranslator)

@@ -87,15 +87,13 @@ class VisualState(ObservableState):
         self.barrierList= []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
-        self.waypointTemp = WaypointManager.createWaypoint(0,0)       # temp waypoint when adding new waypoints to list
+        self.newWaypoint = WaypointManager.createWaypoint(0,0)       # temp waypoint when adding new waypoints to list
+        self.newWaypointLast = self.newWaypoint       # previous waypoint
         self.robotPos = (0,0)       # current position of robot
         self.robotAngle = 0     # current angle of robot
         self.nextWaypoint = WaypointManager.createWaypoint(0,0)  # next waypoint
-        self.prevWaypoint = WaypointManager.createWaypoint(0,0)       # previous waypoint
         self.waypointList = []  # list of waypoints
         self.scrBuff = None
-        #self.scanCone = ((0,0),(0,0),(0,0))     # scan used for collison range
-        #self.isCollision = False    # bool to check if pole in collision range
         self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
         self.rcFwd = 0      #information panel data for motors
@@ -156,7 +154,6 @@ class VisualState(ObservableState):
                 
     def drawObstacles(self,surface):
         for wall in self.wallList:      # draw the walls on the screen
-            #self.wall = (wall[0], SCREENHEIGHT - wall[1],  wall[2], SCREENHEIGHT - wall[3])
             pygame.draw.line(surface, BLACK, toScreenPos((wall[0], wall[1])), toScreenPos((wall[2], wall[3])), 4 )
 
         for pole in self.poleList:      # draw poles on the screen
@@ -165,11 +162,9 @@ class VisualState(ObservableState):
             pygame.draw.circle(surface,BLACK,poleTemp, 5, 2)
 
         for goal in self.goalList:
-            #self.goal = (goal[0], SCREENHEIGHT - goal[1], goal[2], SCREENHEIGHT - goal[3])
             pygame.draw.line(surface,BLACK,toScreenPos((goal[0],goal[1])),toScreenPos((goal[2],goal[3])), 4)
 
         for barrier in self.barrierList:
-            #self.barrier = (barrier[0], SCREENHEIGHT - barrier[1], barrier[2], SCREENHEIGHT - barrier[3])
             pygame.draw.line(surface,BLACK,toScreenPos((barrier[0],barrier[1])),toScreenPos((barrier[2], barrier[3])), 2)
         for ball in self.ballList:
             ballTemp = toScreenPos(ball)
@@ -313,7 +308,7 @@ def visualControlUpdate(state,batchdata):
             pressPosition = (e.pos[0], e.pos[1])        # sets screen coordinates to MouseButtonDown coordinates
             if (screenAreaTop.collidepoint(pressPosition)) or \
                 (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
-                state.waypointTemp = WaypointManager.createWaypoint(fromScreenX(e.pos[0]), fromScreenY(e.pos[1]))      # create new temp waypoint position from arena coordinates
+                state.newWaypoint = WaypointManager.createWaypoint(fromScreenX(e.pos[0]), fromScreenY(e.pos[1]))      # create new temp waypoint position from arena coordinates
         elif e.type == MOUSEBUTTONDOWN and e.button ==3:
             state.menu.show()     # show user menu
             state.eventPress = (e.pos[0], e.pos[1])
@@ -346,6 +341,9 @@ def visualControlUpdate(state,batchdata):
             state.robotPos = currentPos
             state.robotAngle = currentAngle
 
+        elif item['messageType'] == 'waypointList':
+            state.waypointList = (item['waypointList'])
+
         elif item['messageType'] == 'obstacle':
             state.barrierList = (item['barrierList'])
             state.poleList = (item['poleList'])
@@ -363,9 +361,8 @@ def visualControlUpdate(state,batchdata):
             state.lengthOfBatch = (item['length'])
             state.varianceOfLatency = (item['variance'])
         elif item['messageType'] == 'scan':
-            #state.scanCone = (item['scanCone'])
-            #state.isCollision = (item['collision'])
             state.scanSensors[item['sensorID']] = [item['collision'], item['scanCone']]
+            
         elif item['messageType'] == 'control':
             state.rcFwd = abs((item['rcFwd']*127.0  ))
             state.rcTurn = abs((item['rcTurn']*127.0 ))
@@ -380,17 +377,18 @@ def visualControlUpdate(state,batchdata):
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
 
-    sourceState.waypointList = destState.waypoints
-    if sourceState.removeLastWP:
-        destState.waypoints.pop()
-    if destState.nearWaypoint and sourceState.nextWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
-        sourceState.stopLoops = True
+    if len(sourceState.waypointList) >= 1:    
+        if destState.nearWaypoint and sourceState.nextWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
+            sourceState.stopLoops = True
 
-    if sourceState.waypointTemp.getPosition() != (0,0) and sourceState.waypointTemp != sourceState.prevWaypoint:
-        sourceState.prevWaypoint = sourceState.waypointTemp
-        message = {'messageType':'waypoint',
-                   'newWaypoint'    :sourceState.waypointTemp,
-                   'removeWaypoint' :sourceState.removeLastWP}
+    if sourceState.newWaypoint != sourceState.newWaypointLast:
+        sourceState.newWaypointLast = sourceState.newWaypoint
+        message = {'messageType':'newWaypoint',
+                   'newWaypoint'    :sourceState.newWaypoint}
+        destQueue.put(message)
+
+    if sourceState.removeLastWP == True:
+        message = {'messageType':'removeWaypoint'}
         destQueue.put(message)
 
 def visualToAppManager(sourceState, destState, destQueue):
