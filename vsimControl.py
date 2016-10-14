@@ -21,7 +21,7 @@ class VsimState(ObservableState):
         self.rcFwd = 0.0
         self.timeDelta = 0.0
         self._fricEffectPerSec = fricEffectPerSec       # 0.95 #deceleration effect
-        self._lrBias = lrBias        # 1.0
+        self._lrBias = lrBias        
         self._speedMax = speedMax       # 600.0 # to mm/sec
         self._leftSpeedMultiplier = self._speedMax * self._lrBias
         self._rightSpeedMultiplier = self._speedMax / self._lrBias

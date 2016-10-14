@@ -22,28 +22,29 @@ class RouteState(ObservableState):
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
         self.waypoints    = [
 
-##        (2390.0,4630.0),(2390.0,4630.0)]
+##        WaypointManager.createWaypoint(2390,4630),
+##        WaypointManager.createWaypoint(2390,4630)]
         
         #Estimate of course
 
-##        (2250.0,200.0),
-##        (2300.0,980.0),
-##        (1460.0,1030.0),
-##        (1480.0,1920.0),
-##        (2250.0,2010.0),
-##        (2300.0,2850.0), 
-##        (1240.0,2840.0),
-##        (470.0,6560.0),
-##        (1850.0,6750.0),
-##        (2270.0,5570.0),       
-##        (2270.0,4140.0),    
-##        (1210.0,2920.0),             
-##        (2410.0,2840.0),                       
-##        (2280.0,2040.0),                                  
-##        (1360.0,1860.0),                              
-##        (1310.0,1110.0),                              
-##        (2140.0,1030.0),                        
-##        (2300.0,220.0)
+##        WaypointManager.createWaypoint(2250,200),
+##        WaypointManager.createWaypoint(2300,980),
+##        WaypointManager.createWaypoint(1460,1030),
+##        WaypointManager.createWaypoint(1480,1920),
+##        WaypointManager.createWaypoint(2250,2010),
+##        WaypointManager.createWaypoint(2300,2850), 
+##        WaypointManager.createWaypoint(1240,2840),
+##        WaypointManager.createWaypoint(470,6560),
+##        WaypointManager.createWaypoint(1850,6750),
+##        WaypointManager.createWaypoint(2270,5570),       
+##        WaypointManager.createWaypoint(2270,4140),    
+##        WaypointManager.createWaypoint(1210,2920),             
+##        WaypointManager.createWaypoint(2410,2840),                       
+##        WaypointManager.createWaypoint(2280,2040),                                  
+##        WaypointManager.createWaypoint(1360,1860),                              
+##        WaypointManager.createWaypoint(1310,1110),                              
+##        WaypointManager.createWaypoint(2140,1030),                        
+##        WaypointManager.createWaypoint(2300,220)
              
         #Square
         WaypointManager.createWaypoint(2000, 4000),
