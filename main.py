@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Green Block
+'''
 import time
 import math
 import plumbing.controlloop
@@ -24,9 +29,10 @@ import scanSimControl
 
 def runControlLoops():
 
-    #Change from True to False to swap from Simulated Mode to Real Mode and vice versa for the other way round
-    SimMode = True
-    
+    '''
+    Section 2
+    Green Block
+    '''
     timeScale = 1
     guiTimeScale = 0.5
 
@@ -42,10 +48,8 @@ def runControlLoops():
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
 
-    '''
-    Explaination of the next block
-    Green Block
-    ''' 
+    SimMode = False #True = Simulated Mode, False = Real Mode
+    
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
     odoState    = odoControl.OdoState()    #OdoState(mmPerPulse,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 40, 0.6)    #RcChanState(lrChange, fwdbkChange, speedScaling)
@@ -59,7 +63,7 @@ def runControlLoops():
     scanSimState2 = scanSimControl.ScanSimState('US', (0,-170), 180, 45, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
 
     '''
-    Explaination of next block
+    Section 3
     Amber Block
     '''
     routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
@@ -79,7 +83,7 @@ def runControlLoops():
     scanSimController2 = plumbing.controlloop.ControlLoop( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
 
     '''
-    Explaination of next block
+    Section 4
     Green Block
     '''
     routeController.connectTo(trackController,  routeControl.routeToTrackTranslator)
@@ -122,8 +126,8 @@ def runControlLoops():
     #visualController.connectTo(routeController, visualControl.visualToAppManager)
 
     '''
-    Explaination of next block
-    Green Block
+    Section 5
+    Amber Block
     '''
     routeController.start()
     trackController.start()
@@ -136,10 +140,6 @@ def runControlLoops():
     scanSimController.start()
     scanSimController2.start()
 
-    '''
-    Explaination of next block
-    Amber Block
-    '''
     visualController.run()
 
 
