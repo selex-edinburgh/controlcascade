@@ -118,7 +118,7 @@ class VisualState(ObservableState):
         self.realMode = False
 
         self.stopLoops = True       # initialized to true to stop at beginning
-        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in wait in wait
+        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in waiting
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
 
         self.eventPress = 0
@@ -237,28 +237,35 @@ class VisualState(ObservableState):
         surface.blit(self.font.render(("Variance:       {0:.8f}".format(self.varianceOfLatency)), True, BLUE), (505,SCREENHEIGHT -275))
 
         if self.stopLoops:
-            surface.blit(self.font.render(("Program Running"), True, BLUE), (555, SCREENHEIGHT - 20))
-            surface.blit(self.font.render(("Program Stopped"), True, WHITE), (555, SCREENHEIGHT - 40))
+            colour1 = BLUE
+            colour2 = WHITE
         else:
-            surface.blit(self.font.render(("Program Stopped"), True, BLUE), (555, SCREENHEIGHT - 40))
-            surface.blit(self.font.render(("Program Running"), True, WHITE), (555, SCREENHEIGHT - 20))
+            colour1 = WHITE
+            colour2 = BLUE
+        surface.blit(self.font.render(("Program Running"), True, colour1), (555, SCREENHEIGHT - 20))
+        surface.blit(self.font.render(("Program Stopped"), True, colour2), (555, SCREENHEIGHT - 40))
 
-        if self.waitLoops:
-            surface.blit(self.font.render(("Continuous WP"), True, BLUE), (555, SCREENHEIGHT - 140))
-            surface.blit(self.font.render(("Waiting WP"), True, WHITE), (555, SCREENHEIGHT - 160))
+        if WaypointManager.waypointType == WaypointTypeEnum.WAITING:
+            colour1 = BLUE
+            colour2 = WHITE
         else:
-            surface.blit(self.font.render(("Waiting WP"), True, BLUE), (555, SCREENHEIGHT - 160))
-            surface.blit(self.font.render(("Continuous WP"), True, WHITE), (555, SCREENHEIGHT - 140))
+            colour1 = WHITE
+            colour2 = BLUE   
+        surface.blit(self.font.render(("Continuous WP"), True, colour1), (555, SCREENHEIGHT - 140))
+        surface.blit(self.font.render(("Waiting WP"), True, colour2), (555, SCREENHEIGHT - 160))
         
         pos = fromScreenPos(pygame.mouse.get_pos())        # cursor position
         surface.blit(self.font.render(("Cursor pos:"),True, WHITE), (40, SCREENHEIGHT - 150))
         surface.blit(self.font.render(("{0}".format(pos)),True, WHITE), (40, SCREENHEIGHT - 130))
         if self.realMode:
-            surface.blit(self.font.render(("Real mode"), True, WHITE),(555,(SCREENHEIGHT - 80)))
-            surface.blit(self.font.render(("Simulated mode"), True, BLUE),(555,(SCREENHEIGHT - 100)))
+            colour1 = BLUE
+            colour2 = WHITE
         else:
-            surface.blit(self.font.render(("Simulated mode"), True, WHITE),(555,(SCREENHEIGHT - 100)))
-            surface.blit(self.font.render(("Real mode"), True, BLUE),(555,(SCREENHEIGHT - 80)))
+            colour1 = WHITE
+            colour2 = BLUE
+        surface.blit(self.font.render(("Simulated mode"), True, colour1),(555,(SCREENHEIGHT - 100)))
+        surface.blit(self.font.render(("Real mode"), True, colour2),(555,(SCREENHEIGHT - 80)))
+        
 
 def handle_menu(e, state):
     print 'Menu event: %s.%d: %s' % (e.name,e.item_id,e.text)
@@ -275,8 +282,10 @@ def handle_menu(e, state):
             state.stopLoops = False
         if e.text == 'Waiting Waypoint':
             state.waitLoops = True
+            WaypointManager.setWaypointType(WaypointTypeEnum.WAITING)
         if e.text == 'Continuous Waypoint':
             state.waitLoops = False
+            WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
         if e.text == 'Remove Pole':

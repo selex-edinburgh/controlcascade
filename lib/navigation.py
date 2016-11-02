@@ -25,7 +25,7 @@ class WaypointManager:
     waypointType = WaypointTypeEnum.CONTINUOUS
     @staticmethod
     def createWaypoint(x, y):
-        return Waypoint(x, y, 0 if WaypointManager.waypointType == WaypointTypeEnum.CONTINUOUS else waitPeriod)
+        return Waypoint(x, y, 0 if WaypointManager.waypointType == WaypointTypeEnum.CONTINUOUS else WaypointManager.waitPeriod)
     @staticmethod
     def setWaitPeriod(wp):  
         WaypointManager.waitPeriod = wp
