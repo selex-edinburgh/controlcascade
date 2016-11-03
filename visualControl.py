@@ -25,6 +25,7 @@ progdir = os.path.dirname(progname)
 sys.path.append(os.path.join(progdir,'lib'))
 from popup_menu import NonBlockingPopupMenu
 
+
 BLACK = (  0,   0,   0)     # global constants
 WHITE = (255, 255, 255)
 BLUE =  (  147,   179, 208)
@@ -44,14 +45,20 @@ pygame.init()
 menu_data = (
     'Main',
     'Remove Last Waypoint',
-    'Waiting Waypoint',
-    'Continuous Waypoint',
-    'Stop',
-    'Start',
+    (
+        'Waypoint Type',
+        'Waiting Waypoint',
+        'Continuous Waypoint',
+    ),
     'Remove Pole',
-    'Timing Graph',
-    'Motor Graph',
-    'Quit',
+    (
+        'Graphs',
+        'Motor Graph',
+        'Timing Graph',
+    ),
+    'Start (G)',
+    'Stop (Spacebar)',
+    'Quit (Escape)',
 )
 
 def scaleToScreen(D):           #scales to SCREENSCALE
@@ -274,18 +281,6 @@ def handle_menu(e, state):
         print 'Hide menu'
         state.menu.hide()
     elif e.name == 'Main':
-        if e.text == 'Quit':
-            pygame.quit()
-        if e.text == 'Stop':
-            state.stopLoops = True
-        if e.text == 'Start':
-            state.stopLoops = False
-        if e.text == 'Waiting Waypoint':
-            state.waitLoops = True
-            WaypointManager.setWaypointType(WaypointTypeEnum.WAITING)
-        if e.text == 'Continuous Waypoint':
-            state.waitLoops = False
-            WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
         if e.text == 'Remove Pole':
@@ -293,19 +288,28 @@ def handle_menu(e, state):
                 if r.collidepoint(state.eventPress):
                     state.poleList.pop(index)
                     state.poleRecList.pop(index)
-        if e.text == 'Motor Graph':
-            subprocess.Popen(['sh', 'runMotorGraphPy.sh'])
-            print "motorororooro"
-        if e.text == 'Timing Graph':
-            subprocess.Popen(['sh', 'runStatsGraphPy.sh'])
-            print "motorororooro"
+        if e.text == 'Start (G)':
+            state.stopLoops = False
+        if e.text == 'Stop (Spacebar)':
+            state.stopLoops = True
+        if e.text == 'Quit (Escape)':
+            pygame.quit()
+            sys.exit()  
+    elif e.name == 'Waypoint Type...':
+        if e.text == 'Waiting Waypoint':
+            state.waitLoops = True
+            WaypointManager.setWaypointType(WaypointTypeEnum.WAITING)
+        if e.text == 'Continuous Waypoint':
+            state.waitLoops = False
+            WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
             
-    elif e.name == 'Graphs':
+    elif e.name == 'Graphs...':
         if e.text == 'Motor Graph':
-            os.system('py motorGraph.py')
+            print 'started graphing'
+            os.system('python graphs/motorGraph.py')
             print "motorororooro"
         if e.text == 'Timing Graph':
-            os.system('statsGraph.py')
+            os.system('python graphs/statsGraph.py')
             print "motorororooro"
     elif e.name == 'More Things':
         
@@ -319,21 +323,25 @@ def visualControlUpdate(state,batchdata):
     screenOutOfBounds2 = pygame.Rect(0,480,120,360)
 
     for e in state.menu.handle_events(pygame.event.get()):
-        if e.type == pygame.QUIT:
-            pygame.quit()       # quit the screen
-            sys.exit()
-        elif e.type == MOUSEBUTTONDOWN and e.button ==1:
+        if e.type == MOUSEBUTTONDOWN and e.button ==1:
             pressPosition = (e.pos[0], e.pos[1])        # sets screen coordinates to MouseButtonDown coordinates
             if (screenAreaTop.collidepoint(pressPosition)) or \
-                (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
+                  (screenAreaBottom.collidepoint(pressPosition)): # detect if click is within the arena/visual screen
                 state.newWaypoint = WaypointManager.createWaypoint(fromScreenX(e.pos[0]), fromScreenY(e.pos[1]))      # create new temp waypoint position from arena coordinates
-        elif e.type == MOUSEBUTTONDOWN and e.button ==3:
-            state.menu.show()     # show user menu
-            state.eventPress = (e.pos[0], e.pos[1])
+        elif e.type == MOUSEBUTTONUP and e.button ==3:
+             state.menu.show()     # show user menu
+             state.eventPress = (e.pos[0], e.pos[1])
         elif e.type == USEREVENT:
             if e.code == 'MENU':
-                handle_menu(e, state)
-
+                handle_menu(e, state)       
+        elif e.type == KEYDOWN and e.key == K_SPACE:
+            state.stopLoops = True
+        elif e.type == KEYDOWN and e.key == K_g:
+            state.stopLoops = False
+        elif e.type == KEYDOWN and e.key == K_ESCAPE:
+            pygame.quit()       # quit the screen
+            sys.exit()
+    
     state.screen.fill(GREY)         # fill the screen with colour
     state.screen.fill(GREEN, screenAreaTop)         # fill the screen with colour
     state.screen.fill(GREEN, screenAreaBottom)          # fill the screen with colour
