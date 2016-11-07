@@ -43,8 +43,10 @@ class ControlLoop(threading.Thread):
                            - time.time()
                 try:
                     item = self.queue.get(True,max(timeout,0))
-                    if item['messageType'] == 'stop':
+                    if item['messageType'] == 'loopControlMessage':
+                        if item['quitLoops']: return
                         self._running =  not item['stopLoops']
+                        
                     if self._running:
                         batchdata.append(item)
                         haveData = True

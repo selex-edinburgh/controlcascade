@@ -124,8 +124,8 @@ class VisualState(ObservableState):
 
         self.realMode = False
 
+        self.quitLoops = False      # initialized to false since do not want to quit at beginning
         self.stopLoops = True       # initialized to true to stop at beginning
-        self.waitLoops = False       # initialized to false since will be stopped at beginning so no point in waiting
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
 
         self.eventPress = 0
@@ -293,14 +293,11 @@ def handle_menu(e, state):
         if e.text == 'Stop (Spacebar)':
             state.stopLoops = True
         if e.text == 'Quit (Escape)':
-            pygame.quit()
-            sys.exit()  
+            state.quitLoops = True
     elif e.name == 'Waypoint Type...':
         if e.text == 'Waiting Waypoint':
-            state.waitLoops = True
             WaypointManager.setWaypointType(WaypointTypeEnum.WAITING)
         if e.text == 'Continuous Waypoint':
-            state.waitLoops = False
             WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
             
     elif e.name == 'Graphs...':
@@ -316,6 +313,7 @@ def handle_menu(e, state):
         pass
 
 def visualControlUpdate(state,batchdata):
+    if state.quitLoops:  return
     state.removeLastWP = False
     screenAreaTop = pygame.Rect(0,0,480,480)        # assign different areas of the screen for drawing (colours)
     screenAreaBottom = pygame.Rect(120,480, 240,240)
@@ -339,8 +337,11 @@ def visualControlUpdate(state,batchdata):
         elif e.type == KEYDOWN and e.key == K_g:
             state.stopLoops = False
         elif e.type == KEYDOWN and e.key == K_ESCAPE:
-            pygame.quit()       # quit the screen
-            sys.exit()
+            state.quitLoops = True
+            
+    if state.quitLoops:
+        pygame.quit()
+        return
     
     state.screen.fill(GREY)         # fill the screen with colour
     state.screen.fill(GREEN, screenAreaTop)         # fill the screen with colour
@@ -417,8 +418,19 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
         message = {'messageType':'removeWaypoint'}
         destQueue.put(message)
 
-def visualToAppManager(sourceState, destState, destQueue):
+def visualToStartStop(sourceState, destState, destQueue):
 
-    message = {'messageType': 'stop',
-                'stopLoops': sourceState.stopLoops}
+    message = {'messageType': 'loopControlMessage',
+                'stopLoops': sourceState.stopLoops,
+                'quitLoops': sourceState.quitLoops}
     destQueue.put(message)
+
+def visualToQuit(sourceState, destState, destQueue):
+
+    if sourceState.quitLoops:
+        message = {'messageType': 'loopControlMessage',
+                   'stopLoops': sourceState.stopLoops,
+                   'quitLoops': sourceState.quitLoops}
+        destQueue.put(message)
+    
+

@@ -114,16 +114,28 @@ def runControlLoops():
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
 
 
-    visualController.connectTo(trackController, visualControl.visualToAppManager)       # application manager to stop loops
-    visualController.connectTo(odoController, visualControl.visualToAppManager)
-    #visualController.connectTo(statsController, visualControl.visualToAppManager)
-    #visualController.connectTo(rcChanController, visualControl.visualToAppManager)
-    #visualController.connectTo(envSimController, visualControl.visualToAppManager)
-    #visualController.connectTo(sensorController, visualControl.visualToAppManager)
-    #visualController.connectTo(routeController, visualControl.visualToAppManager)
-    #visualController.connectTo(scanSimController, visualControl.visualToAppManager)
-    #visualController.connectTo(scanSimController2, visualControl.visualToAppManager)
-    #visualController.connectTo(routeController, visualControl.visualToAppManager)
+    visualController.connectTo(trackController, visualControl.visualToStartStop)       # application manager to stop loops
+    visualController.connectTo(odoController, visualControl.visualToStartStop)
+    #visualController.connectTo(statsController, visualControl.visualToStartStop)
+    #visualController.connectTo(rcChanController, visualControl.visualToStartStop)
+    #visualController.connectTo(envSimController, visualControl.visualToStartStop)
+    #visualController.connectTo(sensorController, visualControl.visualToStartStop)
+    #visualController.connectTo(routeController, visualControl.visualToStartStop)
+    #visualController.connectTo(scanSimController, visualControl.visualToStartStop)
+    #visualController.connectTo(scanSimController2, visualControl.visualToStartStop)
+    #visualController.connectTo(routeController, visualControl.visualToStartStop)
+
+    visualController.connectTo(trackController, visualControl.visualToQuit)       # application manager to stop loops
+    visualController.connectTo(odoController, visualControl.visualToQuit)
+    visualController.connectTo(statsController, visualControl.visualToQuit)
+    visualController.connectTo(rcChanController, visualControl.visualToQuit)
+    visualController.connectTo(envSimController, visualControl.visualToQuit)
+    visualController.connectTo(sensorController, visualControl.visualToQuit)
+    visualController.connectTo(routeController, visualControl.visualToQuit)
+    visualController.connectTo(scanSimController, visualControl.visualToQuit)
+    visualController.connectTo(scanSimController2, visualControl.visualToQuit)
+    visualController.connectTo(routeController, visualControl.visualToQuit)
+    visualController.connectTo(visualController, visualControl.visualToQuit)
 
     '''
     Section 5
@@ -141,7 +153,9 @@ def runControlLoops():
     scanSimController2.start()
 
     visualController.run()
-
+    print 'Good Night'
+##    pygame.quit()       # quit the screen
+##    sys.exit()
 
 if __name__ == '__main__':
 
