@@ -27,7 +27,7 @@ class RouteState(ObservableState):
         
         #Estimate of course
 
-##        WaypointManager.createWaypoint(2250,200),
+##        WaypointManager.createWaypoint(2250,200),# Starting Position: Waypoint 0
 ##        WaypointManager.createWaypoint(2300,980),
 ##        WaypointManager.createWaypoint(1460,1030),
 ##        WaypointManager.createWaypoint(1480,1920),
@@ -47,11 +47,11 @@ class RouteState(ObservableState):
 ##        WaypointManager.createWaypoint(2300,220)
              
         #Square
-        WaypointManager.createWaypoint(2000, 4000),
-        WaypointManager.createWaypoint(2000, 5000),
-        WaypointManager.createWaypoint(3000, 5000),
-        WaypointManager.createWaypoint(3000, 4000),
-        WaypointManager.createWaypoint(2000, 4000)
+        WaypointManager.createWaypoint(1400, 3800),
+        WaypointManager.createWaypoint(1400, 5800),
+        WaypointManager.createWaypoint(3400, 5800),
+        WaypointManager.createWaypoint(3400, 3800),
+        WaypointManager.createWaypoint(1400, 3800)
         ]
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0
@@ -74,8 +74,9 @@ def routeControlUpdate(state,batchdata):
             sensedPos = item['sensedPos']
             tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
             dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
+            
             if dist < state._near:
-
+                #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
                     if not(state.waiting): # Check to see if wait has started if not start waiting
@@ -85,8 +86,9 @@ def routeControlUpdate(state,batchdata):
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
 
-                if not(state.waiting):    
-                    state.nearWaypoint = True
+                if not(state.waiting):
+                    #print "Setting waypoint {}".format(tempWaypoint)
+                    state.nearWaypoint = tempWaypoint
                     if ( state.nextWaypoint+1 < len(state.waypoints)):
                         state.nextWaypoint += 1
 

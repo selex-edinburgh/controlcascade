@@ -218,7 +218,11 @@ class VisualState(ObservableState):
         surface.blit(self.fontTitle.render(("Route"), True, WHITE), (505,(SCREENHEIGHT -600)))     # latency information panel
         surface.blit(self.font.render(("Next Waypoint:  ({0},{1})".format(int(self.nextWaypoint.getPosition()[0]), int(self.nextWaypoint.getPosition()[1]))), True, WHITE), (505,SCREENHEIGHT -565))
         surface.blit(self.font.render(("No. of Waypoints:  {0}".format(len(self.waypointList) -1)), True, WHITE), (505,SCREENHEIGHT -545))
-        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint)), True, WHITE), (505,SCREENHEIGHT -525))
+
+        #if "test" not in self.__dict__ or self.__dict__['test'] != self.nearWaypoint:
+        #    self.__dict__['test'] = self.nearWaypoint
+        #    print "Screen {}".format(self.nearWaypoint)
+        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint != False)), True, WHITE), (505,SCREENHEIGHT -525))
         surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,SCREENHEIGHT -505))
 
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(SCREENHEIGHT -475)))     # collision information panel
@@ -405,7 +409,7 @@ def visualControlUpdate(state,batchdata):
 def visualToRouteTranslator(sourceState, destState, destQueue):
 
     if len(sourceState.waypointList) >= 1:    
-        if destState.nearWaypoint and sourceState.nextWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
+        if destState.nearWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
             sourceState.stopLoops = True
 
     if sourceState.newWaypoint != sourceState.newWaypointLast:

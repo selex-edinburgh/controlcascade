@@ -51,9 +51,10 @@ def runControlLoops():
     SimMode = False #True = Simulated Mode, False = Real Mode
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
-    odoState    = odoControl.OdoState()    #OdoState(mmPerPulse,initTheta)
-    rcChanState = rcChanControl.RcChanState(40, 40, 0.6)    #RcChanState(lrChange, fwdbkChange, speedScaling)
-    trackState  = trackControl.TrackState(200,237,500)      #TrackState(wheelBase,trackWidth,movementBudget)
+    firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]
+    odoState    = odoControl.OdoState(150, 150, firstWaypoint.angleTo_Degrees(routeState.waypoints[1]))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
+    rcChanState = rcChanControl.RcChanState(40, 40, 0.6, 0)    #RcChanState(lrChange, fwdbkChange, speedScaling, turnBias)
+    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y)      #TrackState(wheelBase,trackWidth,movementBudget)
     vsimState   = vsimControl.VsimState(1.5,0.95,900.0) #VsimState(fricEffectPerSec,lrBias(0.95=Sim, 1.0=Real),speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
@@ -127,14 +128,14 @@ def runControlLoops():
 
     visualController.connectTo(trackController, visualControl.visualToQuit)       # application manager to stop loops
     visualController.connectTo(odoController, visualControl.visualToQuit)
-    visualController.connectTo(statsController, visualControl.visualToQuit)
-    visualController.connectTo(rcChanController, visualControl.visualToQuit)
-    visualController.connectTo(envSimController, visualControl.visualToQuit)
-    visualController.connectTo(sensorController, visualControl.visualToQuit)
-    visualController.connectTo(routeController, visualControl.visualToQuit)
-    visualController.connectTo(scanSimController, visualControl.visualToQuit)
-    visualController.connectTo(scanSimController2, visualControl.visualToQuit)
-    visualController.connectTo(routeController, visualControl.visualToQuit)
+##    visualController.connectTo(statsController, visualControl.visualToQuit)
+##    visualController.connectTo(rcChanController, visualControl.visualToQuit)
+##    visualController.connectTo(envSimController, visualControl.visualToQuit)
+##    visualController.connectTo(sensorController, visualControl.visualToQuit)
+##    visualController.connectTo(routeController, visualControl.visualToQuit)
+##    visualController.connectTo(scanSimController, visualControl.visualToQuit)
+##    visualController.connectTo(scanSimController2, visualControl.visualToQuit)
+##    visualController.connectTo(routeController, visualControl.visualToQuit)
     visualController.connectTo(visualController, visualControl.visualToQuit)
 
     '''

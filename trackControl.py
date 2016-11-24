@@ -17,7 +17,7 @@ from plumbing.controlloop import ControlObserverTranslator
 from lib.navigation import *
 
 class TrackState(ObservableState):
-    def __init__(self, wheelBase, trackWidth, movementBudget):
+    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
@@ -26,7 +26,7 @@ class TrackState(ObservableState):
         self.legOrigin = WaypointManager.createWaypoint(0.0,0.0)
         self.currentAngle = 0
         #self.currentPos = (2390.0,4630.0) # Uncomment this line to have RC draw at centre of screen
-        self.currentPos = (-500.0,-500.0)  # This draws the RC off screen before clicking Start
+        self.currentPos = (xPos,yPos)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
         self.demandPos = (0.0,0.0)
         self._trackWidth = trackWidth                   # nominal 237.0 mm between wheels l/r
