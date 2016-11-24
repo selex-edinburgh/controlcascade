@@ -62,8 +62,8 @@ def speedUpdate( current, demanded, tDelta, fricPerSec):
     return current - fricNow + fricTerminal
     
 def vsimToOdoTranslator( sourceState, destState, destQueue ):
-    deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulse ,0)
-    deltaR = round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulse ,0)
+    deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulseLt ,0)
+    deltaR = round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulseRt ,0)
     rollover = destState._rolloverRange
     
     left = (destState.totalPulseL + deltaL) % rollover

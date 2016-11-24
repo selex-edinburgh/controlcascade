@@ -30,17 +30,20 @@ from plumbing.controlloop import ControlObserverTranslator
 ##    print "os fail"
 
 class RcChanState(ObservableState):
-    def __init__(self, lrChange, fwdbkChange, speedScaling):
+    def __init__(self, lrChange, fwdbkChange, speedScaling, turnBias):
         super(RcChanState,self).__init__()
-        self.currentTurn = 127
-        self.currentFwd = 127
-        self.demandTurn = 127
-        self.demandFwd = 127
+        self._nullFwd = 127
+        self._nullTurn = 127 + turnBias
+        self._maxDemand = 127
+        self.currentTurn = self._nullTurn
+        self.currentFwd = self._nullFwd
+        self.demandTurn = self._nullTurn
+        self.demandFwd = self._nullFwd
         self.speedScaling = speedScaling
         self._lrChange = lrChange * speedScaling
         self._fwdbkChange = fwdbkChange * speedScaling
         self.timeStamp    = time.time()
-        
+
         self.timeStampFlow["control"] = time.time()
         try:
             self.ser= serial.Serial(            #Set up Serial Interface
@@ -69,14 +72,14 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             pass
 
         if item['messageType'] == 'control':
-                state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * 127 + 127)   ## expects anti clockwise
-                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * 127 + 127)   ## inserted minus
+                state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * state._maxDemand + state._nullTurn)   ## expects anti clockwise
+                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * state._maxDemand + state._nullFwd)   ## inserted minus
         elif item['messageType'] == 'sense':
             pass
 
     if not batchdata:       # if no messages (loops stopped) set the speed to stationary
-        state.demandFwd = 127
-        state.demandTurn = 127
+        state.demandFwd = state._nullFwd
+        state.demandTurn = state._nullTurn
 
 
     state.currentTurn = limitedChange(state.currentTurn, state.demandTurn , state._lrChange )
@@ -103,6 +106,6 @@ def limitedChange(startX, endX, magnitudeLimit):
 
 def rcChanToVsimTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'control',
-                   'rcTurn' :-(sourceState.currentTurn/127.0 - 1.0),
-                   'rcFwd'  :sourceState.currentFwd/127.0 - 1.0 ,
+                   'rcTurn' :-(sourceState.currentTurn/sourceState._maxDemand - 1.0),
+                   'rcFwd'  :sourceState.currentFwd/sourceState._maxDemand - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})

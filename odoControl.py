@@ -25,7 +25,7 @@ from plumbing.observablestate import ObservableState
 from plumbing.controlloop import ControlObserverTranslator
 
 class OdoState(ObservableState):
-    def __init__(self,mmPerPulse=150.0 * math.pi/1024.0,initAngle=0):
+    def __init__(self,wheelDiaRt=150.0, wheelDiaLt=150.0,initAngle=0):
         super(OdoState,self).__init__()
         self.totalPulseL = 0
         self.totalPulseR = 0
@@ -33,11 +33,13 @@ class OdoState(ObservableState):
         self.prevPulseR = 0
         self.offsetL = 0
         self.offsetR = 0
-        self._rolloverRange = 1024
+        self._rolloverRange = 1024.0
         self.prevDistTravel = 0
         self.distTravel = 0
         self._initAngle = initAngle
-        self._mmPerPulse = mmPerPulse       # 1
+        self._mmPerPulseRt = wheelDiaRt * math.pi/1024.0
+        self._mmPerPulseLt = wheelDiaLt * math.pi/1024.0
+        
         self.timeStampFlow["sense"] = time.time()
         self.realMode = False
         self.firstTime = True
@@ -203,11 +205,11 @@ def odoControlUpdate(state,batchdata, doRead):
 
     #intergrating pulse L and R to get a total distance travelled
     state.prevDistTravel = state.distTravel
-    state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) + \
-                            (state.totalPulseR -  state.prevPulseR )) / 2.0 * state._mmPerPulse
+    state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) * state._mmPerPulseLt + \
+                            (state.totalPulseR -  state.prevPulseR )* state._mmPerPulseRt) / 2.0
 
 def odoToTrackTranslator( sourceState, destState, destQueue ):
-    lrDifferenceMm = (sourceState.totalPulseL - sourceState.totalPulseR) * sourceState._mmPerPulse 
+    lrDifferenceMm = (sourceState.totalPulseL * sourceState._mmPerPulseLt) - (sourceState.totalPulseR * sourceState._mmPerPulseRt)
 
     angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor     # calculates the relative heading and applies the turnFactor
     
