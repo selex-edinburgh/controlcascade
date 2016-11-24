@@ -16,6 +16,8 @@ class Waypoint:
         self.waitPeriod = waitPeriod
     def getPosition(self):
         return (self.x,self.y)
+    def angleTo_Degrees(self, other):
+        return math.degrees(math.atan2( other.x - self.x , other.y - self.y ))
 class WaypointTypeEnum:
     CONTINUOUS = 1
     WAITING = 2
@@ -36,7 +38,9 @@ class WaypointManager:
 def axisRotation( pos, theta ):
     return ( pos[0] * cos(theta) + pos[1] * sin(theta) , \
              - pos[0] * sin(theta) + pos[1] * cos(theta) )
-    
+
+def degreeAngle(a, b):
+    return()
 
 def sensorToWorld(RobotPos, RobotHdg, SensorPosOffset, SensorHdgOffset, RTheta):
     theta1 = RTheta[1] + SensorHdgOffset   #correct object angle for sensor angle offset
