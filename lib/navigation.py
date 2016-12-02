@@ -17,7 +17,7 @@ class Waypoint:
     def getPosition(self):
         return (self.x,self.y)
     def angleTo_Degrees(self, other):
-        return math.degrees(math.atan2( other.x - self.x , other.y - self.y ))
+        return degrees(atan2( other.x - self.x , other.y - self.y ))
 class WaypointTypeEnum:
     CONTINUOUS = 1
     WAITING = 2
