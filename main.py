@@ -56,7 +56,7 @@ def runControlLoops():
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(150, 150, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
     rcChanState = rcChanControl.RcChanState(40, 40, 0.9, 6, 0.99)    #RcChanState(lrChange, fwdbkChange, speedScaling, turnOffset, turnBias)
-    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y)      #TrackState(wheelBase,trackWidth,movementBudget,firstWaypoint X, firstWaypoint Y)
+    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y, 0.63)      #TrackState(wheelBase,trackWidth,movementBudget,firstWaypoint X, firstWaypoint Y, underTurnFudge) underTurnFudge will be changed after testing
     vsimState   = vsimControl.VsimState(1.5,0.95,900.0) #VsimState(fricEffectPerSec,lrBias(0.95=Sim, 1.0=Real),speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)

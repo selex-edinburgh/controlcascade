@@ -17,7 +17,7 @@ from plumbing.controlloop import ControlObserverTranslator
 from lib.navigation import *
 
 class TrackState(ObservableState):
-    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos):
+    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos, underTurnFudge):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
@@ -41,6 +41,7 @@ class TrackState(ObservableState):
         self.timeStampFlow["sense"] = time.time()
         self.isCollision = False
         self.nearWaypoint = False       # check is near next waypoint
+        self.underTurnFudge = underTurnFudge
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:

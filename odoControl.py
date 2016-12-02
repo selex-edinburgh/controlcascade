@@ -211,7 +211,7 @@ def odoControlUpdate(state,batchdata, doRead):
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL * sourceState._mmPerPulseLt) - (sourceState.totalPulseR * sourceState._mmPerPulseRt)
 
-    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * 0.63 # 0.63 fudge! to make full turn happen
+    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * destState.underTurnFudge# 0.63 fudge! to make full turn happen
       # calculates the relative heading and applies the turnFactor
     
     angle =  (math.degrees(angleRadians)+ sourceState._initAngle)%360   # applies offset to apply absolute heading
