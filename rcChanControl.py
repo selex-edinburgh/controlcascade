@@ -30,10 +30,11 @@ from plumbing.controlloop import ControlObserverTranslator
 ##    print "os fail"
 
 class RcChanState(ObservableState):
-    def __init__(self, lrChange, fwdbkChange, speedScaling, turnBias):
+    def __init__(self, lrChange, fwdbkChange, speedScaling, turnOffset = 0, turnBiasLOverR = 1.0):
         super(RcChanState,self).__init__()
         self._nullFwd = 127
-        self._nullTurn = 127 + turnBias
+        self._nullTurn = 127 + turnOffset
+        self._turnBiasLOverR = turnBiasLOverR
         self._maxDemand = 127
         self.currentTurn = self._nullTurn
         self.currentFwd = self._nullFwd
@@ -74,6 +75,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         if item['messageType'] == 'control':
                 state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * state._maxDemand + state._nullTurn)   ## expects anti clockwise
                 state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * state._maxDemand + state._nullFwd)   ## inserted minus
+                state.demandTurn = state.demandTurn * state._turnBiasLOverR if state.demandTurn > 0.0 else state.demandTurn / state._turnBiasLOverR
         elif item['messageType'] == 'sense':
             pass
 

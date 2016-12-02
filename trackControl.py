@@ -62,16 +62,26 @@ def trackControlUpdate(state,batchdata):
             halfArcMove = (item['sensedMove']) / 2.0
 
             if math.radians(halfArcTurn) < 0.1:  # small angle approximation sin(angle) = angle : and avoid divide-by-zero risk
-                linearMove = abs(2.0 * halfArcMove )
+                linearMove = (2.0 * halfArcMove )
             else:
-                linearMove = abs(2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
+                linearMove = (2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
 
             midwayAngle = state.currentAngle + halfArcTurn
-            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
-                                    state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
+#            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
+#                                   state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
 
+        
             state.currentAngle = item['sensedAngle']
 
+#START ignore all that ^^^
+#   just turn first, then move
+            move = item['sensedMove']
+            oldpos = state.currentPos
+            
+            state.currentPos = ( oldpos[0] + move * math.cos(math.radians(90-state.currentAngle)),
+                                  oldpos[1] + move * math.sin(math.radians(90-state.currentAngle)) )
+#END end ignore all that ^^^
+            
             state.timeStamp = time.time()
 
        # elif item['messageType'] == 'obstacle':

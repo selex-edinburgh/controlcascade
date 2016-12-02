@@ -49,12 +49,14 @@ def runControlLoops():
     vsimUpdateRateMax = 0.06
 
     SimMode = False #True = Simulated Mode, False = Real Mode
+    doOverrideAngle = False #True = Manual Angle, False = Auto Angle
+    overrideAngle = 270 #0 = North
     
     routeState  = routeControl.RouteState(120.0)        #RouteState(near)
-    firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]
-    odoState    = odoControl.OdoState(150, 150, firstWaypoint.angleTo_Degrees(routeState.waypoints[1]))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
-    rcChanState = rcChanControl.RcChanState(40, 40, 0.6, 0)    #RcChanState(lrChange, fwdbkChange, speedScaling, turnBias)
-    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y)      #TrackState(wheelBase,trackWidth,movementBudget)
+    firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
+    odoState    = odoControl.OdoState(150, 150, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
+    rcChanState = rcChanControl.RcChanState(40, 40, 0.9, 6, 0.99)    #RcChanState(lrChange, fwdbkChange, speedScaling, turnOffset, turnBias)
+    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y)      #TrackState(wheelBase,trackWidth,movementBudget,firstWaypoint X, firstWaypoint Y)
     vsimState   = vsimControl.VsimState(1.5,0.95,900.0) #VsimState(fricEffectPerSec,lrBias(0.95=Sim, 1.0=Real),speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
