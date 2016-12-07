@@ -30,7 +30,7 @@ from plumbing.controlloop import ControlObserverTranslator
 ##    print "os fail"
 
 class RcChanState(ObservableState):
-    def __init__(self, lrChange, fwdbkChange, speedScaling, turnOffset = 0, turnBiasLOverR = 1.0):
+    def __init__(self, lrChange, fwdbkChange, speedScalingFwdBk, speedScalingLR, turnOffset = 0, turnBiasLOverR = 1.0):
         super(RcChanState,self).__init__()
         self._nullFwd = 127
         self._nullTurn = 127 + turnOffset
@@ -40,9 +40,10 @@ class RcChanState(ObservableState):
         self.currentFwd = self._nullFwd
         self.demandTurn = self._nullTurn
         self.demandFwd = self._nullFwd
-        self.speedScaling = speedScaling
-        self._lrChange = lrChange * speedScaling
-        self._fwdbkChange = fwdbkChange * speedScaling
+        self.speedScalingFwdBk = speedScalingFwdBk
+        self.speedScalingLR = speedScalingLR
+        self._lrChange = lrChange * speedScalingLR
+        self._fwdbkChange = fwdbkChange * speedScalingFwdBk
         self.timeStamp    = time.time()
 
         self.timeStampFlow["control"] = time.time()
@@ -73,8 +74,8 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             pass
 
         if item['messageType'] == 'control':
-                state.demandTurn = state.clip(item['demandTurn'] * state.speedScaling * state._maxDemand + state._nullTurn)   ## expects anti clockwise
-                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScaling * state._maxDemand + state._nullFwd)   ## inserted minus
+                state.demandTurn = state.clip(item['demandTurn'] * state.speedScalingLR * state._maxDemand + state._nullTurn)   ## expects anti clockwise
+                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScalingFwdBk * state._maxDemand + state._nullFwd)   ## inserted minus
                 state.demandTurn = state.demandTurn * state._turnBiasLOverR if state.demandTurn > 0.0 else state.demandTurn / state._turnBiasLOverR
         elif item['messageType'] == 'sense':
             pass

@@ -36,28 +36,45 @@ def runControlLoops():
     timeScale = 1
     guiTimeScale = 0.5
 
-    trackUpdateRateMin = 0.016
-    trackUpdateRateMax =   1
-
+    near = 120.0 # how close needs to be till thinks that it has reached waypoint
+    
     odoUpdateRateMin = 0.016
     odoUpdateRateMax =  1
-
+    wheelDiaRt = 150
+    wheelDiaLt = 150
+    doOverrideAngle = False #True = Manual Angle, False = Auto Angle
+    overrideAngle = 270 #0 = North works Clockwise
+    
     rcChanUpdateRateMin = 0.016
     rcChanUpdateRateMax = 0.09
+    lrChange = 40
+    fwdbkChange = 40
+    speedScalingFwdBk = 0.7
+    speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
+    turnOffset = 6
+    turnBias = 0.99
 
+    trackUpdateRateMin = 0.016
+    trackUpdateRateMax =   1
+    wheelBase = 200
+    trackWidth = 237
+    movementBudget = 500
+    underTurnFudge = 0.58 #underTurnFudge will be changed after testing
+    
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
+    fricEffectPerSec = 1.5
+    lrBias = 0.95 # 0.95=Sim, 1.0=Real
+    speedMax = 900.0
 
     SimMode = False #True = Simulated Mode, False = Real Mode
-    doOverrideAngle = False #True = Manual Angle, False = Auto Angle
-    overrideAngle = 270 #0 = North
-    
-    routeState  = routeControl.RouteState(120.0)        #RouteState(near)
+
+    routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
-    odoState    = odoControl.OdoState(150, 150, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
-    rcChanState = rcChanControl.RcChanState(40, 40, 0.9, 6, 0.99)    #RcChanState(lrChange, fwdbkChange, speedScaling, turnOffset, turnBias)
-    trackState  = trackControl.TrackState(200,237,500, firstWaypoint.x, firstWaypoint.y, 0.63)      #TrackState(wheelBase,trackWidth,movementBudget,firstWaypoint X, firstWaypoint Y, underTurnFudge) underTurnFudge will be changed after testing
-    vsimState   = vsimControl.VsimState(1.5,0.95,900.0) #VsimState(fricEffectPerSec,lrBias(0.95=Sim, 1.0=Real),speedMax)
+    odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
+    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
+    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurnFudge)
+    vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState(30,5)
     visualState = visualControl.VisualState()

@@ -23,7 +23,7 @@ class WaypointTypeEnum:
     WAITING = 2
 
 class WaypointManager:
-    waitPeriod = 5
+    waitPeriod = 20
     waypointType = WaypointTypeEnum.CONTINUOUS
     @staticmethod
     def createWaypoint(x, y):
