@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import math
 import threading
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 from lib.navigation import *
 
 class ScanSimState(ObservableState):

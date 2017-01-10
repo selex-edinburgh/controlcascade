@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import pygame
 import os
 import math
-import runControlLoops
+import runArcNodes
 
 # it is better to have an extra variable, than an extremely long line.
 #img_path = 'r2d2.png' #os.path.join('C:\Python27', 'player.png')

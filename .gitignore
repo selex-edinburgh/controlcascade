@@ -2,3 +2,8 @@
 **/~$*.**.db**.txt*
 loopStats.txt
 motorCommands.txt
+graphs/startup.png
+profilerMain.py
+pycallgraph.png
+rc.nja
+rcprof.prof

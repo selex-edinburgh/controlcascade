@@ -16,7 +16,7 @@ import subprocess
 from lib import *
 from pygame import gfxdraw
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 from pygame.locals import *
 from lib.navigation import *
 

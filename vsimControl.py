@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import time
 import math
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 class VsimState(ObservableState):
     def __init__(self, fricEffectPerSec, lrBias, speedMax):

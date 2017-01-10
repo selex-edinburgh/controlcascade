@@ -12,7 +12,7 @@ import math
 import threading
 import datetime
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 from lib.navigation import *
 
 class RouteState(ObservableState):

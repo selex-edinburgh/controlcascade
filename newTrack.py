@@ -12,7 +12,7 @@ import time
 import math
 import threading
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 class TrackState(ObeservableState):
     def __init__(self, trackWidth, movementBudget): 

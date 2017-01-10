@@ -14,7 +14,7 @@ Green Block
 '''
 import time
 import math
-import plumbing.controlloop
+import plumbing.arcnode
 
 import routeControl
 import trackControl
@@ -27,7 +27,7 @@ import visualControl
 import statsControl
 import scanSimControl
 
-def runControlLoops():
+def runArcNodes():
 
     '''
     Section 2
@@ -86,21 +86,21 @@ def runControlLoops():
     Section 3
     Amber Block
     '''
-    routeController  = plumbing.controlloop.ControlLoop( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
-    trackController  = plumbing.controlloop.ControlLoop( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
+    routeController  = plumbing.arcnode.ArcNode( routeState,  routeControl.routeControlUpdate,   0.20 * timeScale,  0.20 * timeScale)
+    trackController  = plumbing.arcnode.ArcNode( trackState,  trackControl.trackControlUpdate,   trackUpdateRateMin * timeScale,  trackUpdateRateMax * timeScale)
     if SimMode:
-        odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-        rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+        odoController    = plumbing.arcnode.ArcNode( odoState,    odoControl.simUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+        rcChanController = plumbing.arcnode.ArcNode( rcChanState, rcChanControl.simMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
     else:
-        odoController    = plumbing.controlloop.ControlLoop( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
-        rcChanController = plumbing.controlloop.ControlLoop( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
-    vsimController   = plumbing.controlloop.ControlLoop( vsimState,   vsimControl.vsimControlUpdate,     vsimUpdateRateMin * timeScale,  vsimUpdateRateMax * timeScale)
-    envSimController = plumbing.controlloop.ControlLoop( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
-    sensorController = plumbing.controlloop.ControlLoop( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
-    visualController = plumbing.controlloop.ControlLoop( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
-    statsController  = plumbing.controlloop.ControlLoop( statsState,  statsControl.statsControlUpdate,   0.5 * timeScale,  0.5 * timeScale)
-    scanSimController = plumbing.controlloop.ControlLoop( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
-    scanSimController2 = plumbing.controlloop.ControlLoop( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
+        odoController    = plumbing.arcnode.ArcNode( odoState,    odoControl.realUpdate,              odoUpdateRateMin * timeScale,  odoUpdateRateMax * timeScale)
+        rcChanController = plumbing.arcnode.ArcNode( rcChanState, rcChanControl.realMotor,            rcChanUpdateRateMin * timeScale,  rcChanUpdateRateMax * timeScale)
+    vsimController   = plumbing.arcnode.ArcNode( vsimState,   vsimControl.vsimControlUpdate,     vsimUpdateRateMin * timeScale,  vsimUpdateRateMax * timeScale)
+    envSimController = plumbing.arcnode.ArcNode( envSimState, envSimControl.envSimControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
+    sensorController = plumbing.arcnode.ArcNode( sensorState, sensorControl.sensorControlUpdate, 0.06 * timeScale,  0.06 * timeScale)
+    visualController = plumbing.arcnode.ArcNode( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
+    statsController  = plumbing.arcnode.ArcNode( statsState,  statsControl.statsControlUpdate,   0.5 * timeScale,  0.5 * timeScale)
+    scanSimController = plumbing.arcnode.ArcNode( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
+    scanSimController2 = plumbing.arcnode.ArcNode( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
 
     '''
     Section 4
@@ -179,4 +179,4 @@ def runControlLoops():
 
 if __name__ == '__main__':
 
-   runControlLoops()
+   runArcNodes()

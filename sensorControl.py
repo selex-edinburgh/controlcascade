@@ -11,7 +11,7 @@ import math
 import threading
 import time
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 class SensorState(ObservableState):
     def __init__(self, scanDist, scanRange):

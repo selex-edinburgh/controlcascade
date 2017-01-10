@@ -22,7 +22,7 @@ except ImportError as err: # catch the RunTimeError and output a response
     print ("Error: Can't import RPi.GPIO")
 
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 class OdoState(ObservableState):
     def __init__(self,wheelDiaRt=150.0, wheelDiaLt=150.0,initAngle=0):

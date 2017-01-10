@@ -16,7 +16,7 @@ import matplotlib.animation as animation
 import numpy as np
 
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 try:        # delete log file
     os.rename('loopStats.txt','log/%s.old' %time.time())

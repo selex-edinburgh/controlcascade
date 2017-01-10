@@ -11,7 +11,7 @@ import time
 import math
 import i2c
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 
 class advVSimState(observablestate):

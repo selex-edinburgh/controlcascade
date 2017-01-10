@@ -17,7 +17,7 @@ try:
 except:
     print "Serial not connected.."
 from plumbing.observablestate import ObservableState
-from plumbing.controlloop import ControlObserverTranslator
+from plumbing.arcnode import ArcNodeObserverTranslator
 
 '''
     Uncomment this section and motorCommand file open part further down to
