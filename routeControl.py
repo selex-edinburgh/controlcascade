@@ -55,15 +55,15 @@ class RouteState(ObservableState):
 
         #FigureofEight
         WaypointManager.createWaypoint(1400, 3800),
-        WaypointManager.createWaypoint(1400, 4800)
-##        WaypointManager.createWaypoint(2400, 4800),
-##        WaypointManager.createWaypoint(2400, 5800),
-##        WaypointManager.createWaypoint(1400, 5800),
-##        WaypointManager.createWaypoint(1400, 4800),
-##        WaypointManager.createWaypoint(2400, 4800),
-##        WaypointManager.createWaypoint(2400, 3800),
-##        WaypointManager.createWaypoint(1400, 3800),
-##        WaypointManager.createWaypoint(1400, 4000)
+        WaypointManager.createWaypoint(1400, 4800),
+        WaypointManager.createWaypoint(2400, 4800),
+        WaypointManager.createWaypoint(2400, 5800),
+        WaypointManager.createWaypoint(1400, 5800),
+        WaypointManager.createWaypoint(1400, 4800),
+        WaypointManager.createWaypoint(2400, 4800),
+        WaypointManager.createWaypoint(2400, 3800),
+        WaypointManager.createWaypoint(1400, 3800),
+        WaypointManager.createWaypoint(1400, 4000)
         ]
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0

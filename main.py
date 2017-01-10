@@ -52,7 +52,7 @@ def runControlLoops():
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
-    turnBias = 0.99
+    turnBias = 1.06
 
     trackUpdateRateMin = 0.016
     trackUpdateRateMax =   1
