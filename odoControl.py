@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Green Block
+'''
 import time
 import math
 import threading
@@ -207,11 +212,14 @@ def odoControlUpdate(state,batchdata, doRead):
     state.prevDistTravel = state.distTravel
     state.distTravel +=  (( state.totalPulseL - state.prevPulseL ) * state._mmPerPulseLt + \
                             (state.totalPulseR -  state.prevPulseR )* state._mmPerPulseRt) / 2.0
-
+'''
+Section 2
+Green Block
+'''
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL * sourceState._mmPerPulseLt) - (sourceState.totalPulseR * sourceState._mmPerPulseRt)
 
-    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * destState.underTurnFudge# 0.63 fudge! to make full turn happen
+    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * destState.underTurnFudge# 0.63 fudge! to make full turn happen used as calibration as changes with different flooring
       # calculates the relative heading and applies the turnFactor
     
     angle =  (math.degrees(angleRadians)+ sourceState._initAngle)%360   # applies offset to apply absolute heading

@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Green Block
+'''
 import time
 import math
 import threading
@@ -17,56 +22,60 @@ from lib.navigation import *
 
 class RouteState(ObservableState):
     def __init__(self, near):
+        '''
+        Section 2
+        Green Block
+        '''
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
         self.waypoints    = [
 
-##        WaypointManager.createWaypoint(2390,4630),
-##        WaypointManager.createWaypoint(2390,4630)]
+##        Waypoint(2390,4630, 0),     #(x, y, waitPeriod)
+##        Waypoint(2390,4630, 0)
         
         #Estimate of course
 
-##        WaypointManager.createWaypoint(2250,200),# Starting Position: Waypoint 0
-##        WaypointManager.createWaypoint(2300,980),
-##        WaypointManager.createWaypoint(1460,1030),
-##        WaypointManager.createWaypoint(1480,1920),
-##        WaypointManager.createWaypoint(2250,2010),
-##        WaypointManager.createWaypoint(2300,2850), 
-##        WaypointManager.createWaypoint(1240,2840),
-##        WaypointManager.createWaypoint(470,6560),
-##        WaypointManager.createWaypoint(1850,6750),
-##        WaypointManager.createWaypoint(2270,5570),       
-##        WaypointManager.createWaypoint(2270,4140),    
-##        WaypointManager.createWaypoint(1210,2920),             
-##        WaypointManager.createWaypoint(2410,2840),                       
-##        WaypointManager.createWaypoint(2280,2040),                                  
-##        WaypointManager.createWaypoint(1360,1860),                              
-##        WaypointManager.createWaypoint(1310,1110),                              
-##        WaypointManager.createWaypoint(2140,1030),                        
-##        WaypointManager.createWaypoint(2300,220)
+##        Waypoint(2250,200, 0),      #(x, y, waitPeriod)
+##        Waypoint(2300,980, 0),
+##        Waypoint(1460,1030, 0),
+##        Waypoint(1480,1920, 0),
+##        Waypoint(2250,2010, 0),
+##        Waypoint(2300,2850, 0), 
+##        Waypoint(1240,2840, 0),
+##        Waypoint(470,6560, 0),
+##        Waypoint(1850,6750, 0),
+##        Waypoint(2270,5570, 0),       
+##        Waypoint(2270,4140, 0),    
+##        Waypoint(1210,2920, 0),             
+##        Waypoint(2410,2840, 0),                       
+##        Waypoint(2280,2040, 0),                                  
+##        Waypoint(1360,1860, 0),                              
+##        Waypoint(1310,1110, 0),                              
+##        Waypoint(2140,1030, 0),                        
+##        Waypoint(2300,220, 0)
              
         #Square
-##        WaypointManager.createWaypoint(1400, 3800),
-##        WaypointManager.createWaypoint(1400, 5800),
-##        WaypointManager.createWaypoint(3400, 5800),
-##        WaypointManager.createWaypoint(3400, 3800),
-##        WaypointManager.createWaypoint(1400, 3800)
+##        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod)
+##        Waypoint(1400, 5800, 0),
+##        Waypoint(3400, 5800, 0),
+##        Waypoint(3400, 3800, 0),
+##        Waypoint(1400, 3800, 0)
 
         #FigureofEight
-        WaypointManager.createWaypoint(1400, 3800),
-        WaypointManager.createWaypoint(1400, 4800),
-        WaypointManager.createWaypoint(2400, 4800),
-        WaypointManager.createWaypoint(2400, 5800),
-        WaypointManager.createWaypoint(1400, 5800),
-        WaypointManager.createWaypoint(1400, 4800),
-        WaypointManager.createWaypoint(2400, 4800),
-        WaypointManager.createWaypoint(2400, 3800),
-        WaypointManager.createWaypoint(1400, 3800),
-        WaypointManager.createWaypoint(1400, 4000)
+        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod)
+        Waypoint(1400, 4800, 0),
+        Waypoint(2400, 4800, 0),
+        Waypoint(2400, 5800, 0),
+        Waypoint(1400, 5800, 0),
+        Waypoint(1400, 4800, 0),
+        Waypoint(2400, 4800, 0),
+        Waypoint(2400, 3800, 0),
+        Waypoint(1400, 3800, 0),
+        Waypoint(1400, 4000, 0)
         ]
         self.currentPos   = self.waypoints[0]
-        self._near = near        # 120.0
+        self._near = near        # 120.0 The detection radius of when the chariot has reached a waypoint
         self.nearWaypoint = True
         self.timeStampFlow["control"]    = time.time()
         self.finalWaypoint = False
@@ -74,6 +83,10 @@ class RouteState(ObservableState):
         #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
         self.waiting = False
 def routeControlUpdate(state,batchdata):
+    '''
+    Section 3
+    Green Block
+    '''
     #nearWaypointLocal = state.nearWaypoint
     for item in batchdata:
         if item['messageType'] == 'newWaypoint':
@@ -86,7 +99,10 @@ def routeControlUpdate(state,batchdata):
             sensedPos = item['sensedPos']
             tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
             dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
-            
+            '''
+            Section 4
+            Amber Block
+            '''
             if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
@@ -104,7 +120,10 @@ def routeControlUpdate(state,batchdata):
                     if ( state.nextWaypoint+1 < len(state.waypoints)):
                         state.nextWaypoint += 1
 
-                
+'''
+Section 5
+Green Block
+'''                
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     nextID = sourceState.nextWaypoint      
     
