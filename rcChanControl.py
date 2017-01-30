@@ -30,7 +30,7 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 ##    print "os fail"
 
 class RcChanState(ObservableState):
-    def __init__(self, lrChange, fwdbkChange, speedScalingFwdBk, speedScalingLR, turnOffset = 0, turnBiasLOverR = 1.0):
+    def __init__(self, lrChange, fwdbkChange, minCreepFwdBk, minCreepLR, speedScalingFwdBk, speedScalingLR, turnOffset = 0, turnBiasLOverR = 1.0):
         super(RcChanState,self).__init__()
         self._nullFwd = 127
         self._nullTurn = 127 + turnOffset
@@ -40,6 +40,8 @@ class RcChanState(ObservableState):
         self.currentFwd = self._nullFwd
         self.demandTurn = self._nullTurn
         self.demandFwd = self._nullFwd
+        self.minCreepFwdBk = minCreepFwdBk
+        self.minCreepLR = minCreepLR
         self.speedScalingFwdBk = speedScalingFwdBk
         self.speedScalingLR = speedScalingLR
         self._lrChange = lrChange * speedScalingLR
@@ -88,6 +90,9 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = min(255,max(0, limitedChange(state.currentTurn, state.demandTurn , state._lrChange )))
     state.currentFwd = min(255,max(0, limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange )))
 
+    if state.currentTurn > 127 and state.currentTurn < 147:
+        state.currentTurn =
+        
 ##    f = open('motorCommands.txt', 'a')
 ##
 ##    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)

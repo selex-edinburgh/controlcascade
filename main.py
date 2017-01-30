@@ -49,6 +49,8 @@ def runArcNodes():
     rcChanUpdateRateMax = 0.09
     lrChange = 40
     fwdbkChange = 40
+    minCreepFwdBk = 20
+    minCreepLR = 20
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
@@ -72,7 +74,7 @@ def runArcNodes():
     routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
-    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
+    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minCreepFwdBk, minCreepLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
     trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurnFudge)
     vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
