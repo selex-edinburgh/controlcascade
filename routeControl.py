@@ -29,7 +29,6 @@ class RouteState(ObservableState):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
-        self.action1
         self.waypoints    = [
 
 ##        Waypoint(2390,4630, 0),     #(x, y, waitPeriod)
@@ -57,23 +56,23 @@ class RouteState(ObservableState):
 ##        Waypoint(2300,220, 0)
              
         #Square
-##        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod)
-##        Waypoint(1400, 5800, 0),
-##        Waypoint(3400, 5800, 0),
-##        Waypoint(3400, 3800, 0),
-##        Waypoint(1400, 3800, 0)
+        Waypoint(1400, 3800, 0, actions = [Action('IR', 0, 0, 0, 0)]),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
+        Waypoint(1400, 5800, 0, actions = [Action()]),
+        Waypoint(3400, 5800, 0, actions = [Action()]),
+        Waypoint(3400, 3800, 0, actions = [Action()]),
+        Waypoint(1400, 3800, 0, actions = [Action()])
 
         #FigureofEight
-        Waypoint(1400, 3800, 0, actions = [Action(IR, 0, 0, 0, 2)]),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
-        Waypoint(1400, 4800, 0, actions = [Action()]),
-        Waypoint(2400, 4800, 0, actions = [Action()]),
-        Waypoint(2400, 5800, 0, actions = [Action()]),
-        Waypoint(1400, 5800, 0, actions = [Action()]),
-        Waypoint(1400, 4800, 0, actions = [Action()]),
-        Waypoint(2400, 4800, 0, actions = [Action()]),
-        Waypoint(2400, 3800, 0, actions = [Action()]),
-        Waypoint(1400, 3800, 0, actions = [Action()]),
-        Waypoint(1400, 4000, 0, actions = [Action()])
+##        Waypoint(1400, 3800, 0, actions = [Action('IR', 0, 0, 0, 2)]),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
+##        Waypoint(1400, 4800, 0, actions = [Action()]),
+##        Waypoint(2400, 4800, 0, actions = [Action()]),
+##        Waypoint(2400, 5800, 0, actions = [Action()]),
+##        Waypoint(1400, 5800, 0, actions = [Action()]),
+##        Waypoint(1400, 4800, 0, actions = [Action()]),
+##        Waypoint(2400, 4800, 0, actions = [Action()]),
+##        Waypoint(2400, 3800, 0, actions = [Action()]),
+##        Waypoint(1400, 3800, 0, actions = [Action()]),
+##        Waypoint(1400, 4000, 0, actions = [Action()])
         ]
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0 The detection radius of when the chariot has reached a waypoint

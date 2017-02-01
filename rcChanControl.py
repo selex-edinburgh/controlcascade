@@ -47,6 +47,7 @@ class RcChanState(ObservableState):
         self._lrChange = lrChange * speedScalingLR
         self._fwdbkChange = fwdbkChange * speedScalingFwdBk
         self.timeStamp    = time.time()
+        self.creepSpeed = 20
 
         self.timeStampFlow["control"] = time.time()
         try:
@@ -90,8 +91,10 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = min(255,max(0, limitedChange(state.currentTurn, state.demandTurn , state._lrChange )))
     state.currentFwd = min(255,max(0, limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange )))
 
-    if state.currentTurn > 127 and state.currentTurn < 147:
-        state.currentTurn =
+    if state.currentTurn > state._nullTurn and state.currentTurn < state._nullTurn + state.creepSpeed:
+        state.currentTurn = state._nullTurn + state.creepSpeed
+    elif state.currentTurn > state._nullTurn - state.creepSpeed and state.currentTurn < state._nullTurn:
+        state.currentTurn = state._nullTurn - state.creepSpeed
         
 ##    f = open('motorCommands.txt', 'a')
 ##

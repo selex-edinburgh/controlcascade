@@ -21,10 +21,10 @@ class Waypoint:
         return degrees(atan2( other.x - self.x , other.y - self.y ))
 
 class Action:
-    def __init__(self, sensorType = None obstX = 0, obstY = 0, scanAngle = 0, scanNo = 0):
+    def __init__(self, sensorType = None, obstX = 0, obstY = 0, scanAngle = 0, scanNo = 0):
         self.sensorType = sensorType
-        self.obstX = x
-        self.obstY = y
+        self.obstX = obstX
+        self.obstY = obstY
         self.scanAngle = scanAngle
         self.scanNo = scanNo
     def getSensorType(self):
