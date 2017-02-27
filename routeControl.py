@@ -18,7 +18,9 @@ import threading
 import datetime
 from plumbing.observablestate import ObservableState
 from plumbing.arcnode import ArcNodeObserverTranslator
+from functools import partial
 from lib.navigation import *
+from lib.sensoractions import *
 
 class RouteState(ObservableState):
     def __init__(self, near):
@@ -29,6 +31,11 @@ class RouteState(ObservableState):
         super(RouteState,self).__init__()
         self.nextWaypoint = 1
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
+
+        bus = I2C(defaultAddress=4)
+        irStepper = ScanningSensor(IR(bus), Stepper(bus))
+        makeIR_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=10, scanNo=5, scanSpeed=1) # populates makeTriangulate with the create function from makeTriangulator, with some defaulted values 
+                                                                                                    # this means that a scanAction can be made from just a pair of coordinates  having theses defaulted values filling the rest
         self.waypoints    = [
 
 ##        Waypoint(2390,4630, 0),     #(x, y, waitPeriod)
@@ -56,23 +63,23 @@ class RouteState(ObservableState):
 ##        Waypoint(2300,220, 0)
              
         #Square
-        Waypoint(1400, 3800, 0, actions = [Action('IR', 0, 0, 0, 0)]),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
-        Waypoint(1400, 5800, 0, actions = [Action()]),
-        Waypoint(3400, 5800, 0, actions = [Action()]),
-        Waypoint(3400, 3800, 0, actions = [Action()]),
-        Waypoint(1400, 3800, 0, actions = [Action()])
+        Waypoint(1400, 3800, 0),                                              #(x, y, waitPeriod, [makeTriangulate(makeScan((x1,y1),scanAngleWidth1,scanNo1), makeScan((x2,y2),scanAngleWidth2,scanNo2))])
+        Waypoint(1400, 5800, 0, [makeIR_Triangulate((100, 100), (100, 100))]),#(x, y, waitPeriod, [makeIR_Triangulate((x1,y1),(x2,y2))]
+        Waypoint(3400, 5800, 0),
+        Waypoint(3400, 3800, 0),
+        Waypoint(1400, 3800, 0)
 
         #FigureofEight
-##        Waypoint(1400, 3800, 0, actions = [Action('IR', 0, 0, 0, 2)]),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
-##        Waypoint(1400, 4800, 0, actions = [Action()]),
-##        Waypoint(2400, 4800, 0, actions = [Action()]),
-##        Waypoint(2400, 5800, 0, actions = [Action()]),
-##        Waypoint(1400, 5800, 0, actions = [Action()]),
-##        Waypoint(1400, 4800, 0, actions = [Action()]),
-##        Waypoint(2400, 4800, 0, actions = [Action()]),
-##        Waypoint(2400, 3800, 0, actions = [Action()]),
-##        Waypoint(1400, 3800, 0, actions = [Action()]),
-##        Waypoint(1400, 4000, 0, actions = [Action()])
+##        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
+##        Waypoint(1400, 4800, 0),
+##        Waypoint(2400, 4800, 0),
+##        Waypoint(2400, 5800, 0),
+##        Waypoint(1400, 5800, 0),
+##        Waypoint(1400, 4800, 0),
+##        Waypoint(2400, 4800, 0),
+##        Waypoint(2400, 3800, 0),
+##        Waypoint(1400, 3800, 0),
+##        Waypoint(1400, 4000, 0)
         ]
         self.currentPos   = self.waypoints[0]
         self._near = near        # 120.0 The detection radius of when the chariot has reached a waypoint
@@ -108,14 +115,16 @@ def routeControlUpdate(state,batchdata):
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
-                    if not(state.waiting): # Check to see if wait has started if not start waiting
+                    if not state.waiting: # Check to see if wait has started if not start waiting
+                        for action in tempWaypoint.actions:
+                            action.run(state)
                         state.waiting = True
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
 
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
 
-                if not(state.waiting):
+                if not state.waiting:
                     #print "Setting waypoint {}".format(tempWaypoint)
                     state.nearWaypoint = tempWaypoint
                     if ( state.nextWaypoint+1 < len(state.waypoints)):

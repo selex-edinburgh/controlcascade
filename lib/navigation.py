@@ -19,18 +19,6 @@ class Waypoint:
         return (self.x,self.y)
     def angleTo_Degrees(self, other):
         return degrees(atan2( other.x - self.x , other.y - self.y ))
-
-class Action:
-    def __init__(self, sensorType = None, obstX = 0, obstY = 0, scanAngle = 0, scanNo = 0):
-        self.sensorType = sensorType
-        self.obstX = obstX
-        self.obstY = obstY
-        self.scanAngle = scanAngle
-        self.scanNo = scanNo
-    def getSensorType(self):
-        return (self.sensorTypes)
-    def getPosition(self):
-        return (self.obstX,self.obstY)
     
 class WaypointTypeEnum:
     CONTINUOUS = 1
