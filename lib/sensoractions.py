@@ -285,10 +285,12 @@ class ScanningSensor(object):
 if __name__ == '__main__':
     robotPos = (1400,2000)
     robotHdg = 0
+    RealPole1 = (1700,2300)
+    RealPole2 = (1100,2300)
     bus = I2C(defaultAddress=4)
     irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
     #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
     makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=10, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=10, scanNo2=5, scanSpeed2=1)
     action = makeSensor_Triangulate((100, 100), (100, 100))
-    state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
+    state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'RealPole1' : RealPole1, 'RealPole2' : RealPole2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
     action.run(state)
