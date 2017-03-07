@@ -10,38 +10,72 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 from math import cos, sin, radians, atan2, hypot, degrees
 from navigation import *
 
-def angleDifference(RealPole1, RealPole2, DetectionPole1, DetectionPole2):
-    RealPole = (RealPole1[0] - RealPole2[0], RealPole1[1] - RealPole2[1])
-    DetectionPole = (DetectionPole1[0] - DetectionPole2[0], DetectionPole1[1] - DetectionPole2[1])
-    RealPoleAngle = degrees(atan2(RealPole))
-    DetectionPoleAngle = degrees(atan2(DetectionPole))
-    AngleDiff = RealPoleAngle - DetectionPoleAngle
-    return (AngleDiff)
+def triangulate(RobotPos, RobotHdg, RealPole1, RealPole2, Detection1, Detection2):
 
-def triangulate(RobotPos, RobotHdg, SensorPosOffset,SensorHdgOffset, RealPole1, RealPole2, Detection1, Detection2):
+    
+    def angleDifference(RealPole1, RealPole2, DetectionPole1, DetectionPole2):
+        RealPole = (RealPole1[0] - RealPole2[0], RealPole1[1] - RealPole2[1])
+        DetectionPole = (DetectionPole1[0] - DetectionPole2[0], DetectionPole1[1] - DetectionPole2[1])
+        RealPoleAngle = degrees(atan2(RealPole[0],RealPole[1]))
+        DetectionPoleAngle = degrees(atan2(DetectionPole[0],DetectionPole[1]))
+        AngleDiff = RealPoleAngle - DetectionPoleAngle
+        return AngleDiff
+    def positionDifference(RealPole1, RealPole2, DetectionPole1, DetectionPole2):
+        PosDiff1 = (RealPole1[0] - DetectionPole1[0], RealPole1[1] - DetectionPole1[1])
+        PosDiff2 = (RealPole2[0] - DetectionPole2[0], RealPole2[1] - DetectionPole2[1])
+        PosDiff = ((PosDiff1[0] + PosDiff2[0])/2,(PosDiff1[1] + PosDiff2[1])/2 )
+        return PosDiff
+
+    
     SensorPosOffset1 = Detection1.sensorPosOffset
     SensorHdgOffset1 = Detection1.sensorHdgOffset
-    
-    DetectionPole1 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset1, SensorHdgOffset1, Detection1)
-    DetectionPole2 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset2, SensorHdgOffset2, Detection2)
+    RTheta1 = Detection1.RTheta
+    SensorPosOffset2 = Detection2.sensorPosOffset
+    SensorHdgOffset2 = Detection2.sensorHdgOffset
+    RTheta2 = Detection2.RTheta
+    DetectionPole1 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset1, SensorHdgOffset1, RTheta1)
+    DetectionPole2 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset2, SensorHdgOffset2, RTheta2)
     AngleDiff = angleDifference(RealPole1, RealPole2, DetectionPole1, DetectionPole2)
     RobotHdg = RobotHdg + AngleDiff
-    DetectionPole1 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset, SensorHdgOffset, Detection1)
-    DetectionPole2 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset, SensorHdgOffset, Detection2)
-    PosDiff1 = (RealPole1 -DetectionPole1)
-    PosDiff2 = (RealPole2 - DetectionPole2)
-    PosDiff = (PosDiff1 + PosDiff2)/2
-
+    DetectionPole1 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset1, SensorHdgOffset1, RTheta1)
+    DetectionPole2 = sensorToWorld(RobotPos, RobotHdg, SensorPosOffset2, SensorHdgOffset2, RTheta2)
+    PosDiff = positionDifference(RealPole1, RealPole2, DetectionPole1, DetectionPole2)
     return AngleDiff, PosDiff
 
 if __name__ == '__main__':
-    RobotPos = None
-    RobotHdg = None
-    SensorPosOffset = None
-    SensorHdgOffset = None
-    Detection1 = None
-    Detection2 = None
-    RealPole1 = None
-    RealPole2 = None
-    AngleDiff, PosDiff = triangulate(RobotPos, RobotHdg, RealPole1, RealPole2, Detection1, Detection2)
-    RobotPos = (RobotPos[0] + PosDiff[0], RobotPos[1] + PosDiff[1])
+    from collections import namedtuple
+    NamedDetectionTuple = namedtuple('NamedDetectionTuple', 'RTheta sensorPosOffset sensorHdgOffset')
+    
+    RobotPos = (1400, 2000)
+    RobotHdg = 0
+    SensorPosOffset = (0,170)
+    SensorHdgOffset = 0
+##    Detection1 = ((424, 45), (0,170), 0)
+##    Detection2 = ((424,-45), (0,170), 0)
+    RealPole1 = (1700, 2300)
+    RealPole2 = (1100, 2300)
+    TrueRobotPos = (1400, 2000)
+    TrueRobotAngle = 0
+    TrueAngleError = 10
+    TruePosError = (80, -80)
+
+    ErrorRobotPos = (TrueRobotPos[0] - TruePosError[0],TrueRobotPos[1] - TruePosError[1])
+    print 'that', ErrorRobotPos
+    ErrorRobotAngle = TrueRobotAngle - TrueAngleError
+
+    (R1, theta1) = worldToSensor(TrueRobotPos, TrueRobotAngle, SensorPosOffset, SensorHdgOffset, RealPole1)
+    (R2, theta2) = worldToSensor(TrueRobotPos, TrueRobotAngle, SensorPosOffset, SensorHdgOffset, RealPole2)
+
+        
+    print (R1, theta1)
+    print (R2, theta2)
+    #RobotPos = (RobotPos[0] + PosDiff[0], RobotPos[1] + PosDiff[1])
+
+    testDetection1 = NamedDetectionTuple((R1,theta1),SensorPosOffset,SensorHdgOffset )
+    testDetection2 = NamedDetectionTuple((R2,theta2),SensorPosOffset,SensorHdgOffset )
+
+    AngleDiff, PosDiff = triangulate(ErrorRobotPos, ErrorRobotAngle, RealPole1, RealPole2, testDetection1, testDetection2)
+
+    print AngleDiff
+    print PosDiff
+    
