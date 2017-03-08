@@ -15,7 +15,7 @@ import smbus
 from collections import namedtuple
 from navigation import *
 
-NamedDetectionTuple = namedtuple('NamedDetectionTuple', 'RTheta sensorPosOffset sensorHdgOffset')
+NamedDetectionTuple = namedtuple('NamedDetectionTuple', 'rTheta sensorPosOffset sensorHdgOffset')
 
 def _readAngleAndDistance(i2cBus, control):
     rxBytes = i2cBus.read(control, 4)  #Read 4 Bytes                
@@ -129,12 +129,12 @@ class StepperMotor(Motor):
         #print self.steprDatum, txBytes[0], txBytes[1]
         self.i2cBus.write(control, txBytes)            #sent to sensors
 
-    def moveToAngle(self, speed=1):
+    def moveToAngle(self, angle, speed=1):
         if speed <1 or speed >3:
             return "Invalid speed entered:" + speed + ". Make value from 1-3"
         control = 40 + speed #if control >=41 and control <=43:       #Stepper Motor Go To Fixed Angle
         #Convert steprFixedAngle to Hi & Lo Bytes steps for transmission
-        steprFixedAngleScaled = self.steprFixedAngle*self.steprScaling + 2048  #scale for steps/deg & add centre offset
+        steprFixedAngleScaled = angle*self.steprScaling + 2048  #scale for steps/deg & add centre offset
         txBytes = [0,0] #Define txBytes as 2 Bytes
         txBytes[0] = int(steprFixedAngleScaled/256)              #steprFixedAngle Hi Byte
         txBytes[1] = int(steprFixedAngleScaled - txBytes[0]*256) #steprFixedAngle Lo Byte
@@ -200,6 +200,35 @@ def makeTriangulator(scanningSensor, scanAngleWidth, scanNo, scanSpeed, scanning
         return makeTriangulate(scanAction1, scanAction2)
     return create
 
+def triangulate(robotPos, robotHdg, realPole1, realPole2, detection1, detection2):
+    def angleDifference(realPole1, realPole2, detectionPole1, detectionPole2):
+        realPole = (realPole1[0] - realPole2[0], realPole1[1] - realPole2[1])
+        detectionPole = (detectionPole1[0] - detectionPole2[0], detectionPole1[1] - detectionPole2[1])
+        realPoleAngle = degrees(atan2(realPole[0],realPole[1]))
+        detectionPoleAngle = degrees(atan2(detectionPole[0],detectionPole[1]))
+        angleDiff = realPoleAngle - detectionPoleAngle
+        return angleDiff
+    def positionDifference(realPole1, realPole2, detectionPole1, detectionPole2):
+        posDiff1 = (realPole1[0] - detectionPole1[0], realPole1[1] - detectionPole1[1])
+        posDiff2 = (realPole2[0] - detectionPole2[0], realPole2[1] - detectionPole2[1])
+        # TODO make check to see if diference in error is too great. At that point just use one diffference with smallest error. Otherwise take average of both differences
+        posDiff = ((posDiff1[0] + posDiff2[0])/2,(posDiff1[1] + posDiff2[1])/2 )
+        return posDiff
+    sensorPosOffset1 = detection1.sensorPosOffset
+    sensorHdgOffset1 = detection1.sensorHdgOffset
+    rTheta1 = detection1.rTheta
+    sensorPosOffset2 = detection2.sensorPosOffset
+    sensorHdgOffset2 = detection2.sensorHdgOffset
+    rTheta2 = detection2.rTheta
+    detectionPole1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
+    detectionPole2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
+    angleDiff = angleDifference(realPole1, realPole2, detectionPole1, detectionPole2)
+    robotHdg = robotHdg + angleDiff
+    detectionPole1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
+    detectionPole2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
+    posDiff = positionDifference(realPole1, realPole2, detectionPole1, detectionPole2)
+    return angleDiff, posDiff
+
 class TriangulateAction(Action):
     def __init__(self, scanAction1, scanAction2):
         super(TriangulateAction, self).__init__()
@@ -208,9 +237,23 @@ class TriangulateAction(Action):
         
         
     def run(self, state):
-        Detection1 = self.scanAction1.run(state)
-        Detection2 = self.scanAction2.run(state)
-        
+        print 'robotPos', state['robotPos'], 'robotHdg', state['robotHdg']
+##        truePosError = (100, -100)
+##        trueAngleError = 10
+##        robotPos = state['robotPos']
+##        robotHdg = state['robotHdg']
+##        robotPos = (robotPos[0] - truePosError[0],robotPos[1] - truePosError[1])
+##        robotHdg = robotHdg - trueAngleError
+        print 'robotPos', robotPos, 'robotHdg', robotHdg
+        print'...'
+        detection1 = self.scanAction1.run(state)
+        print '...'
+##        detection2 = self.scanAction2.run(state)
+##        angleDiff, posDiff = triangulate(state['robotPos'], state['robotHdg'], state['realPole1'], state['realPole2'], detection1, detection2)
+##        angleDiff, posDiff = triangulate(robotPos, robotHdg, state['realPole1'], state['realPole2'], detection1, detection2)
+##        print '...'
+##        print 'angleDiff', angleDiff
+##        print 'posDiff', posDiff
 
 class ScanningSensorAction(Action):
     def __init__(self, scanningSensor, coordinate,scanAngleWidth,scanNo,scanSpeed):
@@ -223,40 +266,54 @@ class ScanningSensorAction(Action):
     def run(self, state):
         sensorPosOffset = state[self.scanningSensor.sensorID][0]
         sensorHdgOffset = state[self.scanningSensor.sensorID][1]
-        #print state
         rangeToMid, midAngle = worldToSensor(state['robotPos'], state['robotHdg'], sensorPosOffset, sensorHdgOffset, self.coordinate)
-        angle1 = midAngle - (self.scanAngleWidth*0.5)
-        angle2 = midAngle + (self.scanAngleWidth*0.5)
-        print angle1, angle2
+        print 'rangeToMid', rangeToMid, 'midAngle', midAngle
+        if midAngle >180:
+            midAngle = midAngle - 360
+        angle1 = midAngle + (self.scanAngleWidth*0.5)
+        angle2 = midAngle - (self.scanAngleWidth*0.5)
+        print 'angle1', angle1, 'angle2', angle2
+        #self.scanningSensor.scanAtAngle(angle1, self.scanSpeed)
         self.scanningSensor.scanBetweenTwoAngles(angle1,angle2,self.scanSpeed)
         objRangeResults = []
         objAngleResults = []
         previousAngle = None
         previousScanDirection = None
         scanDirection = None
-        for currentScanNo in xrange(self.scanNo):
-            scanState = 1
+        scanState = 0
+        for currentScanNo in xrange(self.scanNo):            
             tempRange = None
-            while scanState < 4:
+            while scanState < 3:
                 currentAngle = self.scanningSensor.getCurrentAngle()
                 if previousAngle is not None:
-                    diff = previousAngle-currentAngle
-                    print "Skip!" if diff < 5 else 'Keep!', currentScanNo, currentAngle, scanDirection if scanDirection else "No Direction", previousScanDirection, scanState
+                    diff = numpy.abs(previousAngle-currentAngle)
                     if previousAngle != currentAngle and diff < 5:
                         scanDirection = previousAngle > currentAngle
+                        print diff, currentScanNo, currentAngle, scanDirection, previousScanDirection, scanState
                         if scanDirection is not previousScanDirection:
+                            print 'dChange', diff, currentScanNo, currentAngle, scanDirection, previousScanDirection, scanState
                             scanState = scanState + 1
-                        previousScanDirection = scanDirection
-                        previousAngle = currentAngle
-                    if tempRange is None or self.scanningSensor.getNearestScanRange() < tempRange:
-                        tempRange = self.scanningSensor.getNearestScanRange()
-                        tempAngle = self.scanningSensor.getNearestAngle()
+                            previousScanDirection = scanDirection
+                    if tempRange is None or self.scanningSensor.getCurrentScanRange() < tempRange:
+                        if scanState > 1:
+                            tempRange = self.scanningSensor.getCurrentScanRange()
+                            tempAngle = self.scanningSensor.getCurrentAngle()
+                            print 'temp', currentScanNo, scanState, tempRange, tempAngle
+                previousAngle = currentAngle
+                time.sleep(0.005) 
             objRangeResults.append(tempRange)
             objAngleResults.append(tempAngle)
+            scanState = 1
         rangeOfObj = numpy.mean(objRangeResults)
         angleOfObj = numpy.mean(objAngleResults)
-        #self.scanningSensor.scanAtAngle(1)
+        currentAngle = self.scanningSensor.getCurrentAngle()
+        print 'currentAngle', currentAngle, rangeOfObj, angleOfObj
         
+##        rangeOfObj = rangeToMid
+##        angleOfObj = midAngle
+##        print 'rangeOfObj', rangeOfObj, 'angleOfObj', angleOfObj
+        
+        self.scanningSensor.scanAtAngle(0)
         return NamedDetectionTuple((rangeOfObj, angleOfObj), sensorPosOffset, sensorHdgOffset)
 
 class ScanningSensor(object):
@@ -264,11 +321,15 @@ class ScanningSensor(object):
         self.sensor = sensor
         self.motor = motor
         self.sensorID = sensorID
+        
+    def reinitialise(self):
+        self.motor.reinitialiseToCentreDatum()
+        
     def scanBetweenTwoAngles(self, angleStart, angleEnd, scanSpeed=1):
         self.motor.moveBetweenTwoAngles(angleStart, angleEnd, scanSpeed)
         
-    def scanAtAngle(self, scanSpeed=1):
-        self.motor.moveToAngle(scanSpeed)
+    def scanAtAngle(self, angle, scanSpeed=1):
+        self.motor.moveToAngle(angle, scanSpeed)
 
     def getCurrentAngle(self):
         return self.motor.getCurrentAngle()
@@ -285,12 +346,15 @@ class ScanningSensor(object):
 if __name__ == '__main__':
     robotPos = (1400,2000)
     robotHdg = 0
-    RealPole1 = (1700,2300)
-    RealPole2 = (1100,2300)
+    realPole1 = (1700,2300)
+    realPole2 = (1100,2300)
     bus = I2C(defaultAddress=4)
+    #StepperMotor(bus).moveToAngle(0, 1)
+    StepperMotor(bus).reinitialiseToCentreDatum()
+    time.sleep(9.5)
     irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
     #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
     makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=10, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=10, scanNo2=5, scanSpeed2=1)
-    action = makeSensor_Triangulate((100, 100), (100, 100))
-    state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'RealPole1' : RealPole1, 'RealPole2' : RealPole2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
+    action = makeSensor_Triangulate(realPole1, realPole2)
+    state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'realPole1' : realPole1, 'realPole2' : realPole2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
     action.run(state)
