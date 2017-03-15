@@ -135,6 +135,7 @@ class StepperMotor(Motor):
         control = 40 + speed #if control >=41 and control <=43:       #Stepper Motor Go To Fixed Angle
         #Convert steprFixedAngle to Hi & Lo Bytes steps for transmission
         steprFixedAngleScaled = angle*self.steprScaling + 2048  #scale for steps/deg & add centre offset
+        min(max(round(steprFixedAngleScaled),0),4095)
         txBytes = [0,0] #Define txBytes as 2 Bytes
         txBytes[0] = int(steprFixedAngleScaled/256)              #steprFixedAngle Hi Byte
         txBytes[1] = int(steprFixedAngleScaled - txBytes[0]*256) #steprFixedAngle Lo Byte
@@ -148,10 +149,12 @@ class StepperMotor(Motor):
         #Convert steprScanAngleLt & Rt to Byte steps for transmission
         steprScanAngleLtScaled = angleStart*self.steprScaling + 2048  #scale for steps/deg & add offset
         steprScanAngleRtScaled = angleEnd*self.steprScaling + 2048  #scale for steps/deg & add offset
+        min(max(round(steprScanAngleLtScaled),0),4095)
+        min(max(round(steprScanAngleRtScaled),0),4095)
         txBytes = [0,0] #Define txBytes as 2 Bytes
         txBytes[0] = int(steprScanAngleLtScaled/16)        #convert to Byte (0 to 255)
         txBytes[1] = int(steprScanAngleRtScaled/16)        #convert to Byte (0 to 255)
-        #print(txBytes[0],txBytes[1])            #print to screen
+        print(txBytes[0],txBytes[1])            #print to screen
         self.i2cBus.write(control, txBytes)    #sent to sensors
 
     def getCurrentAngle(self):
@@ -200,33 +203,51 @@ def makeTriangulator(scanningSensor, scanAngleWidth, scanNo, scanSpeed, scanning
         return makeTriangulate(scanAction1, scanAction2)
     return create
 
-def triangulate(robotPos, robotHdg, realPole1, realPole2, detection1, detection2):
-    def angleDifference(realPole1, realPole2, detectionPole1, detectionPole2):
-        realPole = (realPole1[0] - realPole2[0], realPole1[1] - realPole2[1])
-        detectionPole = (detectionPole1[0] - detectionPole2[0], detectionPole1[1] - detectionPole2[1])
-        realPoleAngle = degrees(atan2(realPole[0],realPole[1]))
-        detectionPoleAngle = degrees(atan2(detectionPole[0],detectionPole[1]))
-        angleDiff = realPoleAngle - detectionPoleAngle
+def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2):
+    def angleDifference(realObject1, realObject2, detectionObject1, detectionObject2):
+        realObjectsVector = (realObject1[0] - realObject2[0], realObject1[1] - realObject2[1])
+        detectionObjectsVector = (detectionObject1[0] - detectionObject2[0], detectionObject1[1] - detectionObject2[1])
+        realObjectAngle = degrees(atan2(realObjectsVector[0],realObjectsVector[1]))
+        detectionObjectAngle = degrees(atan2(detectionObjectsVector[0],detectionObjectsVector[1]))
+        angleDiff = realObjectAngle - detectionObjectAngle
         return angleDiff
-    def positionDifference(realPole1, realPole2, detectionPole1, detectionPole2):
-        posDiff1 = (realPole1[0] - detectionPole1[0], realPole1[1] - detectionPole1[1])
-        posDiff2 = (realPole2[0] - detectionPole2[0], realPole2[1] - detectionPole2[1])
-        # TODO make check to see if diference in error is too great. At that point just use one diffference with smallest error. Otherwise take average of both differences
+    def positionDifference(realObject1, realObject2, detectionObject1, detectionObject2):
+        posDiff1 = (realObject1[0] - detectionObject1[0], realObject1[1] - detectionObject1[1])
+        posDiff2 = (realObject2[0] - detectionObject2[0], realObject2[1] - detectionObject2[1])
+        # TODO make check to see if difference in error is too great. At that point just use one diffference with smallest error. Otherwise take average of both differences
         posDiff = ((posDiff1[0] + posDiff2[0])/2,(posDiff1[1] + posDiff2[1])/2 )
         return posDiff
+    def expectedDetectionOnObject(robotPos, realObject):
+        # points on perimeter of realObject1,2
+        print realObject[0], realObject[1]
+        ro1toRobotX = realObject[0][0] - robotPos[0]
+        ro1toRobotY = realObject[0][1] - robotPos[1]
+        dist = math.hypot(ro1toRobotX, ro1toRobotY)
+        ro1toPerimiterX = (realObject[1] * ro1toRobotX) / dist
+        ro1toPerimiterY = (realObject[1] * ro1toRobotY) / dist
+        print 'ro1toPerimiterX', ro1toPerimiterX
+        print 'ro1toPerimiterY', ro1toPerimiterY
+        pointOnRO1X = realObject[0][0] - ro1toPerimiterX
+        pointOnRO1Y = realObject[0][1] - ro1toPerimiterY
+        print (pointOnRO1X,pointOnRO1Y)
+        return (pointOnRO1X,pointOnRO1Y)
     sensorPosOffset1 = detection1.sensorPosOffset
     sensorHdgOffset1 = detection1.sensorHdgOffset
     rTheta1 = detection1.rTheta
     sensorPosOffset2 = detection2.sensorPosOffset
     sensorHdgOffset2 = detection2.sensorHdgOffset
     rTheta2 = detection2.rTheta
-    detectionPole1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
-    detectionPole2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
-    angleDiff = angleDifference(realPole1, realPole2, detectionPole1, detectionPole2)
+    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
+    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
+
+    pointOnRO1 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset1[0],robotPos[1]+sensorPosOffset1[1]) , realObject1)
+    pointOnRO2 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset2[0],robotPos[1]+sensorPosOffset2[1]) , realObject2)
+    
+    angleDiff = angleDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)
     robotHdg = robotHdg + angleDiff
-    detectionPole1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
-    detectionPole2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
-    posDiff = positionDifference(realPole1, realPole2, detectionPole1, detectionPole2)
+    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
+    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
+    posDiff = positionDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)
     return angleDiff, posDiff
 
 class TriangulateAction(Action):
@@ -240,18 +261,18 @@ class TriangulateAction(Action):
         print 'robotPos', state['robotPos'], 'robotHdg', state['robotHdg']
 ##        truePosError = (100, -100)
 ##        trueAngleError = 10
-##        robotPos = state['robotPos']
-##        robotHdg = state['robotHdg']
+        robotPos = state['robotPos']
+        robotHdg = state['robotHdg']
 ##        robotPos = (robotPos[0] - truePosError[0],robotPos[1] - truePosError[1])
 ##        robotHdg = robotHdg - trueAngleError
         print 'robotPos', robotPos, 'robotHdg', robotHdg
         print'...'
         detection1 = self.scanAction1.run(state)
         print '...'
-##        detection2 = self.scanAction2.run(state)
-##        angleDiff, posDiff = triangulate(state['robotPos'], state['robotHdg'], state['realPole1'], state['realPole2'], detection1, detection2)
-##        angleDiff, posDiff = triangulate(robotPos, robotHdg, state['realPole1'], state['realPole2'], detection1, detection2)
-##        print '...'
+        #detection2 = self.scanAction2.run(state)
+##        angleDiff, posDiff = triangulate(state['robotPos'], state['robotHdg'], state['realObject1'][0], state['realObject2'][0], detection1, detection2)
+##        angleDiff, posDiff = triangulate(robotPos, robotHdg, state['realObject1'][0], state['realObject2'][0], detection1, detection2)
+        print '...'
 ##        print 'angleDiff', angleDiff
 ##        print 'posDiff', posDiff
 
@@ -273,7 +294,6 @@ class ScanningSensorAction(Action):
         angle1 = midAngle + (self.scanAngleWidth*0.5)
         angle2 = midAngle - (self.scanAngleWidth*0.5)
         print 'angle1', angle1, 'angle2', angle2
-        #self.scanningSensor.scanAtAngle(angle1, self.scanSpeed)
         self.scanningSensor.scanBetweenTwoAngles(angle1,angle2,self.scanSpeed)
         objRangeResults = []
         objAngleResults = []
@@ -313,7 +333,8 @@ class ScanningSensorAction(Action):
 ##        angleOfObj = midAngle
 ##        print 'rangeOfObj', rangeOfObj, 'angleOfObj', angleOfObj
         
-        self.scanningSensor.scanAtAngle(0)
+        #self.scanningSensor.scanAtAngle(0)
+        #time.sleep(3)
         return NamedDetectionTuple((rangeOfObj, angleOfObj), sensorPosOffset, sensorHdgOffset)
 
 class ScanningSensor(object):
@@ -346,15 +367,22 @@ class ScanningSensor(object):
 if __name__ == '__main__':
     robotPos = (1400,2000)
     robotHdg = 0
-    realPole1 = (1700,2300)
-    realPole2 = (1100,2300)
-    bus = I2C(defaultAddress=4)
-    #StepperMotor(bus).moveToAngle(0, 1)
-    StepperMotor(bus).reinitialiseToCentreDatum()
-    time.sleep(9.5)
-    irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
-    #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
-    makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=10, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=10, scanNo2=5, scanSpeed2=1)
-    action = makeSensor_Triangulate(realPole1, realPole2)
-    state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'realPole1' : realPole1, 'realPole2' : realPole2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
-    action.run(state)
+    realObject1 = ((1700,2300),0) #((xCoordinate,yCoordinate),objectRadius)
+    realObject2 = ((1100,2300),0)
+    running = 2
+    if running == 1:
+        bus = I2C(defaultAddress=4)
+        #StepperMotor(bus).moveToAngle(0, 1)
+        #StepperMotor(bus).reinitialiseToCentreDatum()
+        time.sleep(9.5)
+        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
+        #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
+        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
+        action = makeSensor_Triangulate(realObject1, realObject2)
+        state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'realObject1' : realObject1, 'realObject2' : realObject2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
+        action.run(state)
+    elif running == 2:
+        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
+        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
+        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
+        print angleDiff, posDiff
