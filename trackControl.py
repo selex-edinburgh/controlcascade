@@ -184,7 +184,12 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'demandPos':sourceState.demandPos,
     'nearWaypoint':sourceState.nearWaypoint}
     destQueue.put(message)
-
+    
+def trackToSensorTranslator(sourceState, destState, destQueue):
+    message = {'messageType':'sensedRobot',
+            'robotPos':sourceState.currentPos,
+            'robotHdg':sourceState.currentAngle}
+    destQueue.put(message)
 
 def angleDiff ( fromAngle, toAngle ) :
     angleDiff = toAngle - fromAngle

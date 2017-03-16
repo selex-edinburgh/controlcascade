@@ -33,9 +33,9 @@ class RouteState(ObservableState):
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
 
         bus = I2C(defaultAddress=4)
-        irStepper = ScanningSensor(IR(bus), Stepper(bus))
-        makeIR_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=10, scanNo=5, scanSpeed=1) # populates makeTriangulate with the create function from makeTriangulator, with some defaulted values 
-                                                                                                    # this means that a scanAction can be made from just a pair of coordinates  having theses defaulted values filling the rest
+        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
+        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1) # populates makeTriangulate with the create function from makeTriangulator, with some defaulted values
+                                                                                                            # this means that a scanAction can be made from just a pair of coordinates  having theses defaulted values filling the rest
         self.waypoints    = [
 
 ##        Waypoint(2390,4630, 0),     #(x, y, waitPeriod)
@@ -63,8 +63,8 @@ class RouteState(ObservableState):
 ##        Waypoint(2300,220, 0)
              
         #Square
-        Waypoint(1400, 3800, 0),                                              #(x, y, waitPeriod, [makeTriangulate(makeScan((x1,y1),scanAngleWidth1,scanNo1), makeScan((x2,y2),scanAngleWidth2,scanNo2))])
-        Waypoint(1400, 5800, 0, [makeIR_Triangulate((100, 100), (100, 100))]),#(x, y, waitPeriod, [makeIR_Triangulate((x1,y1),(x2,y2))]
+        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan((x1,y1),scanAngleWidth1,scanNo1), makeScan((x2,y2),scanAngleWidth2,scanNo2))])
+        Waypoint(1400, 5800, 0, [makeSensor_Triangulate((1700, 6100), (1100, 6100))]),#(x, y, waitPeriod, [makeSensor_Triangulate((x1,y1),(x2,y2))]  
         Waypoint(3400, 5800, 0),
         Waypoint(3400, 3800, 0),
         Waypoint(1400, 3800, 0)
@@ -81,10 +81,10 @@ class RouteState(ObservableState):
 ##        Waypoint(1400, 3800, 0),
 ##        Waypoint(1400, 4000, 0)
         ]
-        self.currentPos   = self.waypoints[0]
+        self.currentPos = self.waypoints[0]
         self._near = near        # 120.0 The detection radius of when the chariot has reached a waypoint
         self.nearWaypoint = True
-        self.timeStampFlow["control"]    = time.time()
+        self.timeStampFlow["control"] = time.time()
         self.finalWaypoint = False
         self.goalTime = 0
         #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
@@ -116,8 +116,8 @@ def routeControlUpdate(state,batchdata):
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
                     if not state.waiting: # Check to see if wait has started if not start waiting
-                        for action in tempWaypoint.actions:
-                            action.run(state)
+##                        for action in tempWaypoint.actions:
+##                            action.run(state)
                         state.waiting = True
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
 
@@ -143,8 +143,14 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
                'timeStamp'  :sourceState.timeStampFlow["control"],
                'nearWaypoint' :sourceState.nearWaypoint
                }
-  
     destQueue.put(message)
+
+def routeToSensorTranslator( sourceState, destState, destQueue ):
+    if sourceState.waiting == True:
+        message = {'messageType':'scan',
+                   'actions'    :sourceState.waypoints[sourceState.nextWaypoint].actions
+                   }
+        destQueue.put(message)
 
 def routeToVisualTranslator( sourceState, destState, destQueue ): #TODO
 ##    if sourceState.routeChanged:

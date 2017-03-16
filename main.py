@@ -78,7 +78,7 @@ def runArcNodes():
     trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurnFudge)
     vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
-    sensorState = sensorControl.SensorState(30,5)
+    sensorState = sensorControl.SensorState()
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
     scanSimState  = scanSimControl.ScanSimState('IR', (0, 170), 0, 90, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
@@ -115,11 +115,13 @@ def runArcNodes():
     vsimController.connectTo(odoController, vsimControl.vsimToOdoTranslator)
     odoController.connectTo(trackController, odoControl.odoToTrackTranslator)
     trackController.connectTo(routeController, trackControl.trackToRouteTranslator)
-    #envSimController.connectTo(sensorController, envSimControl.envSimToSensorTranslator)
+    #envSimController.connectTo(sensorController, envSimControl.envSimToSensorTranslator)    #sensors poles
     sensorController.connectTo(trackController, sensorControl.sensorToTrackTranslator)
+    trackController.connectTo(sensorController, trackControl.trackToSensorTranslator)       #sensors robot
     envSimController.connectTo(visualController, envSimControl.envToVisualTranslator)
     trackController.connectTo(visualController, trackControl.trackToVisualTranslator)
     visualController.connectTo(routeController, visualControl.visualToRouteTranslator)
+    visualController.connectTo(sensorController, visualControl.visualToSensorTranslator)
     #routeController.connectTo(statsController, statsControl.toStatsTranslator)
     trackController.connectTo(statsController, statsControl.toStatsTranslator)
 

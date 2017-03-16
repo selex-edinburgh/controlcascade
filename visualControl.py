@@ -51,6 +51,7 @@ menu_data = (
         'Continuous Waypoint',
     ),
     'Remove Pole',
+    'Reset Sensor (R)',
     (
         'Graphs',
         'Motor Graph',
@@ -131,7 +132,8 @@ class VisualState(ObservableState):
         self.eventPress = 0
 
         self.scanSensors = {} # add dictionary for sensorID's
-
+        self.sensorReset = False
+        
     def drawRobot(self, surface):
         if self.scrBuff == None:
                 self.scrBuff = surface.copy()
@@ -292,6 +294,8 @@ def handle_menu(e, state):
                 if r.collidepoint(state.eventPress):
                     state.poleList.pop(index)
                     state.poleRecList.pop(index)
+        if e.text == 'Reset Sensor (R)':
+            state.sensorReset = True
         if e.text == 'Start (G)':
             state.stopLoops = False
         if e.text == 'Stop (Spacebar)':
@@ -335,7 +339,9 @@ def visualControlUpdate(state,batchdata):
              state.eventPress = (e.pos[0], e.pos[1])
         elif e.type == USEREVENT:
             if e.code == 'MENU':
-                handle_menu(e, state)       
+                handle_menu(e, state)
+        elif e.type == KEYDOWN and e.key == K_r:
+            state.sensorReset = True
         elif e.type == KEYDOWN and e.key == K_SPACE:
             state.stopLoops = True
         elif e.type == KEYDOWN and e.key == K_g:
@@ -421,7 +427,14 @@ def visualToRouteTranslator(sourceState, destState, destQueue):
     if sourceState.removeLastWP == True:
         message = {'messageType':'removeWaypoint'}
         destQueue.put(message)
+        
+def visualToSensorTranslator(sourceState, destState, destQueue):
 
+    if sourceState.sensorReset == True:
+        sourceState.sensorReset = False
+        message = {'messageType':'reset'}
+        destQueue.put(message)
+        
 def visualToStartStop(sourceState, destState, destQueue):
 
     message = {'messageType': 'loopControlMessage',
