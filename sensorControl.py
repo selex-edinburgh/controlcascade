@@ -20,18 +20,21 @@ class SensorState(ObservableState):
         super(SensorState,self).__init__()
         self.sensorID = ''
         self.scanCone = [(0.0)]
-        self.timeStamp    = time.time()
         self.isCollision = False
-        self.robotPos = (0, 0)
+        self.timeStamp = time.time()
+        self.robotPos = (0,0)
         self.robotHdg = 0
+        self.realObject1 = ((0,0),0)
+        self.realObject2 = ((0,0),0)
+        self.sensorSetup = False
         self.waiting = False
-        self.realObject1 = ((300,300),0)
-        self.realObject2 = ((-300,300),0)
-        self.actions = None
-        self.sensorSetup = True
-        self.running = 3
+        self.irStepperOffset = ((0,170),0)
+        self.usServoOffset = ((0,-170),180)
+
+        self.running = 1 # To be removed after testing
         
 def sensorControlUpdate(state,batchdata):
+    actions = None
     for item in batchdata:
         if item['messageType'] == 'control':
             pass
@@ -43,38 +46,28 @@ def sensorControlUpdate(state,batchdata):
             state.scanCone = item['scanCone']
             state.isCollision = item['collision']
         elif item['messageType'] == 'scan':
-            state.actions = item['actions']
+            actions = item['actions']
         elif item['messageType'] == 'reset':
             state.sensorSetup = True
 
-    state.robotPos = (1400,2000)
-    state.robotHdg = 0
-    state.realObject1 = ((1700,2300),0) #((xCoordinate,yCoordinate),objectRadius)
-    state.realObject2 = ((1100,2300),0)
+##    state.robotPos = (1400,2000)
+##    state.robotHdg = 0
+##    state.realObject1 = ((1700,2300),0) #((xCoordinate,yCoordinate),objectRadius)
+##    state.realObject2 = ((1100,2300),0)
     if state.sensorSetup == True:
-        #StepperMotor(bus).reinitialiseToCentreDatum()
+        StepperMotor(bus).reinitialiseToCentreDatum()
         state.sensorSetup = False
-    if state.waiting == True:
-        if state.running == 1:
-            bus = I2C(defaultAddress=4)
-            #StepperMotor(bus).moveToAngle(0, 1)
-            time.sleep(9.5)
-            irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
-            #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo') 
+    if state.running == 1:
+        print 'scan'
+        if actions != None:
+            robotState = {'robotPos' : state.robotPos, 'robotHdg' : state.robotHdg, 'irStepper' : state.irStepperOffset, 'usServo' : state.usServoOffset}
+            actions.run(robotState)
+    elif state.running == 2: # For testing
+        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
+        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
+        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
+        print angleDiff, posDiff
 
-            makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
-            action = makeSensor_Triangulate(realObject1, realObject2)
-            state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'realObject1' : realObject1, 'realObject2' : realObject2, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
-            action.run(state)
-        elif state.running == 3:
-            print actions
-            
-        elif state.running == 2:
-            detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
-            detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
-            angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
-            print angleDiff, posDiff
-        
 def sensorToTrackTranslator(sourceState, destState, destQueue):
     message = {'messageType':'obstacle',
             'collision': sourceState.isCollision}

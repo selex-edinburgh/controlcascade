@@ -125,6 +125,7 @@ def runArcNodes():
     #routeController.connectTo(statsController, statsControl.toStatsTranslator)
     trackController.connectTo(statsController, statsControl.toStatsTranslator)
 
+    routeController.connectTo(sensorController,  routeControl.routeToSensorTranslator)
     statsController.connectTo(visualController, statsControl.statsToVisualTranslator)
     trackController.connectTo(scanSimController, trackControl.trackToScanSimTranslator)
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)

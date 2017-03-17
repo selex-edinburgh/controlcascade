@@ -62,13 +62,18 @@ class RouteState(ObservableState):
 ##        Waypoint(2140,1030, 0),                        
 ##        Waypoint(2300,220, 0)
              
-        #Square
-        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan((x1,y1),scanAngleWidth1,scanNo1), makeScan((x2,y2),scanAngleWidth2,scanNo2))])
-        Waypoint(1400, 5800, 0, [makeSensor_Triangulate((1700, 6100), (1100, 6100))]),#(x, y, waitPeriod, [makeSensor_Triangulate((x1,y1),(x2,y2))]  
-        Waypoint(3400, 5800, 0),
-        Waypoint(3400, 3800, 0),
-        Waypoint(1400, 3800, 0)
+##        #Square
+##        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
+##        Waypoint(1400, 5800, 10, [makeSensor_Triangulate(((1900,6300),0), ((900,6300),0))]),#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1),((x2,y2),objRadius2))]  
+##        Waypoint(3400, 5800, 0),
+##        Waypoint(3400, 3800, 0),
+##        Waypoint(1400, 3800, 0)
 
+        #scan test
+        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
+        Waypoint(1400, 4800, 20, [makeSensor_Triangulate(((1900,5300)),0), ((900,5300),0)))]),#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1), ((x2,y2),objRadius2))]  
+        Waypoint(2400, 4800, 0)
+        
         #FigureofEight
 ##        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
 ##        Waypoint(1400, 4800, 0),
@@ -89,6 +94,7 @@ class RouteState(ObservableState):
         self.goalTime = 0
         #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
         self.waiting = False
+        self.runActions = None
         
 def routeControlUpdate(state,batchdata):
     '''
@@ -111,16 +117,15 @@ def routeControlUpdate(state,batchdata):
             Section 4
             Amber Block
             '''
+            state.runActions = None
             if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
                     if not state.waiting: # Check to see if wait has started if not start waiting
-##                        for action in tempWaypoint.actions:
-##                            action.run(state)
                         state.waiting = True
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
-
+                        state.runActions = state.waypoints[sourceState.nextWaypoint].actions
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
 
@@ -146,9 +151,9 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
     destQueue.put(message)
 
 def routeToSensorTranslator( sourceState, destState, destQueue ):
-    if sourceState.waiting == True:
+    if sourceState.runActions !=  None:
         message = {'messageType':'scan',
-                   'actions'    :sourceState.waypoints[sourceState.nextWaypoint].actions
+                   'actions'    :sourceState.runActions
                    }
         destQueue.put(message)
 
