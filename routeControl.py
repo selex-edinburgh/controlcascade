@@ -71,7 +71,7 @@ class RouteState(ObservableState):
 
         #scan test
         Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
-        Waypoint(1400, 4800, 20, [makeSensor_Triangulate(((1900,5300)),0), ((900,5300),0)))]),#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1), ((x2,y2),objRadius2))]  
+        Waypoint(1400, 4800, 20, makeSensor_Triangulate(((1900,5300),0), ((900,5300),0))),#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1), ((x2,y2),objRadius2))]  
         Waypoint(2400, 4800, 0)
         
         #FigureofEight
@@ -102,6 +102,7 @@ def routeControlUpdate(state,batchdata):
     Green Block
     '''
     #nearWaypointLocal = state.nearWaypoint
+    state.runActions = None
     for item in batchdata:
         if item['messageType'] == 'newWaypoint':
             newWaypoint = item['newWaypoint']
@@ -117,15 +118,14 @@ def routeControlUpdate(state,batchdata):
             Section 4
             Amber Block
             '''
-            state.runActions = None
             if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
                     if not state.waiting: # Check to see if wait has started if not start waiting
                         state.waiting = True
+                        state.runActions = state.waypoints[state.nextWaypoint].actions
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
-                        state.runActions = state.waypoints[sourceState.nextWaypoint].actions
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
 

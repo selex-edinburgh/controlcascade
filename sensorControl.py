@@ -58,10 +58,10 @@ def sensorControlUpdate(state,batchdata):
         StepperMotor(bus).reinitialiseToCentreDatum()
         state.sensorSetup = False
     if state.running == 1:
-        print 'scan'
         if actions != None:
             robotState = {'robotPos' : state.robotPos, 'robotHdg' : state.robotHdg, 'irStepper' : state.irStepperOffset, 'usServo' : state.usServoOffset}
-            actions.run(robotState)
+            print actions
+            actions.run(robotState) # TODO Put the actions created in routeControl in a list and then change to iterate through them all here
     elif state.running == 2: # For testing
         detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
         detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
