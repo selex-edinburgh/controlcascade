@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Green Block
+'''
 import math
 import threading
 import time
@@ -17,6 +22,10 @@ from lib.sensoractions import *
 
 class SensorState(ObservableState):
     def __init__(self):
+        '''
+        Section 2
+        Green Block
+        '''
         super(SensorState,self).__init__()
         self.sensorID = ''
         self.scanCone = [(0.0)]
@@ -34,6 +43,10 @@ class SensorState(ObservableState):
         self.running = 1 # To be removed after testing
         
 def sensorControlUpdate(state,batchdata):
+    '''
+    Section 3
+    Green Block
+    '''
     actions = None
     for item in batchdata:
         if item['messageType'] == 'control':
@@ -49,7 +62,10 @@ def sensorControlUpdate(state,batchdata):
             actions = item['actions']
         elif item['messageType'] == 'reset':
             state.sensorSetup = True
-
+    '''
+    Section 4
+    Green Block
+    '''
 ##    state.robotPos = (1400,2000)
 ##    state.robotHdg = 0
 ##    state.realObject1 = ((1700,2300),0) #((xCoordinate,yCoordinate),objectRadius)
@@ -68,7 +84,11 @@ def sensorControlUpdate(state,batchdata):
         angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
         print angleDiff, posDiff
 
-def sensorToTrackTranslator(sourceState, destState, destQueue):
+'''
+Section 5
+Green Block
+'''  
+def sensorToTrackTranslator(sourceState, destState, destQueue): # TODO have the angleDiff & posDiff given back to track to be applied.
     message = {'messageType':'obstacle',
             'collision': sourceState.isCollision}
     destQueue.put(message)

@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Green Block
+'''
 import sys
 import time
 import math
@@ -17,6 +22,10 @@ from navigation import *
 
 NamedDetectionTuple = namedtuple('NamedDetectionTuple', 'rTheta sensorPosOffset sensorHdgOffset')
 
+'''
+Section 2
+Amber Block
+'''
 def _readData(i2cBus, control):
     rxBytes = i2cBus.read(control, 6)  #Read 6 Bytes                
     angle = rxBytes[0]*256 + rxBytes[1]     #Add High and Low Bytes
@@ -66,6 +75,10 @@ class I2C(object):
             print err
             print "Failed to write to the bus"
 
+'''
+Section 3
+Amber Block
+'''
 class Motor(object):
     def __init__(self):
         pass
@@ -104,7 +117,11 @@ class Action(object):
 
     def run(self, state):
         pass
-    
+
+'''
+Section 4
+Green Block
+'''
 class StepperMotor(Motor):
     def __init__(self, i2cBus=None):
         self.i2cBus = i2cBus or I2C(defaultAddress=4)
@@ -175,6 +192,10 @@ class StepperMotor(Motor):
         angle, __distance, __scanNum, __direction = _readData(self.i2cBus, 116)
         return (angle-2048)/11.32 #remove offset & scale for steps/deg
 
+'''
+Section 5
+Green Block
+'''
 class IR(Sensor):
     def __init__(self, i2cBus=None):
         self.i2cBus = i2cBus or I2C(defaultAddress=4)
@@ -211,7 +232,11 @@ class IR(Sensor):
     def getNearestScanNumber(self):
         __angle, __distance, scanNum, direction = _readData(self.i2cBus, 116)
         return scanNum, direction
-    
+
+'''
+Section 6
+Green Block
+'''
 def makeTriangulate(scanAction1, scanAction2):
     return TriangulateAction(scanAction1, scanAction2)
 
@@ -225,6 +250,10 @@ def makeTriangulator(scanningSensor, scanAngleWidth, scanNo, scanSpeed, scanning
         return makeTriangulate(scanAction1, scanAction2)
     return create
 
+'''
+Section 7
+Green Block
+'''
 def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2):
     def angleDifference(realObject1, realObject2, detectionObject1, detectionObject2):
         realObjectsVector = (realObject1[0] - realObject2[0], realObject1[1] - realObject2[1])
@@ -272,6 +301,10 @@ def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detect
     posDiff = positionDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)
     return angleDiff, posDiff
 
+'''
+Section 8
+Green Block
+'''
 class TriangulateAction(Action):
     def __init__(self, scanAction1, scanAction2):
         super(TriangulateAction, self).__init__()
@@ -299,6 +332,10 @@ class TriangulateAction(Action):
         print 'angleDiff', angleDiff
         print 'posDiff', posDiff
 
+'''
+Section 9
+Green Block
+'''
 class ScanningSensorAction(Action):
     def __init__(self, scanningSensor, coordinate,scanAngleWidth,scanNo,scanSpeed):
         super(ScanningSensorAction, self).__init__()
@@ -342,6 +379,10 @@ class ScanningSensorAction(Action):
         time.sleep(3)
         return NamedDetectionTuple((rangeOfObj, angleOfObj), sensorPosOffset, sensorHdgOffset)
 
+'''
+Section 10
+Green Block
+'''
 class ScanningSensor(object):
     def __init__(self, sensor, motor, sensorID):
         self.sensor = sensor
@@ -375,27 +416,27 @@ class ScanningSensor(object):
     def getNearestScanNumber(self):
         return self.sensor.getNearestScanNumber()
     
-if __name__ == '__main__':
-    robotPos = (1400,2000)
-    robotHdg = 0
-    realObject1 = ((1900,2500),0) #((xCoordinate,yCoordinate),objectRadius)
-    realObject2 = (( 900,2500),0)
-    running = 2
-    if running == 1:
-        bus = I2C(defaultAddress=4)
-        #StepperMotor(bus).moveToAngle(0, 1)
-        #StepperMotor(bus).reinitialiseToCentreDatum()
-        #time.sleep(10)
-        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
-        #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
-        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
-        action = makeSensor_Triangulate(realObject1, realObject2)
-        state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
-        action.run(state)
-    elif running == 2:
-##        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
-##        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
-        detection1 = NamedDetectionTuple((599.0826320, 56.57), (0, 170), 0)
-        detection2 = NamedDetectionTuple((599.0826320, -56.57), (0, 170), 0)
-        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
-        print angleDiff, posDiff
+##if __name__ == '__main__':
+##    robotPos = (1400,2000)
+##    robotHdg = 0
+##    realObject1 = ((1900,2500),0) #((xCoordinate,yCoordinate),objectRadius)
+##    realObject2 = (( 900,2500),0)
+##    running = 2
+##    if running == 1:
+##        bus = I2C(defaultAddress=4)
+##        #StepperMotor(bus).moveToAngle(0, 1)
+##        #StepperMotor(bus).reinitialiseToCentreDatum()
+##        #time.sleep(10)
+##        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
+##        #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
+##        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
+##        action = makeSensor_Triangulate(realObject1, realObject2)
+##        state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
+##        action.run(state)
+##    elif running == 2:
+####        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
+####        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
+##        detection1 = NamedDetectionTuple((599.0826320, 56.57), (0, 170), 0)
+##        detection2 = NamedDetectionTuple((599.0826320, -56.57), (0, 170), 0)
+##        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
+##        print angleDiff, posDiff

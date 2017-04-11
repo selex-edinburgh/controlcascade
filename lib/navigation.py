@@ -7,6 +7,11 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+
+'''
+Section 1
+Amber Block
+'''
 from math import cos, sin, radians, atan2, hypot, degrees
 
 class Waypoint:
@@ -19,7 +24,11 @@ class Waypoint:
         return (self.x,self.y)
     def angleTo_Degrees(self, other):
         return degrees(atan2( other.x - self.x , other.y - self.y ))
-    
+
+'''
+Section 2
+Amber Block
+''' 
 class WaypointTypeEnum:
     CONTINUOUS = 1
     WAITING = 2
@@ -37,12 +46,13 @@ class WaypointManager:
     def setWaypointType(wpt):
         WaypointManager.waypointType = wpt
 
+'''
+Section 3
+Amber Block
+'''
 def axisRotation( pos, theta ):
     return ( pos[0] * cos(theta) + pos[1] * sin(theta) , \
              - pos[0] * sin(theta) + pos[1] * cos(theta) )
-
-def degreeAngle(a, b):
-    return()
 
 def sensorToWorld(RobotPos, RobotHdg, SensorPosOffset, SensorHdgOffset, RTheta):
     theta1 = RTheta[1] + SensorHdgOffset   #correct object angle for sensor angle offset
