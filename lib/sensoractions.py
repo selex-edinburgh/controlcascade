@@ -235,7 +235,7 @@ class IR(Sensor):
 
 '''
 Section 6
-Green Block
+Amber Block
 '''
 def makeTriangulate(scanAction1, scanAction2):
     return TriangulateAction(scanAction1, scanAction2)
