@@ -47,7 +47,11 @@ class RcChanState(ObservableState):
         self._lrChange = lrChange * speedScalingLR
         self._fwdbkChange = fwdbkChange * speedScalingFwdBk
         self.timeStamp    = time.time()
-        self.creepSpeed = 20
+
+        self.minCreepMotorL = 40
+        self.minCreepMotorR = 40
+        self.nullMotorL = 254
+        self.nullMotorR = 0
 
         self.timeStampFlow["control"] = time.time()
         try:
@@ -60,8 +64,8 @@ class RcChanState(ObservableState):
         except:
             print "Serial not connected..."
 
-    def clip(self, x):
-        return min(254,max(1,x))
+def clip(x):
+    return min(254,max(1,x))
 
 def simMotor(state, batchdata):
     rcChanControlUpdate(state, batchdata, False)
@@ -77,8 +81,8 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             pass
 
         if item['messageType'] == 'control':
-                state.demandTurn = state.clip(item['demandTurn'] * state.speedScalingLR * state._maxDemand + state._nullTurn)   ## expects anti clockwise
-                state.demandFwd  = state.clip(item['demandFwd'] * state.speedScalingFwdBk * state._maxDemand + state._nullFwd)   ## inserted minus
+                state.demandTurn = clip(item['demandTurn'] * state.speedScalingLR * state._maxDemand + state._nullTurn)   ## expects anti clockwise
+                state.demandFwd  = clip(item['demandFwd'] * state.speedScalingFwdBk * state._maxDemand + state._nullFwd)   ## inserted minus
                 state.demandTurn = state.demandTurn * state._turnBiasLOverR if state.demandTurn > 0.0 else state.demandTurn / state._turnBiasLOverR
         elif item['messageType'] == 'sense':
             pass
@@ -88,14 +92,31 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.demandTurn = state._nullTurn
 
 
-    state.currentTurn = min(255,max(0, limitedChange(state.currentTurn, state.demandTurn , state._lrChange )))
-    state.currentFwd = min(255,max(0, limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange )))
+    state.currentTurn = clip(limitedChange(state.currentTurn, state.demandTurn , state._lrChange)) 
+    state.currentFwd = clip(limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange))
 
-    if state.currentTurn > state._nullTurn and state.currentTurn < state._nullTurn + state.creepSpeed:
-        state.currentTurn = state._nullTurn + state.creepSpeed
-    elif state.currentTurn > state._nullTurn - state.creepSpeed and state.currentTurn < state._nullTurn:
-        state.currentTurn = state._nullTurn - state.creepSpeed
-        
+    if state.currentFwd > state._nullFwd and state.currentFwd < state._nullFwd + state.minCreepFwdBk:
+        state.currentFwd = state._nullFwd + state.minCreepFwdBk
+    elif state.currentFwd > state._nullFwd - state.minCreepFwdBk and state.currentFwd < state._nullFwd:
+        state.currentFwd = state._nullFwd - state.minCreepFwdBk
+    if state.currentTurn > state._nullTurn and state.currentTurn < state._nullTurn + state.minCreepLR:
+        state.currentTurn = state._nullTurn + state.minCreepLR
+    elif state.currentTurn > state._nullTurn - state.minCreepLR and state.currentTurn < state._nullTurn:
+        state.currentTurn = state._nullTurn - state.minCreepLR
+
+##    motorL = state.currentFwd + state.currentTurn
+##    motorR = state.currentFwd - state.currentTurn
+##    if motorL > state.nullMotorL and motorL < state.nullMotorL + State.minCreepMotorL:
+##        motorL = state.nullMotorL + State.minCreepMotorL
+##    elif motorL < state.nullMotorL and motorL > state.nullMotorL - State.minCreepMotorL:
+##        motorL = state.nullMotorL - State.minCreepMotorL
+##    if motorR > state.nullMotorR and motorR < state.nullMotorR + State.minCreepMotorR:
+##        motorR = state.nullMotorR + State.minCreepMotorR
+##    elif motorR < state.nullMotorR and motorR > state.nullMotorR - State.minCreepMotorR:
+##        motorR = state.nullMotorR - State.minCreepMotorR
+##    state.currentFwd = (motorL + motorR)/2
+##    state.currentTurn = (motorL - motorR)/2
+    
 ##    f = open('motorCommands.txt', 'a')
 ##
 ##    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)

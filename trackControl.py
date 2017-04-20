@@ -68,12 +68,10 @@ def trackControlUpdate(state,batchdata):
                 linearMove = (2.0 * math.sin(math.radians(halfArcTurn) ) * halfArcMove / math.radians(halfArcTurn)) # linear move is shorter than arc
 
             midwayAngle = state.currentAngle + halfArcTurn
-#            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
-#                                   state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
+##            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
+##                                   state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
 
-        
             state.currentAngle = item['sensedAngle']
-
 #START ignore all that ^^^
 #   just turn first, then move
             move = item['sensedMove']
@@ -84,27 +82,31 @@ def trackControlUpdate(state,batchdata):
 #END end ignore all that ^^^
             
             state.timeStamp = time.time()
-
-       # elif item['messageType'] == 'obstacle':
-        #    state.isCollision = item['collision']
-         #   print item['collision']
-           # if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
-           # (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
-           #     print "OMG GONNA COLLIDE"
+#Old collision detection tests - Start
+##        elif item['messageType'] == 'obstacle':
+##            state.isCollision = item['collision']
+##            print item['collision']
+##            if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
+##            (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
+##                print "OMG GONNA COLLIDE"
 
     if len(batchdata) == 0: return      # do nothing here, unless new control or sense messages have arrived
 
+##    if state.isCollision == True:       # collison warning
+##        state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
+##        print "Collision"
+##        return
+#Old collision detection tests - End
 
-    if state.isCollision == True:       # collison warning
-        state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
-        print "Collision"
-        return
     legGoalPos = state.legGoal.getPosition()
     legOriginPos = state.legOrigin.getPosition()
+
+    - legGoalPos[0]
+    
     #Run update of control laws
     # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
-    # angle = math.atan2( (nextWP[1]-prevWP[1]),(nextWP[0]-prevWP[0] ) )
-    # line  : ax + by + c = 0
+    # A = legOriginPos, B = legGoalPos
+    # line  : ax + by + c = 0 : (1) mathworld link
     # coefficients
     # a=(yB-yA) , b=(xA-xB) and c=(xByA - xAyB)
     a = legGoalPos[1] - legOriginPos[1]
@@ -113,24 +115,21 @@ def trackControlUpdate(state,batchdata):
     abDist = math.hypot(a,b)
     state.demandPos = legGoalPos
     if abDist < 1e-10 or state.currentPos == legGoalPos: return #avoid divide by zero
-    distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist
-    # along perpendicular vector ( a , b )
-    deltaXfromLeg = a * distToLeg / abDist
-    deltaYfromLeg = b * distToLeg / abDist
-    closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg)
-    distToGoal = math.hypot( legGoalPos[0] - closePointOnLeg[0], legGoalPos[1] - closePointOnLeg[1] )
-    absToLeg =  abs(distToLeg)
+    distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist # distToLeg is distance to closePointOnLeg, Leg being the line from legOriginPos to legGoalPos : (11) mathworld link
+    
+    deltaXfromLeg = a * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
+    deltaYfromLeg = b * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
+    closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg) 
+    absToLeg =  abs(distToLeg) # absolute magnitude of distance to closest point on leg (closePointOnLeg)
+    distToGoal = math.hypot( legGoalPos[0] - closePointOnLeg[0], legGoalPos[1] - closePointOnLeg[1] ) # distance from closePointOnLeg to legGoalPos
+
     moveAmount = distToGoal
     if absToLeg > distToGoal: moveAmount =  0
-    #print "absToLeg", absToLeg, "dist: ", distToGoal
-    # demandPos is a point on the Leg, maxMove along from closePointOnLeg
+    # demandPos is a point on the Leg,
     state.demandPos = ( (legGoalPos[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
                     (legGoalPos[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
-
-    #state.demandAngle = math.degrees(math.atan2( state.demandPos[1] -  state.currentPos[1] , state.demandPos[0] - state.currentPos[0] ))
     state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
 
-    #print "demand pos", state.demandPos
 
     state.timeStampFlow["control"] = state.timeStampFlow["sense"]
 
@@ -156,7 +155,7 @@ def trackToRouteTranslator( sourceState, destState, destQueue ):
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
     dtgFactor = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                      sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO
+                      sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO dtg = distanceToGo
     brakingPct = round(min(100.0, dtgFactor)  ,0) # 100% = full speed
     if brakingPct < 10.0 : brakingPct = 0
     #TODO
