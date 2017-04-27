@@ -17,11 +17,10 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 from lib.navigation import *
 
 class TrackState(ObservableState):
-    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos, underTurnFudge):
+    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos, underTurn):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
-        self.legCoeff  = (0.0,0.0,0.0)
         self.legGoal = WaypointManager.createWaypoint(0.0,0.0)
         self.legOrigin = WaypointManager.createWaypoint(0.0,0.0)
         self.currentAngle = 0
@@ -34,14 +33,17 @@ class TrackState(ObservableState):
         self.turnRadius = math.hypot(self._trackWidth, self._wheelBase)/2.0 # value should be around 155.0 mm
         self.turnFactor = ((self._trackWidth/2.0)/self.turnRadius)**2.0 # takes into account the turning component
         # and the turn radius to create a correction value that can be applied to the heading (0.58)
-        self._movementBudget = movementBudget       # 500.0 mm
+        self.underTurn = underTurn
+        #self._movementBudget = movementBudget       # 500.0 mm
         self.timeStamp = time.time()
-        self.pole = (1200,0)
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
-        self.isCollision = False
+        #self.pole = (1200,0)
+        #self.isCollision = False
         self.nearWaypoint = False       # check is near next waypoint
-        self.underTurnFudge = underTurnFudge
+        self.demandTurn = None
+        self.demandFwd = None
+
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -70,8 +72,8 @@ def trackControlUpdate(state,batchdata):
             midwayAngle = state.currentAngle + halfArcTurn
 ##            state.currentPos = (state.currentPos[0] + linearMove * math.sin(math.radians(midwayAngle)), # x move along effective direction
 ##                                   state.currentPos[1] + linearMove * math.cos(math.radians(midwayAngle))) # y move along effective direction
-
             state.currentAngle = item['sensedAngle']
+            
 #START ignore all that ^^^
 #   just turn first, then move
             move = item['sensedMove']
@@ -101,34 +103,51 @@ def trackControlUpdate(state,batchdata):
     legGoalPos = state.legGoal.getPosition()
     legOriginPos = state.legOrigin.getPosition()
 
-    - legGoalPos[0]
+    dist2Go = math.hypot(state.currentPos[0] - legGoalPos[0], state.currentPos[1] - legGoalPos[1])
+    legGoalHdgRadians = math.atan2(state.currentPos[1] - legGoalPos[1], state.currentPos[0] - legGoalPos[0])
+    legGoalHdgDegrees = math.degrees(legGoalHdgRadians)
+    legGoalHdg = (90 - legGoalHdgDegrees)%360
+    hdg2Go = angleDiff(state.currentAngle, legGoalHdg)
     
-    #Run update of control laws
-    # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
-    # A = legOriginPos, B = legGoalPos
-    # line  : ax + by + c = 0 : (1) mathworld link
-    # coefficients
-    # a=(yB-yA) , b=(xA-xB) and c=(xByA - xAyB)
-    a = legGoalPos[1] - legOriginPos[1]
-    b = legOriginPos[0] - legGoalPos[0]
-    c = (legGoalPos[0] * legOriginPos[1]) - (legOriginPos[0] * legGoalPos[1])
-    abDist = math.hypot(a,b)
-    state.demandPos = legGoalPos
-    if abDist < 1e-10 or state.currentPos == legGoalPos: return #avoid divide by zero
-    distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist # distToLeg is distance to closePointOnLeg, Leg being the line from legOriginPos to legGoalPos : (11) mathworld link
+    if hdg2Go > 0:
+        #turn right
+        state.driveMode = 'TurnR'
+    elif hdg2Go < 0:
+        #turn left
+        state.driveMode = 'TurnL'
+    elif dist2Go > 0:
+        #move forward
+        state.driveMode = 'MoveFwd'
+    else ##if hdg2Go == 0 and dist2Go == 0:
+        #stationary
+        state.driveMode = 'Parked'
     
-    deltaXfromLeg = a * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
-    deltaYfromLeg = b * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
-    closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg) 
-    absToLeg =  abs(distToLeg) # absolute magnitude of distance to closest point on leg (closePointOnLeg)
-    distToGoal = math.hypot( legGoalPos[0] - closePointOnLeg[0], legGoalPos[1] - closePointOnLeg[1] ) # distance from closePointOnLeg to legGoalPos
-
-    moveAmount = distToGoal
-    if absToLeg > distToGoal: moveAmount =  0
-    # demandPos is a point on the Leg,
-    state.demandPos = ( (legGoalPos[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
-                    (legGoalPos[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
-    state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
+##    #Run update of control laws
+##    # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+##    # A = legOriginPos, B = legGoalPos
+##    # line  : ax + by + c = 0 : (1) mathworld link
+##    # coefficients
+##    # a=(yB-yA) , b=(xA-xB) and c=(xByA - xAyB)
+##    a = legGoalPos[1] - legOriginPos[1]
+##    b = legOriginPos[0] - legGoalPos[0]
+##    c = (legGoalPos[0] * legOriginPos[1]) - (legOriginPos[0] * legGoalPos[1])
+##    abDist = math.hypot(a,b)
+##    state.demandPos = legGoalPos
+##    if abDist < 1e-10 or state.currentPos == legGoalPos: return #avoid divide by zero
+##    distToLeg = (a*state.currentPos[0] + b*state.currentPos[1] + c ) / abDist # distToLeg is distance to closePointOnLeg, Leg being the line from legOriginPos to legGoalPos : (11) mathworld link
+##    
+##    deltaXfromLeg = a * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
+##    deltaYfromLeg = b * distToLeg / abDist # scaling values down from arbitrary magnitude (a,b) vector : (4) mathworld link
+##    closePointOnLeg =  (state.currentPos[0] - deltaXfromLeg, state.currentPos[1] -  deltaYfromLeg) 
+##    absToLeg =  abs(distToLeg) # absolute magnitude of distance to closest point on leg (closePointOnLeg)
+##    distToGoal = math.hypot( legGoalPos[0] - closePointOnLeg[0], legGoalPos[1] - closePointOnLeg[1] ) # distance from closePointOnLeg to legGoalPos
+##
+##    moveAmount = distToGoal
+##    if absToLeg > distToGoal: moveAmount =  0
+##    # demandPos is a point on the Leg,
+##    state.demandPos = ( (legGoalPos[0] - closePointOnLeg[0]) / distToGoal * moveAmount + closePointOnLeg[0] , \
+##                    (legGoalPos[1] - closePointOnLeg[1]) / distToGoal * moveAmount + closePointOnLeg[1])
+##    state.demandAngle = math.degrees(math.atan2( state.demandPos[0] -  state.currentPos[0] , state.demandPos[1] - state.currentPos[1] ))
 
 
     state.timeStampFlow["control"] = state.timeStampFlow["sense"]
@@ -154,17 +173,22 @@ def trackToRouteTranslator( sourceState, destState, destQueue ):
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
-    dtgFactor = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
-                      sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO dtg = distanceToGo
-    brakingPct = round(min(100.0, dtgFactor)  ,0) # 100% = full speed
-    if brakingPct < 10.0 : brakingPct = 0
-    #TODO
-    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
-    move = max ( 1 - abs(turn), 0 )
-
-
-    message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0 ,
-                                       'demandFwd' : move * brakingPct / 100.0,
+##    dtgFactor = math.hypot(sourceState.demandPos[0]-sourceState.currentPos[0],
+##                      sourceState.demandPos[1]-sourceState.currentPos[1] ) / 4.0#TODO dtg = distanceToGo
+##    brakingPct = round(min(100.0, dtgFactor)  ,0) # 100% = full speed
+##    if brakingPct < 10.0 : brakingPct = 0
+##    #TODO
+##    turn = angleDiff(sourceState.currentAngle, sourceState.demandAngle) / 90
+##    move = max ( 1 - abs(turn), 0 )
+##
+##    message = {'messageType':'control','demandTurn': turn * brakingPct / 100.0,
+##                                       'demandFwd' : move * brakingPct / 100.0,
+##                                       'timeStamp' : sourceState.timeStampFlow["control"]
+##                                       }
+    
+    message = {'messageType':'control','hdg2Go': hdg2Go,
+                                       'dist2Go' : dist2Go,
+                                       'driveMode' : driveMode,
                                        'timeStamp' : sourceState.timeStampFlow["control"]
                                        }
     destQueue.put(message)
@@ -180,7 +204,6 @@ def trackToVisualTranslator(sourceState, destState, destQueue):
     'robotPos':sourceState.currentPos,
     'robotAngle':sourceState.currentAngle,
     'nextWaypoint':sourceState.legGoal,
-    'demandPos':sourceState.demandPos,
     'nearWaypoint':sourceState.nearWaypoint}
     destQueue.put(message)
     

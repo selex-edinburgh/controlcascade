@@ -87,7 +87,7 @@ class RouteState(ObservableState):
 ##        Waypoint(1400, 4000, 0)
         ]
         self.currentPos = self.waypoints[0]
-        self._near = near        # 120.0 The detection radius of when the chariot has reached a waypoint
+        self._near = near        #The detection radius of when the chariot has reached a waypoint
         self.nearWaypoint = True
         self.timeStampFlow["control"] = time.time()
         self.finalWaypoint = False

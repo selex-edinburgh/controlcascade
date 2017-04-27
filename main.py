@@ -36,7 +36,7 @@ def runArcNodes():
     timeScale = 1
     guiTimeScale = 0.5
 
-    near = 120.0 # how close needs to be till thinks that it has reached waypoint
+    near = 1.0 ##120.0 # how close needs to be till thinks that it has reached waypoint
     
     odoUpdateRateMin = 0.016
     odoUpdateRateMax =  1
@@ -49,8 +49,10 @@ def runArcNodes():
     rcChanUpdateRateMax = 0.09
     lrChange = 40
     fwdbkChange = 40
-    minCreepFwdBk = 20
-    minCreepLR = 20
+    minSpeedFwdBk = 20
+    minSpeedLR = 20
+    maxSpeedFwdBk = 45
+    maxSpeedLR = 50
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
@@ -61,7 +63,7 @@ def runArcNodes():
     wheelBase = 200
     trackWidth = 237
     movementBudget = 500
-    underTurnFudge = 0.58 #underTurnFudge will be changed after testing
+    underTurn = 0.58 #underTurn will be changed after testing
     
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
@@ -74,8 +76,8 @@ def runArcNodes():
     routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
-    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minCreepFwdBk, minCreepLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
-    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurnFudge)
+    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
+    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurn)
     vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState()
