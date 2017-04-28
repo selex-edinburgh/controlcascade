@@ -41,7 +41,9 @@ def vsimControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             state.rcTurn = item['rcTurn'] 
             state.rcFwd = item['rcFwd']
-            
+##            print 'rcTurn', state.rcTurn
+##            print 'rcFwd', state.rcFwd
+##            print ' '
         elif item['messageType'] == 'sense':
             print "Sense messages not implemented for vsimControl"
     
@@ -52,8 +54,8 @@ def vsimControlUpdate(state,batchdata):
     demandL = state._leftSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0
     demandR = state._rightSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
     
-    state.speedL = speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
-    state.speedR = speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)
+    state.speedL = demandL#speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
+    state.speedR = demandR#speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)
 
 
 def speedUpdate( current, demanded, tDelta, fricPerSec):

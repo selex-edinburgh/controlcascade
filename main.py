@@ -49,10 +49,10 @@ def runArcNodes():
     rcChanUpdateRateMax = 0.09
     lrChange = 40
     fwdbkChange = 40
-    minSpeedFwdBk = 20
-    minSpeedLR = 20
-    maxSpeedFwdBk = 45
-    maxSpeedLR = 50
+    minSpeedFwdBk = 30
+    minSpeedLR = 50
+    maxSpeedFwdBk = 60
+    maxSpeedLR = 70
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
@@ -138,6 +138,7 @@ def runArcNodes():
     scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController2.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
+    rcChanController.connectTo(trackController, rcChanControl.rcChanToTrackTranslator)
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
 
 

@@ -219,7 +219,7 @@ Green Block
 def odoToTrackTranslator( sourceState, destState, destQueue ):
     lrDifferenceMm = (sourceState.totalPulseL * sourceState._mmPerPulseLt) - (sourceState.totalPulseR * sourceState._mmPerPulseRt)
 
-    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * destState.underTurnFudge# 0.63 fudge! to make full turn happen used as calibration as changes with different flooring
+    angleRadians = (lrDifferenceMm/destState.turnRadius)*destState.turnFactor * destState.underTurn# fudge! to make full turn happen used as calibration as changes with different flooring
       # calculates the relative heading and applies the turnFactor
     
     angle =  (math.degrees(angleRadians)+ sourceState._initAngle)%360   # applies offset to apply absolute heading

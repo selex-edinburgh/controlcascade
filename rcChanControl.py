@@ -45,8 +45,10 @@ class RcChanState(ObservableState):
         self.maxSpeedFwdBk = maxSpeedFwdBk  
         self.maxSpeedLR = maxSpeedLR
         self.startHdgToggle = True
-        self.startHdg = 0
-        self.hdg2Go = 0                     #how much the RC has to turn its heading so that it is facing the next waypoint
+        self.startDistToggle = True
+        self.startHdg2Go = 0
+        self.startDist2Go = 0
+        self.hdg2Go = 0.0                     #how much the RC has to turn its heading so that it is facing the next waypoint
         self.dist2Go = 0                    #how much distance the RC would need to cover to reach the next waypoint if it drove straight towards it
         self.driveMode = None               #says if the RC is turn left, right, moving fwd or stationary
         self.accelLat = 1.5                 #rate of lateral acceleration (default 1.5)
@@ -55,6 +57,9 @@ class RcChanState(ObservableState):
         self.decelLong = 0.1                #rate of longitudinal deceleration (default 0.1)
         self.turnPower = 0                  #the amount to add to nullTurn which turns you in which direction 
         self.fwdPower = 0                   #the amount to add to nullFwd which drives you fwd, might take into account backwards in future
+        self.latPhase = 'end'               #has the turn been completed
+        self.longPhase = 'reset'              #has the fwd been completed
+        self.controlStaleness = 0           #how many times round since rc received a message
         
         self.speedScalingFwdBk = speedScalingFwdBk
         self.speedScalingLR = speedScalingLR
@@ -89,7 +94,6 @@ def realMotor(state, batchdata):
 
 def rcChanControlUpdate(state,batchdata, motorOutput):
     for item in batchdata:      # process items in batchdata
-
         if 'timeStamp' in item:
             state.timeStampFlow[item['messageType']] = item['timeStamp']
             pass
@@ -101,27 +105,32 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             state.hdg2Go = item['hdg2Go']
             state.dist2Go = item['dist2Go']
             state.driveMode = item['driveMode']
+            state.latPhase = item['latPhase']
+            state.longPhase = item['longPhase']
+            state.controlStaleness = 0
         elif item['messageType'] == 'sense':
             pass
 
-    if not batchdata:       # if no messages (loops stopped) set the speed to stationary
-        state.demandTurn = state._nullTurn
-        state.demandFwd = state._nullFwd
+    if not batchdata:       # if no messages (loops stopped) start counting how long the thread has been stale
+        state.controlStaleness += 1
+
+    if state.controlStaleness == 3:
+        state.driveMode = 'Parked'
 
 
 ##    state.currentTurn = clip(limitedChange(state.currentTurn, state.demandTurn , state._lrChange)) 
 ##    state.currentFwd = clip(limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange))
 
-    #reset for start dist and hdg for the motor rate calculations
+    #reset the start dist and hdg for the motor rate calculations accelRate
     if state.driveMode != 'TurnR' and state.driveMode != 'TurnL':
         state.startHdgToggle = True
     elif state.startHdgToggle == True:
-        state.startHdg2Go = hdg2Go
+        state.startHdg2Go = state.hdg2Go
         state.startHdgToggle = False
     if state.driveMode != 'MoveFwd':
         state.startDistToggle = True
     elif state.startDistToggle == True:
-        state.startDist2Go = dist2Go
+        state.startDist2Go = state.dist2Go
         state.startDistToggle = False
 
     #calculates the rate at which the motor power is increased or decreased, with proportion of dist & hdg to go    
@@ -131,46 +140,68 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     decelRateL = (state.hdg2Go*state.decelLat)-(state.minSpeedLR/2)
     accelRateFwd = ((state.startDist2Go - state.dist2Go)*state.accelLong)+state.minSpeedFwdBk
     decelRateFwd = (state.dist2Go*state.decelLong)+(state.minSpeedFwdBk/2)
-
+    state.turnPower = 0
+    state.fwdPower = 0
+    
     #controls if accelerating, cruising or decelerating after being given a driveMode
     if state.driveMode == 'TurnR':
         #turn right
-        if decelRateR < maxSpeedLR:
+        if decelRateR < state.maxSpeedLR:
             #decel to minSpeed
-            turnPower = minSpeedLR if decelRateR < minSpeedLR else decelRateR
-            fwdPower = 0
+            state.turnPower = state.minSpeedLR if decelRateR < state.minSpeedLR else decelRateR
+            state.fwdPower = 0
         else:
             #accel to maxSpeed
-            turnPower = maxSpeedLR if accelRateR > maxSpeedLR else accelRateR
-            fwdPower = 0
+            state.turnPower = state.maxSpeedLR if accelRateR > state.maxSpeedLR else accelRateR
+            state.fwdPower = 0
+        if state.hdg2Go <= 0:
+            state.turnPower = 0
+            state.fwdPower = 0
+            state.latPhase = 'end'
     elif state.driveMode == 'TurnL':
         #turn left
-        if decelRateL > -maxSpeedLR:
+        if decelRateL > -state.maxSpeedLR:
             #decel to minSpeed
-            turnPower = -minSpeedLR if decelRateL > -minSpeedLR else decelRateL
-            fwdPower = 0
+            state.turnPower = -state.minSpeedLR if decelRateL > -state.minSpeedLR else decelRateL
+            state.fwdPower = 0
         else:
             #accel to maxSpeed
-            turnPower = -maxSpeedLR if accelRateR < -maxSpeedLR else accelRateR
-            fwdPower = 0
+            state.turnPower = -state.maxSpeedLR if accelRateR < -state.maxSpeedLR else accelRateR
+            state.fwdPower = 0
+        if state.hdg2Go >= 0:
+            state.turnPower = 0
+            state.fwdPower = 0
+            state.latPhase = 'end'
     elif state.driveMode == 'MoveFwd':
         #move forward
-        if decelRateFwdBk < maxSpeedFwdBk
+        if decelRateFwd < state.maxSpeedFwdBk:
             #decel to minSpeed
-            turnPower = 0
-            fwdPower = minSpeedFwdBk if decelRateFwd < minSpeedFwdBk else decelRateFwd
+            state.turnPower = 0
+            state.fwdPower = state.minSpeedFwdBk if decelRateFwd < state.minSpeedFwdBk else decelRateFwd
         else:
             #accel to maxSpeed
-            turnPower = 0
-            fwdPower = maxSpeedFwdBk if accelRateFwd > maxSpeedFwdBk else accelRateFwd
+            state.turnPower = 0
+            state.fwdPower = state.maxSpeedFwdBk if accelRateFwd > state.maxSpeedFwdBk else accelRateFwd
+        if state.dist2Go <= 0:
+            state.turnPower = 0
+            state.fwdPower = 0
+            state.longPhase = 'end'
     elif state.driveMode == 'Parked':
         #stationary
-        turnPower = 0
-        fwdPower = 0
+        state.turnPower = 0
+        state.fwdPower = 0
 
-    state.currentTurn = state._nullTurn + turnPower
-    state.currentFwd = state._nullFwd + fwdPower
+    state.currentTurn = state._nullTurn + state.turnPower
+    state.currentFwd = state._nullFwd + state.fwdPower
 
+##    print 'rcChan'
+##    print 'driveMode', state.driveMode
+##    print 'hdg2Go', state.hdg2Go
+##    print 'dist2Go', state.dist2Go
+##    print 'turnPower', state.currentTurn
+##    print 'currentFwd', state.currentFwd
+##    print ' '
+    
 ##    motorL = state.currentFwd + state.currentTurn
 ##    motorR = state.currentFwd - state.currentTurn
 ##    if motorL > state.nullMotorL and motorL < state.nullMotorL + State.minSpeedMotorL:
@@ -187,7 +218,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
 ##    f = open('motorCommands.txt', 'a')
 ##    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
 ##    f.close()
-    
+
     if motorOutput:
         state.ser.write(chr(clip(int(state.currentFwd))))       #Output to Motor Drive Board
         state.ser.write(chr(clip(int(state.currentTurn))))      #Output to Motor Drive Board
@@ -201,8 +232,13 @@ def limitedChange(startX, endX, magnitudeLimit):
     change = diffSign * ( min(abs(diff),magnitudeLimit) )
     return startX + change
 
+def rcChanToTrackTranslator( sourceState, destState, destQueue ):
+    destQueue.put({'messageType':'phase',
+                   'latPhase' : sourceState.latPhase,
+                   'longPhase' : sourceState.longPhase})
+    
 def rcChanToVsimTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'control',
-                   'rcTurn' :-(sourceState.currentTurn/sourceState._maxDemand - 1.0),
-                   'rcFwd'  :sourceState.currentFwd/sourceState._maxDemand - 1.0 ,
+                   'rcTurn' :-(sourceState.currentTurn/sourceState._nullTurn - 1.0),
+                   'rcFwd'  :sourceState.currentFwd/sourceState._nullFwd - 1.0 ,
                    'timeStamp' : sourceState.timeStampFlow})

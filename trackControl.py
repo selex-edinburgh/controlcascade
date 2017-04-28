@@ -43,7 +43,11 @@ class TrackState(ObservableState):
         self.nearWaypoint = False       # check is near next waypoint
         self.demandTurn = None
         self.demandFwd = None
-
+        self.driveMode = 'Parked'
+        self.hdg2Go = 0.0
+        self.dist2Go = 0
+        self.latPhase = 'end'
+        self.longPhase = 'reset'
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -58,6 +62,9 @@ def trackControlUpdate(state,batchdata):
             if state.noLegSet:      #This sets the starting position equal to the first waypoint
                 state.currentPos = state.legOrigin.getPosition()
             state.noLegSet = False
+        elif item['messageType'] == 'phase':
+            state.latPhase = item['latPhase']
+            state.longPhase = item['longPhase']
         elif item['messageType'] == 'sense': ### integrate batch entries : sensedMove, sensedTurn
             #approximate as movement along circular arc, effective direction being mid-way on arc
 
@@ -103,23 +110,30 @@ def trackControlUpdate(state,batchdata):
     legGoalPos = state.legGoal.getPosition()
     legOriginPos = state.legOrigin.getPosition()
 
-    dist2Go = math.hypot(state.currentPos[0] - legGoalPos[0], state.currentPos[1] - legGoalPos[1])
-    legGoalHdgRadians = math.atan2(state.currentPos[1] - legGoalPos[1], state.currentPos[0] - legGoalPos[0])
+    if (state.latPhase == "end") and (state.longPhase == "end"): #both turn & line completed
+        state.latPhase = 'reset'
+        state.longPhase = 'reset'
+
+    state.dist2Go = math.hypot(state.currentPos[0] - legGoalPos[0], state.currentPos[1] - legGoalPos[1])              #distance to go to next wpt
+    legGoalHdgRadians = math.atan2(legGoalPos[1] - state.currentPos[1], legGoalPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
     legGoalHdgDegrees = math.degrees(legGoalHdgRadians)
-    legGoalHdg = (90 - legGoalHdgDegrees)%360
-    hdg2Go = angleDiff(state.currentAngle, legGoalHdg)
+    legGoalHdg = (90 - legGoalHdgDegrees)%360           #compass wrt North +ve clockwise
+    state.hdg2Go = angleDiff(state.currentAngle, legGoalHdg)  #heading to turn to face next wpt
+
+##    print 'track'
+##    print 'currentPos', state.currentPos, 'legGoalPos', legGoalPos
+##    print 'legGoalHdgDegrees', legGoalHdgDegrees
+##    print 'currentAngle', state.currentAngle, 'legGoalHdg', legGoalHdg
+##    print 'hdg2Go', state.hdg2Go, 'dist2Go', state.dist2Go
+##    print ' '
     
-    if hdg2Go > 0:
-        #turn right
+    if state.hdg2Go > 0 and state.latPhase <> 'end':        #action turnRt
         state.driveMode = 'TurnR'
-    elif hdg2Go < 0:
-        #turn left
+    elif state.hdg2Go < 0 and state.latPhase <> 'end':      #action turnLt 
         state.driveMode = 'TurnL'
-    elif dist2Go > 0:
-        #move forward
+    elif state.dist2Go > 0 and state.longPhase <> 'end':    #action moveFwd
         state.driveMode = 'MoveFwd'
-    else ##if hdg2Go == 0 and dist2Go == 0:
-        #stationary
+    else: ##if state.hdg2Go == 0 and state.dist2Go == 0:    #no movement
         state.driveMode = 'Parked'
     
 ##    #Run update of control laws
@@ -168,7 +182,8 @@ def trackToStatsTranslator(sourceState, destState, destQueue):
 """
 
 def trackToRouteTranslator( sourceState, destState, destQueue ):
-    message = {'messageType':'sense','sensedPos':sourceState.currentPos}
+    message = {'messageType':'sense',
+               'sensedPos':sourceState.currentPos}
     destQueue.put(message)
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
@@ -186,9 +201,11 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
 ##                                       'timeStamp' : sourceState.timeStampFlow["control"]
 ##                                       }
     
-    message = {'messageType':'control','hdg2Go': hdg2Go,
-                                       'dist2Go' : dist2Go,
-                                       'driveMode' : driveMode,
+    message = {'messageType':'control','hdg2Go': sourceState.hdg2Go,
+                                       'dist2Go' : sourceState.dist2Go,
+                                       'driveMode' : sourceState.driveMode,
+                                       'latPhase' : sourceState.latPhase,
+                                       'longPhase' : sourceState.longPhase,
                                        'timeStamp' : sourceState.timeStampFlow["control"]
                                        }
     destQueue.put(message)
