@@ -434,7 +434,13 @@ def visualToSensorTranslator(sourceState, destState, destQueue):
         sourceState.sensorReset = False
         message = {'messageType':'reset'}
         destQueue.put(message)
-        
+
+def visualToRcChanTranslator(sourceState, destState, destQueue):
+
+    message = {'messageType': 'stop',
+               'stopLoops': sourceState.stopLoops}
+    destQueue.put(message)
+
 def visualToStartStop(sourceState, destState, destQueue):
 
     message = {'messageType': 'loopControlMessage',

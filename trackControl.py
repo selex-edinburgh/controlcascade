@@ -17,15 +17,15 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 from lib.navigation import *
 
 class TrackState(ObservableState):
-    def __init__(self, wheelBase, trackWidth, movementBudget, xPos, yPos, underTurn):
+    def __init__(self, wheelBase, trackWidth, movementBudget, xPos1, yPos1, xPos2, yPos2, underTurn):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
-        self.legGoal = WaypointManager.createWaypoint(0.0,0.0)
-        self.legOrigin = WaypointManager.createWaypoint(0.0,0.0)
+        self.legGoal = WaypointManager.createWaypoint(xPos2,yPos2)
+        self.legOrigin = WaypointManager.createWaypoint(xPos1,yPos1)
         self.currentAngle = 0
         #self.currentPos = (2390.0,4630.0) # Uncomment this line to have RC draw at centre of screen
-        self.currentPos = (xPos,yPos)  # This draws the RC off screen before clicking Start
+        self.currentPos = (xPos1,yPos1)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
         self.demandPos = (0.0,0.0)
         self._trackWidth = trackWidth                   # nominal 237.0 mm between wheels l/r
@@ -46,8 +46,11 @@ class TrackState(ObservableState):
         self.driveMode = 'Parked'
         self.hdg2Go = 0.0
         self.dist2Go = 0
+        self.hdgGone = 0.0
+        self.distGone = 0
         self.latPhase = 'end'
         self.longPhase = 'reset'
+        self.requestWaypoint = False
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -58,7 +61,10 @@ def trackControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             state.legGoal = item['legGoal']
             state.legOrigin = item['legOrigin']
+            state.requestWaypoint = item['requestWaypoint']
             state.nearWaypoint = item['nearWaypoint']
+            state.latPhase = item['latPhase']
+            state.longPhase = item['longPhase']
             if state.noLegSet:      #This sets the starting position equal to the first waypoint
                 state.currentPos = state.legOrigin.getPosition()
             state.noLegSet = False
@@ -88,31 +94,27 @@ def trackControlUpdate(state,batchdata):
             
             state.currentPos = ( oldpos[0] + move * math.cos(math.radians(90-state.currentAngle)),
                                   oldpos[1] + move * math.sin(math.radians(90-state.currentAngle)) )
+##            print 'track'
+##            print 'oldPos', oldpos
+##            print 'currentPos', state.currentPos
+
 #END end ignore all that ^^^
             
             state.timeStamp = time.time()
-#Old collision detection tests - Start
-##        elif item['messageType'] == 'obstacle':
-##            state.isCollision = item['collision']
-##            print item['collision']
-##            if((state.legGoal[0] - state.legOrigin[0]) * (state.pole[1] - state.legOrigin[1]) == \
-##            (state.pole[0] - state.legOrigin[0]) * (state.legGoal[1] - state.legOrigin[1])):
-##                print "OMG GONNA COLLIDE"
 
     if len(batchdata) == 0: return      # do nothing here, unless new control or sense messages have arrived
-
-##    if state.isCollision == True:       # collison warning
-##        state.demandPos = (state.currentPos[0] - 100, state.currentPos[1])
-##        print "Collision"
-##        return
-#Old collision detection tests - End
 
     legGoalPos = state.legGoal.getPosition()
     legOriginPos = state.legOrigin.getPosition()
 
     if (state.latPhase == "end") and (state.longPhase == "end"): #both turn & line completed
-        state.latPhase = 'reset'
-        state.longPhase = 'reset'
+        state.requestWaypoint = True
+
+##    print 'track'
+##    print 'currentPos0', state.currentPos[0]
+##    print 'legGoalPos0', legGoalPos[0]
+##    print 'currentPos1', state.currentPos[1]
+##    print 'legGoalPos1', legGoalPos[1]
 
     state.dist2Go = math.hypot(state.currentPos[0] - legGoalPos[0], state.currentPos[1] - legGoalPos[1])              #distance to go to next wpt
     legGoalHdgRadians = math.atan2(legGoalPos[1] - state.currentPos[1], legGoalPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
@@ -120,11 +122,18 @@ def trackControlUpdate(state,batchdata):
     legGoalHdg = (90 - legGoalHdgDegrees)%360           #compass wrt North +ve clockwise
     state.hdg2Go = angleDiff(state.currentAngle, legGoalHdg)  #heading to turn to face next wpt
 
+    state.distGone = math.hypot(state.currentPos[0] - legOriginPos[0], state.currentPos[1] - legOriginPos[1])              #distance gone towards next wpt
+    legOriginHdgRadians = math.atan2(legOriginPos[1] - state.currentPos[1], legOriginPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
+    legOriginHdgDegrees = math.degrees(legOriginHdgRadians)
+    legOriginHdg = (90 - legOriginHdgDegrees)%360           #compass wrt North +ve clockwise
+    state.hdgGone = angleDiff(state.currentAngle, legOriginHdg)  #heading turned towards next wpt
+    
 ##    print 'track'
 ##    print 'currentPos', state.currentPos, 'legGoalPos', legGoalPos
 ##    print 'legGoalHdgDegrees', legGoalHdgDegrees
 ##    print 'currentAngle', state.currentAngle, 'legGoalHdg', legGoalHdg
 ##    print 'hdg2Go', state.hdg2Go, 'dist2Go', state.dist2Go
+##    print 'hdgGone', state.hdgGone, 'distGone', state.distGone
 ##    print ' '
     
     if state.hdg2Go > 0 and state.latPhase <> 'end':        #action turnRt
@@ -183,7 +192,10 @@ def trackToStatsTranslator(sourceState, destState, destQueue):
 
 def trackToRouteTranslator( sourceState, destState, destQueue ):
     message = {'messageType':'sense',
-               'sensedPos':sourceState.currentPos}
+               #'sensedPos':sourceState.currentPos
+               'latPhase' :sourceState.latPhase,
+               'longPhase' :sourceState.longPhase,
+               'requestWaypoint':sourceState.requestWaypoint}
     destQueue.put(message)
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
@@ -203,6 +215,8 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
     
     message = {'messageType':'control','hdg2Go': sourceState.hdg2Go,
                                        'dist2Go' : sourceState.dist2Go,
+                                       'hdgGone' : sourceState.hdgGone,
+                                       'distGone' : sourceState.distGone,
                                        'driveMode' : sourceState.driveMode,
                                        'latPhase' : sourceState.latPhase,
                                        'longPhase' : sourceState.longPhase,

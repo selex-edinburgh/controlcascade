@@ -64,10 +64,10 @@ class RouteState(ObservableState):
              
         #Square
         Waypoint(1400, 3800, 0),
-        Waypoint(1400, 5800, 0),
-        Waypoint(3400, 5800, 0),
-        Waypoint(3400, 3800, 0),
-        Waypoint(1400, 3800, 0)
+        Waypoint(1400, 4800, 0)
+##        Waypoint(2400, 4800, 0),
+##        Waypoint(2400, 3800, 0),
+##        Waypoint(1400, 3800, 0)
 
         #Scan test
 ##        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
@@ -87,7 +87,7 @@ class RouteState(ObservableState):
 ##        Waypoint(1400, 4000, 0)
         ]
         self.currentPos = self.waypoints[0]
-        self._near = near        #The detection radius of when the chariot has reached a waypoint
+        #self._near = near        #The detection radius of when the chariot has reached a waypoint
         self.nearWaypoint = True
         self.timeStampFlow["control"] = time.time()
         self.finalWaypoint = False
@@ -95,6 +95,9 @@ class RouteState(ObservableState):
         #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
         self.waiting = False
         self.runActions = None
+        self.requestWaypoint = False
+        self.latPhase = None
+        self.longPhase = None
         
 def routeControlUpdate(state,batchdata):
     '''
@@ -109,17 +112,20 @@ def routeControlUpdate(state,batchdata):
             state.waypoints.append(newWaypoint)
         elif item['messageType'] == 'removeWaypoint':
             state.waypoints.pop()
-        elif item['messageType'] == 'sense': # TODO
+        elif item['messageType'] == 'sense':
             state.nearWaypoint = False
-            sensedPos = item['sensedPos']
+            #sensedPos = item['sensedPos']
+            state.latPhase = item['latPhase']
+            state.longPhase = item['longPhase']
+            state.requestWaypoint = item['requestWaypoint']
             tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
-            dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
+            #dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
             '''
             Section 4
             Amber Block
             '''
-            #if requestWaypoint == True:
-            if dist < state._near:
+            if state.requestWaypoint == True:
+            #if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
@@ -129,12 +135,15 @@ def routeControlUpdate(state,batchdata):
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
+                        state.requestWaypoint = False
 
                 if not state.waiting:
                     #print "Setting waypoint {}".format(tempWaypoint)
                     state.nearWaypoint = tempWaypoint
                     if ( state.nextWaypoint+1 < len(state.waypoints)):
                         state.nextWaypoint += 1
+                        state.latPhase = 'reset'
+                        state.longPhase = 'reset'
 
 '''
 Section 5
@@ -147,7 +156,10 @@ def routeToTrackTranslator( sourceState, destState, destQueue ):
                'legGoal'    :sourceState.waypoints[nextID],
                'legOrigin'  :sourceState.waypoints[nextID-1],
                'timeStamp'  :sourceState.timeStampFlow["control"],
-               'nearWaypoint' :sourceState.nearWaypoint
+               'requestWaypoint' :sourceState.requestWaypoint,
+               'nearWaypoint' :sourceState.nearWaypoint,
+               'latPhase' :sourceState.latPhase,
+               'longPhase' :sourceState.longPhase
                }
     destQueue.put(message)
 

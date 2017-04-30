@@ -50,9 +50,9 @@ def runArcNodes():
     lrChange = 40
     fwdbkChange = 40
     minSpeedFwdBk = 30
-    minSpeedLR = 50
-    maxSpeedFwdBk = 60
-    maxSpeedLR = 70
+    minSpeedLR = 40
+    maxSpeedFwdBk = 50
+    maxSpeedLR = 60
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
@@ -77,7 +77,7 @@ def runArcNodes():
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
     rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
-    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, underTurn)
+    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, secondWaypoint.x, secondWaypoint.y, underTurn)
     vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState()
@@ -123,6 +123,7 @@ def runArcNodes():
     envSimController.connectTo(visualController, envSimControl.envToVisualTranslator)
     trackController.connectTo(visualController, trackControl.trackToVisualTranslator)
     visualController.connectTo(routeController, visualControl.visualToRouteTranslator)
+    visualController.connectTo(rcChanController, visualControl.visualToRcChanTranslator)
     visualController.connectTo(sensorController, visualControl.visualToSensorTranslator)
     #routeController.connectTo(statsController, statsControl.toStatsTranslator)
     trackController.connectTo(statsController, statsControl.toStatsTranslator)
@@ -155,14 +156,13 @@ def runArcNodes():
 
     visualController.connectTo(trackController, visualControl.visualToQuit)       # application manager to stop loops
     visualController.connectTo(odoController, visualControl.visualToQuit)
-##    visualController.connectTo(statsController, visualControl.visualToQuit)
-##    visualController.connectTo(rcChanController, visualControl.visualToQuit)
-##    visualController.connectTo(envSimController, visualControl.visualToQuit)
-##    visualController.connectTo(sensorController, visualControl.visualToQuit)
-##    visualController.connectTo(routeController, visualControl.visualToQuit)
+    visualController.connectTo(statsController, visualControl.visualToQuit)
+    visualController.connectTo(rcChanController, visualControl.visualToQuit)
+    visualController.connectTo(envSimController, visualControl.visualToQuit)
+    visualController.connectTo(sensorController, visualControl.visualToQuit)
 ##    visualController.connectTo(scanSimController, visualControl.visualToQuit)
 ##    visualController.connectTo(scanSimController2, visualControl.visualToQuit)
-##    visualController.connectTo(routeController, visualControl.visualToQuit)
+    visualController.connectTo(routeController, visualControl.visualToQuit)
     visualController.connectTo(visualController, visualControl.visualToQuit)
 
     '''
