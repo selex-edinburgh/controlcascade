@@ -23,7 +23,7 @@ class ScanSimState(ObservableState):
         self.scanRange = scanRange
         self.turnSpeed = turnSpeed
         self.robotPos = (1200.0,0.0)
-        self.robotAngle = 0.0
+        self.robotAngle = (0.0)
         self.poleList = [(0.0),(0.0)]
         self.scanCone = []
         self.isCollision = False

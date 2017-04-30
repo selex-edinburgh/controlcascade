@@ -64,8 +64,8 @@ class RouteState(ObservableState):
              
         #Square
         Waypoint(1400, 3800, 0),
-        Waypoint(1400, 4800, 0)
-##        Waypoint(2400, 4800, 0),
+        Waypoint(1400, 4800, 0),
+        Waypoint(2400, 4800, 0)
 ##        Waypoint(2400, 3800, 0),
 ##        Waypoint(1400, 3800, 0)
 
@@ -88,16 +88,14 @@ class RouteState(ObservableState):
         ]
         self.currentPos = self.waypoints[0]
         #self._near = near        #The detection radius of when the chariot has reached a waypoint
-        self.nearWaypoint = True
+        #self.nearWaypoint = True
         self.timeStampFlow["control"] = time.time()
         self.finalWaypoint = False
         self.goalTime = 0
         #self.routeChanged = True # to be set when waypoint are added/removed/modified : used/cleared by route to visual translator
         self.waiting = False
         self.runActions = None
-        self.requestWaypoint = False
-        self.latPhase = None
-        self.longPhase = None
+        self.changingWaypoint = False
         
 def routeControlUpdate(state,batchdata):
     '''
@@ -113,19 +111,16 @@ def routeControlUpdate(state,batchdata):
         elif item['messageType'] == 'removeWaypoint':
             state.waypoints.pop()
         elif item['messageType'] == 'sense':
-            state.nearWaypoint = False
+            #state.nearWaypoint = False
             #sensedPos = item['sensedPos']
-            state.latPhase = item['latPhase']
-            state.longPhase = item['longPhase']
-            state.requestWaypoint = item['requestWaypoint']
+            requestWaypoint = item['requestWaypoint']
             tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
             #dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
             '''
             Section 4
             Amber Block
             '''
-            if state.requestWaypoint == True:
-            #if dist < state._near:
+            if not(state.changingWaypoint) and requestWaypoint: #if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
@@ -135,33 +130,28 @@ def routeControlUpdate(state,batchdata):
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
-                        state.requestWaypoint = False
-
                 if not state.waiting:
-                    #print "Setting waypoint {}".format(tempWaypoint)
-                    state.nearWaypoint = tempWaypoint
+                    #state.nearWaypoint = tempWaypoint
                     if ( state.nextWaypoint+1 < len(state.waypoints)):
                         state.nextWaypoint += 1
-                        state.latPhase = 'reset'
-                        state.longPhase = 'reset'
+                        state.changingWaypoint = True
 
 '''
 Section 5
 Green Block
 '''                
 def routeToTrackTranslator( sourceState, destState, destQueue ):
-    nextID = sourceState.nextWaypoint      
-    
-    message = {'messageType':'control',
-               'legGoal'    :sourceState.waypoints[nextID],
-               'legOrigin'  :sourceState.waypoints[nextID-1],
-               'timeStamp'  :sourceState.timeStampFlow["control"],
-               'requestWaypoint' :sourceState.requestWaypoint,
-               'nearWaypoint' :sourceState.nearWaypoint,
-               'latPhase' :sourceState.latPhase,
-               'longPhase' :sourceState.longPhase
-               }
-    destQueue.put(message)
+    if sourceState.changingWaypoint:
+        nextID = sourceState.nextWaypoint
+        
+        message = {'messageType':'control',
+                   'legGoal'    :sourceState.waypoints[nextID],
+                   'legOrigin'  :sourceState.waypoints[nextID-1],
+                   'timeStamp'  :sourceState.timeStampFlow["control"],
+                   #'nearWaypoint' :sourceState.nearWaypoint
+                   }
+        destQueue.put(message)
+        sourceState.changingWaypoint = False
 
 def routeToSensorTranslator( sourceState, destState, destQueue ):
     if sourceState.runActions !=  None:

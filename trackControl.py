@@ -24,6 +24,7 @@ class TrackState(ObservableState):
         self.legGoal = WaypointManager.createWaypoint(xPos2,yPos2)
         self.legOrigin = WaypointManager.createWaypoint(xPos1,yPos1)
         self.currentAngle = 0
+        self.startCurrentAngle = self.currentAngle
         #self.currentPos = (2390.0,4630.0) # Uncomment this line to have RC draw at centre of screen
         self.currentPos = (xPos1,yPos1)  # This draws the RC off screen before clicking Start
         self.demandAngle = 0
@@ -40,10 +41,11 @@ class TrackState(ObservableState):
         self.timeStampFlow["sense"] = time.time()
         #self.pole = (1200,0)
         #self.isCollision = False
-        self.nearWaypoint = False       # check is near next waypoint
+        #self.nearWaypoint = False       # check is near next waypoint
         self.demandTurn = None
         self.demandFwd = None
         self.driveMode = 'Parked'
+        self.previousDriveMode = None
         self.hdg2Go = 0.0
         self.dist2Go = 0
         self.hdgGone = 0.0
@@ -51,6 +53,8 @@ class TrackState(ObservableState):
         self.latPhase = 'end'
         self.longPhase = 'reset'
         self.requestWaypoint = False
+        self.trackLog = open('trackLog.csv', 'w')
+        print >> self.trackLog, 'track', ', ', 'currentPosX', ', ', 'currentPosY' ', ', 'legGoalPosX', ', ', 'legGoalPosY' ', ', 'currentAngle', ', ', 'legGoalHdgDegrees', ', ', 'legGoalHdg', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'startCurrentAngle', ', ', 'hdgGone', ', ', 'distGone', ', ', 'latPhase', ', ', 'longPhase', ', ', 'driveMode', ', ', 'previousDriveMode', ', '
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -61,13 +65,14 @@ def trackControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             state.legGoal = item['legGoal']
             state.legOrigin = item['legOrigin']
-            state.requestWaypoint = item['requestWaypoint']
-            state.nearWaypoint = item['nearWaypoint']
-            state.latPhase = item['latPhase']
-            state.longPhase = item['longPhase']
+            #state.nearWaypoint = item['nearWaypoint']
+            state.requestWaypoint = False
+            state.latPhase = 'reset'
+            state.longPhase = 'reset'
             if state.noLegSet:      #This sets the starting position equal to the first waypoint
                 state.currentPos = state.legOrigin.getPosition()
             state.noLegSet = False
+            state.startCurrentAngle = state.currentAngle
         elif item['messageType'] == 'phase':
             state.latPhase = item['latPhase']
             state.longPhase = item['longPhase']
@@ -110,12 +115,6 @@ def trackControlUpdate(state,batchdata):
     if (state.latPhase == "end") and (state.longPhase == "end"): #both turn & line completed
         state.requestWaypoint = True
 
-##    print 'track'
-##    print 'currentPos0', state.currentPos[0]
-##    print 'legGoalPos0', legGoalPos[0]
-##    print 'currentPos1', state.currentPos[1]
-##    print 'legGoalPos1', legGoalPos[1]
-
     state.dist2Go = math.hypot(state.currentPos[0] - legGoalPos[0], state.currentPos[1] - legGoalPos[1])              #distance to go to next wpt
     legGoalHdgRadians = math.atan2(legGoalPos[1] - state.currentPos[1], legGoalPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
     legGoalHdgDegrees = math.degrees(legGoalHdgRadians)
@@ -123,18 +122,10 @@ def trackControlUpdate(state,batchdata):
     state.hdg2Go = angleDiff(state.currentAngle, legGoalHdg)  #heading to turn to face next wpt
 
     state.distGone = math.hypot(state.currentPos[0] - legOriginPos[0], state.currentPos[1] - legOriginPos[1])              #distance gone towards next wpt
-    legOriginHdgRadians = math.atan2(legOriginPos[1] - state.currentPos[1], legOriginPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
-    legOriginHdgDegrees = math.degrees(legOriginHdgRadians)
-    legOriginHdg = (90 - legOriginHdgDegrees)%360           #compass wrt North +ve clockwise
-    state.hdgGone = angleDiff(state.currentAngle, legOriginHdg)  #heading turned towards next wpt
-    
-##    print 'track'
-##    print 'currentPos', state.currentPos, 'legGoalPos', legGoalPos
-##    print 'legGoalHdgDegrees', legGoalHdgDegrees
-##    print 'currentAngle', state.currentAngle, 'legGoalHdg', legGoalHdg
-##    print 'hdg2Go', state.hdg2Go, 'dist2Go', state.dist2Go
-##    print 'hdgGone', state.hdgGone, 'distGone', state.distGone
-##    print ' '
+##    legOriginHdgRadians = math.atan2(legOriginPos[1] - state.currentPos[1], legOriginPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
+##    legOriginHdgDegrees = math.degrees(legOriginHdgRadians)
+##    legOriginHdg = (90 - legOriginHdgDegrees)%360           #compass wrt North +ve clockwise
+    state.hdgGone = angleDiff(state.startCurrentAngle, state.currentAngle)  #heading turned towards next wpt
     
     if state.hdg2Go > 0 and state.latPhase <> 'end':        #action turnRt
         state.driveMode = 'TurnR'
@@ -144,6 +135,16 @@ def trackControlUpdate(state,batchdata):
         state.driveMode = 'MoveFwd'
     else: ##if state.hdg2Go == 0 and state.dist2Go == 0:    #no movement
         state.driveMode = 'Parked'
+
+##    print 'track'
+##    print 'currentPos', state.currentPos, 'legGoalPos', legGoalPos
+##    print 'legGoalHdgDegrees', legGoalHdgDegrees
+##    print 'currentAngle', state.currentAngle, 'legGoalHdg', legGoalHdg
+##    print 'hdg2Go', state.hdg2Go, 'dist2Go', state.dist2Go
+##    print 'hdgGone', state.hdgGone, 'distGone', state.distGone
+##    print ' '
+    
+    print >> state.trackLog, 'track', ', ', state.currentPos, ', ', legGoalPos, ', ', state.currentAngle, ', ', legGoalHdgDegrees, ', ', legGoalHdg, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.startCurrentAngle, ', ', state.hdgGone, ', ', state.distGone, ', ', state.latPhase, ', ', state.longPhase, ', ', state.driveMode, ', ', state.previousDriveMode, ', '
     
 ##    #Run update of control laws
 ##    # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
@@ -191,12 +192,11 @@ def trackToStatsTranslator(sourceState, destState, destQueue):
 """
 
 def trackToRouteTranslator( sourceState, destState, destQueue ):
-    message = {'messageType':'sense',
-               #'sensedPos':sourceState.currentPos
-               'latPhase' :sourceState.latPhase,
-               'longPhase' :sourceState.longPhase,
-               'requestWaypoint':sourceState.requestWaypoint}
-    destQueue.put(message)
+    if sourceState.requestWaypoint:
+        message = {'messageType':'sense',
+                   #'sensedPos':sourceState.currentPos,
+                   'requestWaypoint':sourceState.requestWaypoint}
+        destQueue.put(message)
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):
 
@@ -213,16 +213,23 @@ def trackToRcChanTranslator( sourceState, destState, destQueue ):
 ##                                       'timeStamp' : sourceState.timeStampFlow["control"]
 ##                                       }
     
-    message = {'messageType':'control','hdg2Go': sourceState.hdg2Go,
-                                       'dist2Go' : sourceState.dist2Go,
-                                       'hdgGone' : sourceState.hdgGone,
-                                       'distGone' : sourceState.distGone,
-                                       'driveMode' : sourceState.driveMode,
-                                       'latPhase' : sourceState.latPhase,
-                                       'longPhase' : sourceState.longPhase,
-                                       'timeStamp' : sourceState.timeStampFlow["control"]
-                                       }
+    message = {'messageType':'sense',
+               'hdg2Go': sourceState.hdg2Go,
+               'dist2Go' : sourceState.dist2Go,
+               'hdgGone' : sourceState.hdgGone,
+               'distGone' : sourceState.distGone,
+               'timeStamp' : sourceState.timeStampFlow["control"]
+               }
     destQueue.put(message)
+
+    if sourceState.driveMode != sourceState.previousDriveMode:
+            message = {'messageType':'control',
+                       'driveMode' : sourceState.driveMode,
+                       'latPhase' : sourceState.latPhase,
+                       'longPhase' : sourceState.longPhase
+                       }
+            destQueue.put(message)
+            sourceState.previousDriveMode = sourceState.driveMode
 
 def trackToScanSimTranslator(sourceState, destState, destQueue):
     message  =  {'messageType':'sense',
@@ -232,16 +239,17 @@ def trackToScanSimTranslator(sourceState, destState, destQueue):
 
 def trackToVisualTranslator(sourceState, destState, destQueue):
     message = {'messageType':'robot',
-    'robotPos':sourceState.currentPos,
-    'robotAngle':sourceState.currentAngle,
-    'nextWaypoint':sourceState.legGoal,
-    'nearWaypoint':sourceState.nearWaypoint}
+               'robotPos':sourceState.currentPos,
+               'robotAngle':sourceState.currentAngle,
+               'nextWaypoint':sourceState.legGoal
+               }
     destQueue.put(message)
     
 def trackToSensorTranslator(sourceState, destState, destQueue):
     message = {'messageType':'sensedRobot',
-            'robotPos':sourceState.currentPos,
-            'robotHdg':sourceState.currentAngle}
+               'robotPos':sourceState.currentPos,
+               'robotHdg':sourceState.currentAngle
+               }
     destQueue.put(message)
 
 def angleDiff ( fromAngle, toAngle ) :

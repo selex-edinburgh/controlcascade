@@ -59,10 +59,13 @@ class RcChanState(ObservableState):
         self.decelLong = 0.1                #rate of longitudinal deceleration (default 0.1)
         self.turnPower = 0                  #the amount to add to nullTurn which turns you in which direction 
         self.fwdPower = 0                   #the amount to add to nullFwd which drives you fwd, might take into account backwards in future
-        self.latPhase = None               #has the turn been completed
-        self.longPhase = None            #has the fwd been completed
+        self.latPhase = None                #has the turn been completed
+        self.longPhase = None               #has the fwd been completed
+        self.prevLatPhase = None
+        self.prevLongPhase = None
         self.controlStaleness = 0           #how many times round since rc received a message
         self.motorBias = 4
+        self.handbrake = True
         
         self.speedScalingFwdBk = speedScalingFwdBk
         self.speedScalingLR = speedScalingLR
@@ -86,7 +89,7 @@ class RcChanState(ObservableState):
         except:
             print "Serial not connected..."
         self.rcChanLog = open('rcChanLog.csv', 'w')
-        print >> self.rcChanLog, 'rcChan', ', ', 'driveMode', ', ', 'latPhase', ', ', 'longPhase', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'currentTurn', ', ', 'currentFwd', ', '
+        print >> self.rcChanLog, 'rcChan', ', ', 'driveMode', ', ', 'latPhase', ', ', 'longPhase', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'hdgGone', ', ', 'distGone', ', ', 'currentTurn', ', ', 'currentFwd', ', '
 def clip(x,maxValue,minValue):
     return min(maxValue,max(minValue,x))
 
@@ -102,7 +105,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             state.timeStampFlow[item['messageType']] = item['timeStamp']
             pass
 
-        if item['messageType'] == 'control':
+        if item['messageType'] == 'sense':
 ##                state.demandTurn = clip(item['demandTurn'] * state.speedScalingLR * state._maxDemand + state._nullTurn)   ## expects anti clockwise
 ##                state.demandFwd  = clip(item['demandFwd'] * state.speedScalingFwdBk * state._maxDemand + state._nullFwd)   ## inserted minus
 ##                state.demandTurn = state.demandTurn * state._turnBiasLOverR if state.demandTurn > 0.0 else state.demandTurn / state._turnBiasLOverR
@@ -110,15 +113,16 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             state.dist2Go = item['dist2Go']
             state.hdgGone = item['hdgGone']
             state.distGone = item['distGone']
+##            state.controlStaleness = 0
+        elif item['messageType'] == 'stop':
+            if item['stopLoops']:
+                state.handbrake = True
+            else:
+                state.handbrake = False
+        elif item['messageType'] == 'control':
             state.driveMode = item['driveMode']
             state.latPhase = item['latPhase']
             state.longPhase = item['longPhase']
-##            state.controlStaleness = 0
-        if item['messageType'] == 'stop':
-            if item['stopLoops']:
-                state.driveMode = 'Parked'
-        elif item['messageType'] == 'sense':
-            pass
 
     if not batchdata:       # if no messages (loops stopped) start counting how long the thread has been stale
         return
@@ -143,7 +147,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.startDist2Go = state.dist2Go
         state.startDistToggle = False
 
-    if state.driveMode != 'Parked':
+    if state.driveMode != 'Parked' or not(state.handbrake):
         #calculates the rate at which the motor power is increased or decreased, with proportion of dist & hdg to go    
         accelRateR = ((state.startHdg2Go - state.hdg2Go)*state.accelLat)+state.minSpeedLR
         decelRateR = (state.hdg2Go*state.decelLat)+(state.minSpeedLR/2)
@@ -155,7 +159,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.fwdPower = 0
     
     #controls if accelerating, cruising or decelerating after being given a driveMode
-    if state.driveMode == 'Parked':
+    if state.driveMode == 'Parked' or state.handbrake:
         #stationary
         state.turnPower = 0
         state.fwdPower = 0
@@ -197,7 +201,6 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             #accel to maxSpeed
             state.turnPower = 0
             state.fwdPower = state.maxSpeedFwdBk if accelRateFwd > state.maxSpeedFwdBk else accelRateFwd
-
 ##        state.turnPower = state.hdg2Go *2* state.decelLat   #for maintaining heading when driving forward
 ##        if state.turnPower > state.maxSpeedLR:
 ##            state.turnPower = state.maxSpeedLR
@@ -211,18 +214,8 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     state.currentTurn = state._nullTurn + state.turnPower
     state.currentFwd = state._nullFwd + state.fwdPower
 
-##    print 'rcChan'
-##    print 'driveMode', state.driveMode
-##    print 'latPhase', state.latPhase
-##    print 'longPhase', state.longPhase
-##    print 'hdg2Go', state.hdg2Go
-##    print 'dist2Go', state.dist2Go
-##    print 'currentTurn', state.currentTurn
-##    print 'currentFwd', state.currentFwd
-##    print ' '
-
 ##    rcChanLog = open('rcChanLog.csv', 'a')
-    print >> state.rcChanLog, 'rcChan', ', ', state.driveMode, ', ', state.latPhase, ', ', state.longPhase, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.currentTurn, ', ', state.currentFwd, ', '
+    print >> state.rcChanLog, 'rcChan', ', ', state.driveMode, ', ', state.latPhase, ', ', state.longPhase, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.hdgGone, ', ', state.distGone, ', ', state.currentTurn, ', ', state.currentFwd, ', '
 ##    f.close
     
 ##    motorL = state.currentFwd + state.currentTurn
@@ -243,7 +236,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
 ##    f.close()
 
     if motorOutput:
-        if state.currentTurn != 127:
+        if state.currentTurn != 127 or state.currentFwd != 127:
             state.currentTurn = state.currentTurn + state.motorBias
         state.ser.write(chr(clip(int(state.currentFwd),254,1)))     #Output to Motor Drive Board
         state.ser.write(chr(clip(int(state.currentTurn),(254-state.motorBias),(1-state.motorBias))))    #Output to Motor Drive Board
@@ -258,9 +251,12 @@ def limitedChange(startX, endX, magnitudeLimit):
     return startX + change
 
 def rcChanToTrackTranslator( sourceState, destState, destQueue ):
-    destQueue.put({'messageType':'phase',
-                   'latPhase' : sourceState.latPhase,
-                   'longPhase' : sourceState.longPhase})
+    if sourceState.latPhase != sourceState.prevLatPhase or sourceState.longPhase != sourceState.prevLongPhase:
+        destQueue.put({'messageType':'phase',
+                       'latPhase' : sourceState.latPhase,
+                       'longPhase' : sourceState.longPhase})
+        sourceState.prevLatPhase = sourceState.latPhase
+        sourceState.prevLongPhase = sourceState.longPhase
     
 def rcChanToVsimTranslator( sourceState, destState, destQueue ):
     destQueue.put({'messageType':'control',

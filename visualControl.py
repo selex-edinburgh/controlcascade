@@ -111,7 +111,7 @@ class VisualState(ObservableState):
         self.nextWaypoint = WaypointManager.createWaypoint(0,0)  # next waypoint
         self.waypointList = []  # list of waypoints
         self.scrBuff = None
-        self.nearWaypoint = False     # bool to check if near waypoint
+        #self.nearWaypoint = False     # bool to check if near waypoint
         self.removeLastWP = False       # remove last waypoint if true
         self.rcFwd = 0      #information panel data for motors
         self.rcTurn = 0
@@ -224,7 +224,7 @@ class VisualState(ObservableState):
         #if "test" not in self.__dict__ or self.__dict__['test'] != self.nearWaypoint:
         #    self.__dict__['test'] = self.nearWaypoint
         #    print "Screen {}".format(self.nearWaypoint)
-        surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint != False)), True, WHITE), (505,SCREENHEIGHT -525))
+        #surface.blit(self.font.render(("Near Waypoint:            %s" % (self.nearWaypoint != False)), True, WHITE), (505,SCREENHEIGHT -525))
         surface.blit(self.font.render(("Distance to Waypoint:    %s" % (self.distToPoint())), True, WHITE), (505,SCREENHEIGHT -505))
 
         surface.blit(self.fontTitle.render(("Sensor"), True, WHITE), (505,(SCREENHEIGHT -475)))     # collision information panel
@@ -374,7 +374,7 @@ def visualControlUpdate(state,batchdata):
             currentPos = (item['robotPos'])
             currentAngle = (item['robotAngle'])
             state.nextWaypoint = (item['nextWaypoint'])
-            state.nearWaypoint = (item['nearWaypoint'])
+            #state.nearWaypoint = (item['nearWaypoint'])
             state.robotPos = currentPos
             state.robotAngle = currentAngle
 
@@ -414,9 +414,9 @@ def visualControlUpdate(state,batchdata):
 
 def visualToRouteTranslator(sourceState, destState, destQueue):
 
-    if len(sourceState.waypointList) >= 1:    
-        if destState.nearWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
-            sourceState.stopLoops = True
+##    if len(sourceState.waypointList) >= 1:    
+##        if destState.nearWaypoint == sourceState.waypointList[-1]:       # stop if at last waypoint
+##            sourceState.stopLoops = True
 
     if sourceState.newWaypoint != sourceState.newWaypointLast:
         sourceState.newWaypointLast = sourceState.newWaypoint
