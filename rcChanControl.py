@@ -121,6 +121,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             pass
 
     if not batchdata:       # if no messages (loops stopped) start counting how long the thread has been stale
+        return
 ##        state.controlStaleness += 1
 ##
 ##    if state.controlStaleness == 2:
