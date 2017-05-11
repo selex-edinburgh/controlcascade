@@ -13,21 +13,21 @@ from plumbing.observablestate import ObservableState
 from plumbing.arcnode import ArcNodeObserverTranslator
 
 class VsimState(ObservableState):
-    def __init__(self, fricEffectPerSec, lrBias, speedMax):
+    def __init__(self, lrBias, speedMax):
         super(VsimState,self).__init__()        
         self.speedL = 0.0       #  mm/sec
         self.speedR = 0.0       #  mm/sec
         self.rcTurn = 0.0
         self.rcFwd = 0.0
         self.timeDelta = 0.0
-        self._fricEffectPerSec = fricEffectPerSec       # 0.95 #deceleration effect
         self._lrBias = lrBias        
-        self._speedMax = speedMax       # 600.0 # to mm/sec
+        self._speedMax = speedMax   # to mm/sec
         self._leftSpeedMultiplier = self._speedMax * self._lrBias
         self._rightSpeedMultiplier = self._speedMax / self._lrBias
         self.timeStampFlow["sense"] = time.time()
         self.timeStamp= time.time()
-     
+        self.vSimLog = open('vSimLog.csv', 'w')
+        print >> self.vSimLog, 'vSim', ', ', 'rcTurn', ', ', 'rcFwd', ', ', 'speedL', ', ', 'speedR', ', '
 def vsimControlUpdate(state,batchdata):
 
     prevRcTurn = state.rcTurn
@@ -41,9 +41,6 @@ def vsimControlUpdate(state,batchdata):
         if item['messageType'] == 'control':
             state.rcTurn = item['rcTurn'] 
             state.rcFwd = item['rcFwd']
-##            print 'rcTurn', state.rcTurn
-##            print 'rcFwd', state.rcFwd
-##            print ' '
         elif item['messageType'] == 'sense':
             print "Sense messages not implemented for vsimControl"
     
@@ -51,18 +48,11 @@ def vsimControlUpdate(state,batchdata):
     state.timeStamp = time.time()
     state.timeDelta = state.timeStamp - prevTimeStamp
 
-    demandL = state._leftSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0
-    demandR = state._rightSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
-    
-    state.speedL = demandL#speedUpdate(state.speedL,demandL,state.timeDelta,state._fricEffectPerSec)
-    state.speedR = demandR#speedUpdate(state.speedR,demandR,state.timeDelta,state._fricEffectPerSec)
+    state.speedL = state._leftSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0
+    state.speedR = state._rightSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
 
+    print >> state.vSimLog, 'vSim', ', ', state.rcTurn, ', ', state.rcFwd, ', ', state.speedL, ', ', state.speedR, ', '
 
-def speedUpdate( current, demanded, tDelta, fricPerSec):
-    fricNow = fricPerSec * current * tDelta 
-    fricTerminal = fricPerSec * demanded * tDelta
-    return current - fricNow + fricTerminal
-    
 def vsimToOdoTranslator( sourceState, destState, destQueue ):
     deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulseLt ,0)
     deltaR = round(sourceState.speedR * sourceState.timeDelta / destState._mmPerPulseRt ,0)

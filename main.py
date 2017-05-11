@@ -47,12 +47,12 @@ def runArcNodes():
     
     rcChanUpdateRateMin = 0.016
     rcChanUpdateRateMax = 0.09
-    lrChange = 40
-    fwdbkChange = 40
-    minSpeedFwdBk = 30
-    minSpeedLR = 40
-    maxSpeedFwdBk = 50
-    maxSpeedLR = 60
+    lrChange = 40.0
+    fwdbkChange = 40.0
+    minSpeedFwdBk = 30.0
+    minSpeedLR = 40.0
+    maxSpeedFwdBk = 50.0
+    maxSpeedLR = 60.0
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
     turnOffset = 6
@@ -67,24 +67,23 @@ def runArcNodes():
     
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
-    fricEffectPerSec = 1.5
-    lrBias = 0.95 # 0.95=Sim, 1.0=Real
+    lrBias = 1.00
     speedMax = 900.0
 
-    SimMode = False #True = Simulated Mode, False = Real Mode
+    SimMode = True #True = Simulated Mode, False = Real Mode
 
     routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
     rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
     trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, secondWaypoint.x, secondWaypoint.y, underTurn)
-    vsimState   = vsimControl.VsimState(fricEffectPerSec,lrBias,speedMax)
+    vsimState   = vsimControl.VsimState(lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState()
     visualState = visualControl.VisualState()
     statsState = statsControl.StatsState()
     scanSimState  = scanSimControl.ScanSimState('IR', (0, 170), 0, 90, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
-    scanSimState2 = scanSimControl.ScanSimState('US', (0,-170), 180, 45, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
+    #scanSimState2 = scanSimControl.ScanSimState('US', (0,-170), 180, 45, 650, 10)     # scanSimState (sensorID, sensorPosOffset(X,Y), sensorHeadingOffset, scanAngle, scanRange, turnSpeed)
 
     '''
     Section 3
@@ -104,7 +103,7 @@ def runArcNodes():
     visualController = plumbing.arcnode.ArcNode( visualState, visualControl.visualControlUpdate, 0.06 * guiTimeScale,  0.16 * guiTimeScale)
     statsController  = plumbing.arcnode.ArcNode( statsState,  statsControl.statsControlUpdate,   0.5 * timeScale,  0.5 * timeScale)
     scanSimController = plumbing.arcnode.ArcNode( scanSimState, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
-    scanSimController2 = plumbing.arcnode.ArcNode( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
+    #scanSimController2 = plumbing.arcnode.ArcNode( scanSimState2, scanSimControl.scanSimControlUpdate, 0.09 * timeScale, 0.09 * timeScale)
 
     '''
     Section 4
@@ -134,10 +133,10 @@ def runArcNodes():
     envSimController.connectTo(scanSimController, envSimControl.envToScanSimControl)
     scanSimController.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
     scanSimController.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
-    trackController.connectTo(scanSimController2, trackControl.trackToScanSimTranslator)
-    envSimController.connectTo(scanSimController2, envSimControl.envToScanSimControl)
-    scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
-    scanSimController2.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
+    #trackController.connectTo(scanSimController2, trackControl.trackToScanSimTranslator)
+    #envSimController.connectTo(scanSimController2, envSimControl.envToScanSimControl)
+    #scanSimController2.connectTo(visualController, scanSimControl.scanSimToVisualTranslator)
+    #scanSimController2.connectTo(sensorController, scanSimControl.scanSimToSensorTranslator)
     rcChanController.connectTo(visualController, rcChanControl.rcChanToVsimTranslator)
     rcChanController.connectTo(trackController, rcChanControl.rcChanToTrackTranslator)
     odoController.connectTo(visualController, odoControl.odoToVisualTranslator)
@@ -178,7 +177,7 @@ def runArcNodes():
     sensorController.start()
     statsController.start()
     scanSimController.start()
-    scanSimController2.start()
+    #scanSimController2.start()
 
     visualController.run()
     print 'Good Night'

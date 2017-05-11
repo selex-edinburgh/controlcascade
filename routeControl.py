@@ -29,7 +29,7 @@ class RouteState(ObservableState):
         Green Block
         '''
         super(RouteState,self).__init__()
-        self.nextWaypoint = 1
+        self.nextWaypointNumber = 1
         WaypointManager.setWaypointType(WaypointTypeEnum.CONTINUOUS)
 
         bus = I2C(defaultAddress=4)
@@ -65,9 +65,9 @@ class RouteState(ObservableState):
         #Square
         Waypoint(1400, 3800, 0),
         Waypoint(1400, 4800, 0),
-        Waypoint(2400, 4800, 0)
-##        Waypoint(2400, 3800, 0),
-##        Waypoint(1400, 3800, 0)
+        Waypoint(2400, 4800, 0),
+        Waypoint(2400, 3800, 0),
+        Waypoint(1400, 3800, 0)
 
         #Scan test
 ##        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
@@ -96,6 +96,8 @@ class RouteState(ObservableState):
         self.waiting = False
         self.runActions = None
         self.changingWaypoint = False
+        self.routeLog = open('routeLog.csv', 'w')
+        print >> self.routeLog, 'route', ', ', 'finishedLegGoalX', ', ', 'finishedLegGoalY', ', ', 'tempWaypointX', ', ', 'tempWaypointY', ', ', 'nextWaypointNumber', ', ', 'changingWaypoint', ', '
         
 def routeControlUpdate(state,batchdata):
     '''
@@ -113,28 +115,29 @@ def routeControlUpdate(state,batchdata):
         elif item['messageType'] == 'sense':
             #state.nearWaypoint = False
             #sensedPos = item['sensedPos']
-            requestWaypoint = item['requestWaypoint']
-            tempWaypoint = state.waypoints[state.nextWaypoint] # store current waypoint locally
+            finishedLegGoal = item['legGoal']
+            tempWaypoint = state.waypoints[state.nextWaypointNumber] # store current waypoint locally
             #dist = math.hypot(sensedPos[0] - tempWaypoint.getPosition()[0], sensedPos[1] - tempWaypoint.getPosition()[1]) # calculate distance to go to next waypoint
             '''
             Section 4
             Amber Block
             '''
-            if not(state.changingWaypoint) and requestWaypoint: #if dist < state._near:
+            if not(state.changingWaypoint) and finishedLegGoal.getPosition() == tempWaypoint.getPosition(): #if dist < state._near:
                 #print "near {} {}".format(dist, tempWaypoint) 
                 if tempWaypoint.waitPeriod !=0: 
                     currentTime = datetime.datetime.utcnow() # sets current time to whatever the time is on the loop
                     if not state.waiting: # Check to see if wait has started if not start waiting
                         state.waiting = True
-                        state.runActions = state.waypoints[state.nextWaypoint].actions
+                        state.runActions = state.waypoints[state.nextWaypointNumber].actions
                         state.goalTime = currentTime + datetime.timedelta(0,tempWaypoint.waitPeriod) # adds a delta to the current time. timedelta(days,seconds)
                     if state.waiting and state.goalTime <= currentTime: # Check to see if currentTime is past goalTime
                         state.waiting = False # Reseting the wait
                 if not state.waiting:
                     #state.nearWaypoint = tempWaypoint
-                    if ( state.nextWaypoint+1 < len(state.waypoints)):
-                        state.nextWaypoint += 1
+                    if ( state.nextWaypointNumber+1 < len(state.waypoints)):
+                        state.nextWaypointNumber += 1
                         state.changingWaypoint = True
+            print >> state.routeLog, 'route', ', ', finishedLegGoal.getPosition(), ', ', tempWaypoint.getPosition(), ', ', state.nextWaypointNumber, ', ', state.changingWaypoint, ', '
 
 '''
 Section 5
@@ -142,7 +145,7 @@ Green Block
 '''                
 def routeToTrackTranslator( sourceState, destState, destQueue ):
     if sourceState.changingWaypoint:
-        nextID = sourceState.nextWaypoint
+        nextID = sourceState.nextWaypointNumber
         
         message = {'messageType':'control',
                    'legGoal'    :sourceState.waypoints[nextID],
@@ -165,7 +168,7 @@ def routeToVisualTranslator( sourceState, destState, destQueue ): #TODO
 ##        sourceState.routeChanged = False ## ??
 ##        send waypoint list etc
 ##        pass
-##    nextID = sourceState.nextWaypoint      
+##    nextID = sourceState.nextWaypointNumber      
     
     message = {'messageType':'waypointList',
                'waypointList' : sourceState.waypoints

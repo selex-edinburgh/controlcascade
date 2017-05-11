@@ -54,7 +54,7 @@ class TrackState(ObservableState):
         self.longPhase = 'reset'
         self.requestWaypoint = False
         self.trackLog = open('trackLog.csv', 'w')
-        print >> self.trackLog, 'track', ', ', 'currentPosX', ', ', 'currentPosY' ', ', 'legGoalPosX', ', ', 'legGoalPosY' ', ', 'currentAngle', ', ', 'legGoalHdgDegrees', ', ', 'legGoalHdg', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'startCurrentAngle', ', ', 'hdgGone', ', ', 'distGone', ', ', 'latPhase', ', ', 'longPhase', ', ', 'driveMode', ', ', 'previousDriveMode', ', '
+        print >> self.trackLog, 'track', ', ', 'currentPosX', ', ', 'currentPosY' ', ', 'legGoalPosX', ', ', 'legGoalPosY' ', ', 'currentAngle', ', ', 'legGoalHdgDegrees', ', ', 'legGoalHdg', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'startCurrentAngle', ', ', 'hdgGone', ', ', 'distGone', ', ', 'latPhase', ', ', 'longPhase', ', ', 'driveMode', ', ', 'previousDriveMode', ', ', 'requestWaypoint', ', '
 def trackControlUpdate(state,batchdata):
     for item in batchdata:      # Process items in batchdata
         if 'timeStamp' not in item:
@@ -136,15 +136,7 @@ def trackControlUpdate(state,batchdata):
     else: ##if state.hdg2Go == 0 and state.dist2Go == 0:    #no movement
         state.driveMode = 'Parked'
 
-##    print 'track'
-##    print 'currentPos', state.currentPos, 'legGoalPos', legGoalPos
-##    print 'legGoalHdgDegrees', legGoalHdgDegrees
-##    print 'currentAngle', state.currentAngle, 'legGoalHdg', legGoalHdg
-##    print 'hdg2Go', state.hdg2Go, 'dist2Go', state.dist2Go
-##    print 'hdgGone', state.hdgGone, 'distGone', state.distGone
-##    print ' '
-    
-    print >> state.trackLog, 'track', ', ', state.currentPos, ', ', legGoalPos, ', ', state.currentAngle, ', ', legGoalHdgDegrees, ', ', legGoalHdg, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.startCurrentAngle, ', ', state.hdgGone, ', ', state.distGone, ', ', state.latPhase, ', ', state.longPhase, ', ', state.driveMode, ', ', state.previousDriveMode, ', '
+    print >> state.trackLog, 'track', ', ', state.currentPos, ', ', legGoalPos, ', ', state.currentAngle, ', ', legGoalHdgDegrees, ', ', legGoalHdg, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.startCurrentAngle, ', ', state.hdgGone, ', ', state.distGone, ', ', state.latPhase, ', ', state.longPhase, ', ', state.driveMode, ', ', state.previousDriveMode, ', ', state.requestWaypoint, ', '
     
 ##    #Run update of control laws
 ##    # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
@@ -194,8 +186,7 @@ def trackToStatsTranslator(sourceState, destState, destQueue):
 def trackToRouteTranslator( sourceState, destState, destQueue ):
     if sourceState.requestWaypoint:
         message = {'messageType':'sense',
-                   #'sensedPos':sourceState.currentPos,
-                   'requestWaypoint':sourceState.requestWaypoint}
+                   'legGoal':sourceState.legGoal}
         destQueue.put(message)
 
 def trackToRcChanTranslator( sourceState, destState, destQueue ):

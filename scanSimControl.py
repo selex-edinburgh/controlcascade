@@ -24,8 +24,8 @@ class ScanSimState(ObservableState):
         self.turnSpeed = turnSpeed
         self.robotPos = (1200.0,0.0)
         self.robotAngle = (0.0)
-        self.poleList = [(0.0),(0.0)]
-        self.scanCone = []
+        self.poleList = (0.0,0.0)
+        self.scanCone = ()
         self.isCollision = False
         
 def scanSimControlUpdate(state, batchdata):
@@ -46,7 +46,7 @@ def scanSimControlUpdate(state, batchdata):
     b = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,-state.scanAngle/2))
     c = sensorToWorld(state.robotPos,state.robotAngle, state.sensorPosOffset, state.sensorHdgOffset,(state.scanRange,state.scanAngle/2))
     
-    state.scanCone = [a,b,c]        # three points of scan cone
+    state.scanCone = (a,b,c)        # three points of scan cone
     
     anyCollisions = False 
     

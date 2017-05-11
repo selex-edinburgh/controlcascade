@@ -253,8 +253,15 @@ def makeTriangulator(scanningSensor, scanAngleWidth, scanNo, scanSpeed, scanning
 '''
 Section 7
 Green Block
+
+This function takes the R-Theta coordinates of the two known objects detected by the IR sensor.
+It then calculates the XY position of the chariot in arean corrdinates and the heading of the chariot within the arena.
+This information is used to update the position and the heading of the chariot in the arena.
+The putput is the X & Y error in mm and the heading error in degrees.
 '''
-def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2):
+def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2):  # robot position and robot heading from odometer readings,
+                                                                                            #real objects 1 & 2 arena coordinates,
+                                                                                            #detected objects 1 & 2 R-Theta values with sensor offsets for position and heading
     def angleDifference(realObject1, realObject2, detectionObject1, detectionObject2):
         realObjectsVector = (realObject1[0] - realObject2[0], realObject1[1] - realObject2[1])
         detectionObjectsVector = (detectionObject1[0] - detectionObject2[0], detectionObject1[1] - detectionObject2[1])
@@ -282,24 +289,27 @@ def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detect
         pointOnROY = realObject[0][1] - roToPerimiterY
         print 'pointOnRO',(pointOnROX,pointOnROY)
         return (pointOnROX,pointOnROY)
-    sensorPosOffset1 = detection1.sensorPosOffset
-    sensorHdgOffset1 = detection1.sensorHdgOffset
-    rTheta1 = detection1.rTheta
-    sensorPosOffset2 = detection2.sensorPosOffset
-    sensorHdgOffset2 = detection2.sensorHdgOffset
-    rTheta2 = detection2.rTheta
-    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
-    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
-
-    pointOnRO1 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset1[0],robotPos[1]+sensorPosOffset1[1]) , realObject1)
-    pointOnRO2 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset2[0],robotPos[1]+sensorPosOffset2[1]) , realObject2)
     
-    angleDiff = angleDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)
-    robotHdg = robotHdg + angleDiff
-    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)
-    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)
-    posDiff = positionDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)
-    return angleDiff, posDiff
+    sensorPosOffset1 = detection1.sensorPosOffset   # position of sensor 1 on the chariot top
+    sensorHdgOffset1 = detection1.sensorHdgOffset   # heading of sensor 1 on the chariot top with respect to forwards
+    rTheta1 = detection1.rTheta
+    sensorPosOffset2 = detection2.sensorPosOffset   # position of sensor 2 on the chariot top
+    sensorHdgOffset2 = detection2.sensorHdgOffset   # heading of sensor 2 on the chariot top with respect to forwards
+    rTheta2 = detection2.rTheta
+    detectedObjectPos1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1) # function returns X, Y of detected object 1 in arena coords from sensor 1,
+                                                                                                            #using robot position and heading calculated from the odometers 
+    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   # function returns X, Y of detected object 2 in arena coords from sensor 2,
+                                                                                                            #using robot position and heading calculated from the odometers 
+
+    pointOnRO1 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset1[0],robotPos[1]+sensorPosOffset1[1]) , realObject1) # correction due to radius of real object (if pole) for real object 1
+    pointOnRO2 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset2[0],robotPos[1]+sensorPosOffset2[1]) , realObject2) # correction due to radius of real object (if pole) for real object 2
+    
+    angleDiff = angleDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2) # calculates the angle difference between the real object position and the detected object position
+    robotHdg = robotHdg + angleDiff                                                         # applies difference in angle to chariot hdg
+    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)   #with chariot heading updated, detection object 1 is calculated again to get new position coords
+    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   #with chariot heading updated, detection object 2 is calculated again to get new position coords
+    posDiff = positionDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)    # calculates the position difference between the real object position and the detection object position
+    return angleDiff, posDiff # returns the two calculated error changes to be applied to the current chariots position and heading
 
 '''
 Section 8
