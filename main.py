@@ -47,14 +47,15 @@ def runArcNodes():
     
     rcChanUpdateRateMin = 0.016
     rcChanUpdateRateMax = 0.09
-    lrChange = 40.0
-    fwdbkChange = 40.0
+    lrChange = 20.0
+    fwdbkChange = 20.0
     minSpeedFwdBk = 30.0
-    minSpeedLR = 40.0
-    maxSpeedFwdBk = 50.0
-    maxSpeedLR = 60.0
+    minSpeedLR = 45.0
+    maxSpeedFwdBk = 60.0
+    maxSpeedLR = 70.0
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
+    motorBias = 4
     turnOffset = 6
     turnBias = 1.06
 
@@ -70,12 +71,12 @@ def runArcNodes():
     lrBias = 1.00
     speedMax = 900.0
 
-    SimMode = True #True = Simulated Mode, False = Real Mode
+    SimMode = False #True = Simulated Mode, False = Real Mode
 
     routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
-    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, turnOffset, turnBias)
+    rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, motorBias, turnOffset, turnBias)
     trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, secondWaypoint.x, secondWaypoint.y, underTurn)
     vsimState   = vsimControl.VsimState(lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()

@@ -43,14 +43,14 @@ class RouteState(ObservableState):
         
         #Estimate of course
 
-##        Waypoint(2250,200, 0),      #(x, y, waitPeriod)
-##        Waypoint(2300,980, 0),
+##        Waypoint(2250, 200, 0),      #(x, y, waitPeriod)
+##        Waypoint(2300, 980, 0),
 ##        Waypoint(1460,1030, 0),
 ##        Waypoint(1480,1920, 0),
 ##        Waypoint(2250,2010, 0),
 ##        Waypoint(2300,2850, 0), 
 ##        Waypoint(1240,2840, 0),
-##        Waypoint(470,6560, 0),
+##        Waypoint( 470,6560, 0),
 ##        Waypoint(1850,6750, 0),
 ##        Waypoint(2270,5570, 0),       
 ##        Waypoint(2270,4140, 0),    
@@ -60,14 +60,15 @@ class RouteState(ObservableState):
 ##        Waypoint(1360,1860, 0),                              
 ##        Waypoint(1310,1110, 0),                              
 ##        Waypoint(2140,1030, 0),                        
-##        Waypoint(2300,220, 0)
+##        Waypoint(2300, 220, 0)
              
         #Square
         Waypoint(1400, 3800, 0),
-        Waypoint(1400, 4800, 0),
+        Waypoint(1400, 4800, 5),
         Waypoint(2400, 4800, 0),
-        Waypoint(2400, 3800, 0),
-        Waypoint(1400, 3800, 0)
+        Waypoint(2400, 3800, 5),
+        Waypoint(1400, 3800, 0),
+        Waypoint(1400, 3900, 0)
 
         #Scan test
 ##        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])

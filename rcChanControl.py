@@ -30,7 +30,7 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 ##    print "os fail"
 
 class RcChanState(ObservableState):
-    def __init__(self, lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, turnOffset = 0, turnBiasLOverR = 1.0):
+    def __init__(self, lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, motorBias, turnOffset = 0, turnBiasLOverR = 1.0):
         super(RcChanState,self).__init__()
         self._nullFwd = 127.0
         self._nullTurn = 127.0
@@ -64,13 +64,13 @@ class RcChanState(ObservableState):
         self.prevLatPhase = None
         self.prevLongPhase = None
         self.controlStaleness = 0           #how many times round since rc received a message
-        self.motorBias = 4
+        self.motorBias = motorBias
         self.handbrake = True
         
-        self.speedScalingFwdBk = speedScalingFwdBk
-        self.speedScalingLR = speedScalingLR
-        self._lrChange = lrChange * speedScalingLR
-        self._fwdbkChange = fwdbkChange * speedScalingFwdBk
+##        self.speedScalingFwdBk = speedScalingFwdBk
+##        self.speedScalingLR = speedScalingLR
+##        self._lrChange = lrChange * speedScalingLR
+##        self._fwdbkChange = fwdbkChange * speedScalingFwdBk
         self.timeStamp    = time.time()
 
         self.minSpeedMotorL = 40
