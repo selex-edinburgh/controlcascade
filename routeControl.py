@@ -61,20 +61,28 @@ class RouteState(ObservableState):
 ##        Waypoint(1310,1110, 0),                              
 ##        Waypoint(2140,1030, 0),                        
 ##        Waypoint(2300, 220, 0)
-             
-        #Square
-        Waypoint(1400, 3800, 0),
-        Waypoint(1400, 4800, 5),
-        Waypoint(2400, 4800, 0),
-        Waypoint(2400, 3800, 5),
-        Waypoint(1400, 3800, 0),
-        Waypoint(1400, 3900, 0)
+
+        #Course
+        Waypoint(1550, 335, 0),
+        Waypoint(2095, 335, 0),
+        Waypoint(2095, 1065, 0),
+        Waypoint(1550, 1065, 0),
+        Waypoint(1550, 1950, 0),
+        Waypoint(2095, 1950, 0)
+        
+##        #Square
+##        Waypoint(1400, 3800, 0),
+##        Waypoint(1400, 4800, 5),
+##        Waypoint(2400, 4800, 0),
+##        Waypoint(2400, 3800, 5),
+##        Waypoint(1400, 3800, 0),
+##        Waypoint(1400, 3900, 0)
 
         #Scan test
 ##        Waypoint(1400, 3800, 0),#(x, y, waitPeriod, [makeTriangulate(makeScan(scanningSensor1, ((x1,y1),objRadius1), scanAngleWidth1, scanNo1, scanSpeed1), makeScan(scanningSensor2, ((x2,y2),objRadius2), scanAngleWidth2, scanNo2, scanSpeed2))])
-##        Waypoint(1400, 4800, 20, makeSensor_Triangulate(((1900,5300),0), ((900,5300),0))),#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1), ((x2,y2),objRadius2))]  
+##        Waypoint(1400, 4800, 20, [makeSensor_Triangulate(((1900,5300),0), ((900,5300),0)))],#(x,y, waitPeriod, [makeSensor_Triangulate(((x1,y1),objRadius1), ((x2,y2),objRadius2))]  
 ##        Waypoint(2400, 4800, 0)
-        
+##        
         #FigureofEight
 ##        Waypoint(1400, 3800, 0),    #(x, y, waitPeriod, actions[sensorType, x, y, scanAngle, scanNo])
 ##        Waypoint(1400, 4800, 0),

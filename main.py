@@ -34,7 +34,7 @@ def runArcNodes():
     Green Block
     '''
     timeScale = 1
-    guiTimeScale = 0.5
+    guiTimeScale = 0.6
 
     near = 1.0 ##120.0 # how close needs to be till thinks that it has reached waypoint
     

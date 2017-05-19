@@ -26,17 +26,19 @@ sys.path.append(os.path.join(progdir,'lib'))
 from popup_menu import NonBlockingPopupMenu
 
 
-BLACK = (  0,   0,   0)     # global constants
+BLACK = (0,   0,   0)     # global constants
 WHITE = (255, 255, 255)
-BLUE =  (  147,   179, 208)
-LIGHT_BLUE = (120,135,171)
-GREEN = (  34, 102,   102)
-RED =   (192,   57,   43)
-GREY = (52,73,94)
-TRAIL_GREY = (34,167,240)
+BLUE = (147,   179, 208)
+LIGHT_BLUE = (120, 135, 171)
+GREEN = (34, 102, 102)
+RED = (192, 57, 43)
+GREY = (52, 73, 94)
+LIGHT_GREY = (190, 190, 190)
+TRAIL_GREY = (34, 167, 240)
 MARGIN = 200
-DARK_GREY = (34,49,63)
-ORANGE = (230,126,34)
+DARK_GREY = (34, 49, 63)
+ORANGE = (230, 126, 34)
+BROWN = (160, 82, 45)
 SCREENWIDTH = 682      # set screen height and width
 SCREENHEIGHT = 720
 SCREENSCALE = 10       # set screen scaling amount (mm per pixel)
@@ -50,7 +52,7 @@ menu_data = (
         'Waiting Waypoint',
         'Continuous Waypoint',
     ),
-    'Remove Pole',
+##    'Remove Pole',
     'Reset Sensor (R)',
     (
         'Graphs',
@@ -101,7 +103,9 @@ class VisualState(ObservableState):
         self.poleList = []
         self.goalList = []
         self.barrelList = []
-        self.barrierList= []
+        self.barrierList = []
+        self.rampList = []
+        self.paddleList = []
         self.ballList = []
         self.poleRecList = []       # used for collision detection
         self.newWaypoint = WaypointManager.createWaypoint(0,0)       # temp waypoint when adding new waypoints to list
@@ -124,7 +128,7 @@ class VisualState(ObservableState):
         self.varianceOfLatency = 0
 
         self.realMode = False
-
+        self.obstacleChange = False
         self.quitLoops = False      # initialized to false since do not want to quit at beginning
         self.stopLoops = True       # initialized to true to stop at beginning
         self.menu = NonBlockingPopupMenu(menu_data)      # define right-click menu
@@ -135,9 +139,6 @@ class VisualState(ObservableState):
         self.sensorReset = False
         
     def drawRobot(self, surface):
-        if self.scrBuff == None:
-                self.scrBuff = surface.copy()
-        surface.blit(self.scrBuff,(0,0))
         loc = self.image.get_rect().center
         rotImg = pygame.transform.rotate(self.image, 90.0 - self.robotAngle)
         rotImg.get_rect().center = loc
@@ -180,7 +181,9 @@ class VisualState(ObservableState):
             pygame.draw.circle(surface,BLACK,poleTemp, 5, 2)
 
         for goal in self.goalList:
-            pygame.draw.line(surface,BLACK,toScreenPos((goal[0],goal[1])),toScreenPos((goal[2],goal[3])), 4)
+            pygame.draw.line(surface,BLACK,toScreenPos((goal[0],goal[1])),toScreenPos((goal[2],goal[3])), 7)
+            pygame.draw.line(surface,BLACK,toScreenPos((goal[0],goal[1])),toScreenPos((goal[0],goal[5])), 1)
+            pygame.draw.line(surface,BLACK,toScreenPos((goal[4],goal[3])),toScreenPos((goal[2],goal[3])), 1)
 
         for barrier in self.barrierList:
             pygame.draw.line(surface,BLACK,toScreenPos((barrier[0],barrier[1])),toScreenPos((barrier[2], barrier[3])), 2)
@@ -188,6 +191,26 @@ class VisualState(ObservableState):
             ballTemp = toScreenPos(ball)
             pygame.draw.circle(surface,ORANGE,ballTemp, 7)
             pygame.draw.circle(surface,BLACK,ballTemp, 7, 1)
+        for barrel in self.barrelList:
+            barrelTemp = toScreenPos((barrel[0],barrel[1]))
+            pygame.draw.rect(surface,BROWN,[barrelTemp[0],barrelTemp[1],barrel[2],barrel[3]], 0)
+            pygame.draw.rect(surface,BLACK,[barrelTemp[0],barrelTemp[1],barrel[2],barrel[3]], 1)
+        for ramp in self.rampList:
+            rampTemp = toScreenPos((ramp[0],ramp[1]))
+            lineTempX = (ramp[0]+(ramp[2]*10))
+            lineTempY = (ramp[1]-((ramp[3]*10)/2))
+            pygame.draw.rect(surface, LIGHT_GREY, [rampTemp[0],rampTemp[1],ramp[2],ramp[3]], 0)
+            pygame.draw.rect(surface, BLACK, [rampTemp[0],rampTemp[1],ramp[2],ramp[3]], 1)
+            pygame.draw.line(surface, BLACK, toScreenPos((ramp[0],lineTempY)),toScreenPos((lineTempX,lineTempY)), 1)
+        for paddle in self.paddleList:
+            width = 500
+            paddleTemp = toScreenPos(((paddle[0]),paddle[1]))
+            paddleTemp2 = toScreenPos(((paddle[0]+width),paddle[1]))
+            lineTempX = (paddle[0]+width)
+            lineTempY = (paddle[1]-((paddle[3]*10)/2))
+            pygame.draw.rect(surface, BLACK, [paddleTemp[0],paddleTemp[1],paddle[2],paddle[3]], 0)
+            pygame.draw.rect(surface, BLACK, [paddleTemp2[0],paddleTemp2[1],paddle[2],paddle[3]], 0)
+            pygame.draw.line(surface, BLACK, toScreenPos((paddle[0],lineTempY)),toScreenPos((lineTempX,lineTempY)), 1)
             
         pygame.draw.polygon(surface,BLACK,(toScreenPos((4800,7200)),toScreenPos((4420,7200)),toScreenPos((4800,6800))),0)     # corner of course
         pygame.draw.polygon(surface,BLACK,(toScreenPos((0,7200)),toScreenPos((420,7200)),toScreenPos((0,6800))),0)       # corner of course
@@ -289,11 +312,11 @@ def handle_menu(e, state):
     elif e.name == 'Main':
         if e.text == 'Remove Last Waypoint':
             state.removeLastWP = True
-        if e.text == 'Remove Pole':
-            for index, r in enumerate(state.poleRecList, start = 0):
-                if r.collidepoint(state.eventPress):
-                    state.poleList.pop(index)
-                    state.poleRecList.pop(index)
+##        if e.text == 'Remove Pole':
+##            for index, r in enumerate(state.poleRecList, start = 0):
+##                if r.collidepoint(state.eventPress):
+##                    state.poleList.pop(index)
+##                    state.poleRecList.pop(index)
         if e.text == 'Reset Sensor (R)':
             state.sensorReset = True
         if e.text == 'Start (G)':
@@ -352,20 +375,25 @@ def visualControlUpdate(state,batchdata):
     if state.quitLoops:
         pygame.quit()
         return
-    
-    state.screen.fill(GREY)         # fill the screen with colour
-    state.screen.fill(GREEN, screenAreaTop)         # fill the screen with colour
-    state.screen.fill(GREEN, screenAreaBottom)          # fill the screen with colour
-    state.screen.fill(GREY, screenOutOfBounds1)         # fill the screen with colour
-    state.screen.fill(GREY, screenOutOfBounds2)         # fill the screen with colour
 
+    if state.scrBuff == None:
+        state.scrBuff = state.screen.copy()
+        state.scrBuff.fill(GREY)         # fill the screen with colour
+        state.scrBuff.fill(GREEN, screenAreaTop)         # fill the screen with colour
+        state.scrBuff.fill(GREEN, screenAreaBottom)          # fill the screen with colour
+
+
+
+    state.screen.blit(state.scrBuff,(0,0))
     state.drawRobot(state.screen)       # draw the Robot to the screen
-    state.drawObstacles(state.screen)   # draw the obstacles to the screen
+    if state.obstacleChange == True:
+        state.drawObstacles(state.scrBuff)   # draw the obstacles to the screen
+        state.obstacleChange = False
     state.drawInfoPanel(state.screen )  # draw the information panel to the screen
     state.drawPath(state.scrBuff)       # draw the waypoints and path of the robot
     state.drawWaypoints(state.screen)
     state.drawExtras(state.screen)      # draw the extra misc. information
-    state.checkForCollision()       # check for possible collision
+##    state.checkForCollision()       # check for possible collision
     state.menu.draw()     # menu draw *test*
     pygame.display.update()      # update the screen
 
@@ -387,9 +415,10 @@ def visualControlUpdate(state,batchdata):
             state.wallList = (item['wallList'])
             state.barrelList = (item['barrelList'])
             state.rampList = (item['rampList'])
-            state.doorList = (item['doorList'])
+            state.paddleList = (item['paddleList'])
             state.goalList = (item['goalList'])
             state.ballList = (item['ballList'])
+            state.obstacleChange = True
 
         elif item['messageType'] == 'stats':
             state.maxLatency = (item['max'])
