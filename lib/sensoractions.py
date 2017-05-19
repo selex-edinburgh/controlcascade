@@ -257,32 +257,67 @@ Green Block
 This function takes the R-Theta coordinates of the two known objects detected by the IR sensor.
 It then calculates the XY position of the chariot in arean corrdinates and the heading of the chariot within the arena.
 This information is used to update the position and the heading of the chariot in the arena.
-The putput is the X & Y error in mm and the heading error in degrees.
+The look-up table function converts a range sensor reading to a calibrated range
+by using values obtained during calibration and undertaking a
+linear interpolation between the calibration points.
+The output is the X & Y error in mm and the heading error in degrees.
 '''
 def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2):  # robot position and robot heading from odometer readings,
                                                                                             #real objects 1 & 2 arena coordinates,
                                                                                             #detected objects 1 & 2 R-Theta values with sensor offsets for position and heading
-    def angleDifference(realObject1, realObject2, detectionObject1, detectionObject2):
+    def lookUpTable(rangeIR):
+        #Range Calibration Data.
+        #Input and output array values from calibration
+        # X[]= range output received from IR sensor,      
+        X = [(210),(232),(252),(302),(345),(392),(467),(535),(645),(707),\
+             (825),(920),(950),(1082),(1145),(1240),(1340),(1440),(1540),(2000)]         
+        # Y[]= actual calibrated/measured range of obstacle,
+        Y = [(200),(250),(300),(400),(500),(600),(700),(800),(900),(1000),\
+             (1100),(1200),(1300),(1400),(1500),(1600),(1700),(1800),(1900),(2000)]
+        
+        n = 0                   #counter to identify segment of table
+        nMinus1 = 0
+        if rangeIR >2000:
+            rangeIR = 2000      #max range
+        # Find which segment the ourput value lies on
+        while rangeIR > X[n]:
+            n = n + 1           #increment segment counter
+        nPlus1 = n
+        n = n - 1
+        num = Y[nPlus1] - Y[n]          #interpolate segment
+        num = (rangeIR - X[n]) * num    #numerator
+        denom = X[nPlus1] - X[n]        #denominator
+        if denom == 0 :
+            denom = 1                   #divide by zero trap
+        num = Y[n] + num/denom
+        if num > 2000 :
+            num = 2000                  #limit trap
+        lookUpRangeIR = num
+        return lookUpRangeIR
+    
+    def angleDifference(realObject1, realObject2, detectedObjectPos1, detectedObjectPos2):
         realObjectsVector = (realObject1[0] - realObject2[0], realObject1[1] - realObject2[1])
-        detectionObjectsVector = (detectionObject1[0] - detectionObject2[0], detectionObject1[1] - detectionObject2[1])
-        realObjectAngle = degrees(atan2(realObjectsVector[0],realObjectsVector[1]))
-        detectionObjectAngle = degrees(atan2(detectionObjectsVector[0],detectionObjectsVector[1]))
-        angleDiff = realObjectAngle - detectionObjectAngle
+        detectedObjectsVector = (detectedObjectPos1[0] - detectedObjectPos2[0], detectedObjectPos1[1] - detectedObjectPos2[1])
+        realObjectsAngle = degrees(atan2(realObjectsVector[0],realObjectsVector[1]))
+        detectedObjectsAngle = degrees(atan2(detectedObjectsVector[0],detectedObjectsVector[1]))
+        angleDiff = realObjectsAngle - detectedObjectsAngle
         return angleDiff
-    def positionDifference(realObject1, realObject2, detectionObject1, detectionObject2):
-        posDiff1 = (realObject1[0] - detectionObject1[0], realObject1[1] - detectionObject1[1])
-        posDiff2 = (realObject2[0] - detectionObject2[0], realObject2[1] - detectionObject2[1])
+    
+    def positionDifference(realObject1, realObject2, detectedObjectPos1, detectedObjectPos2):
+        posDiff1 = (realObject1[0] - detectedObjectPos1[0], realObject1[1] - detectedObjectPos1[1])
+        posDiff2 = (realObject2[0] - detectedObjectPos2[0], realObject2[1] - detectedObjectPos2[1])
         # TODO make check to see if difference in error is too great. At that point just use one diffference with smallest error. Otherwise take average of both differences
         posDiff = ((posDiff1[0] + posDiff2[0])/2,(posDiff1[1] + posDiff2[1])/2 )
         return posDiff
+    
     def expectedDetectionOnObject(robotPos, realObject):
         # points on perimeter of realObject1,2
         print 'realObj', realObject[0], realObject[1]
         roToRobotX = realObject[0][0] - robotPos[0]
         roToRobotY = realObject[0][1] - robotPos[1]
-        dist = math.hypot(roToRobotX, roToRobotY)
-        roToPerimiterX = (realObject[1] * roToRobotX) / dist
-        roToPerimiterY = (realObject[1] * roToRobotY) / dist
+        dist = math.hypot(roToRobotX, roToRobotY) #math.sqrt( roToRobotX*roToRobotX + roToRobotY*roToRobotY )
+        roToPerimiterX = realObject[1] * (roToRobotX / dist)
+        roToPerimiterY = realObject[1] * (roToRobotY / dist)
         print 'roToPerimiterX', roToPerimiterX
         print 'roToPerimiterY', roToPerimiterY
         pointOnROX = realObject[0][0] - roToPerimiterX
@@ -296,19 +331,26 @@ def triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detect
     sensorPosOffset2 = detection2.sensorPosOffset   # position of sensor 2 on the chariot top
     sensorHdgOffset2 = detection2.sensorHdgOffset   # heading of sensor 2 on the chariot top with respect to forwards
     rTheta2 = detection2.rTheta
+##    if realObject1[1] > 0:
+##        lookUpRange1 = lookUpTable(rTheta1[0])
+##        rTheta1 = (lookUpRange1,rTheta1[1])
+##    if realObject2[1] > 0:
+##        lookUpRange2 = lookUpTable(rTheta2[0])
+##        rTheta2 = (lookUpRange2,rTheta2[1])
+    
     detectedObjectPos1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1) # function returns X, Y of detected object 1 in arena coords from sensor 1,
                                                                                                             #using robot position and heading calculated from the odometers 
-    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   # function returns X, Y of detected object 2 in arena coords from sensor 2,
+    detectedObjectPos2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   # function returns X, Y of detected object 2 in arena coords from sensor 2,
                                                                                                             #using robot position and heading calculated from the odometers 
 
     pointOnRO1 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset1[0],robotPos[1]+sensorPosOffset1[1]) , realObject1) # correction due to radius of real object (if pole) for real object 1
     pointOnRO2 = expectedDetectionOnObject((robotPos[0]+sensorPosOffset2[0],robotPos[1]+sensorPosOffset2[1]) , realObject2) # correction due to radius of real object (if pole) for real object 2
     
-    angleDiff = angleDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2) # calculates the angle difference between the real object position and the detected object position
+    angleDiff = angleDifference(pointOnRO1, pointOnRO2, detectedObjectPos1, detectedObjectPos2) # calculates the angle difference between the real object position and the detected object position
     robotHdg = robotHdg + angleDiff                                                         # applies difference in angle to chariot hdg
-    detectionObject1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)   #with chariot heading updated, detection object 1 is calculated again to get new position coords
-    detectionObject2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   #with chariot heading updated, detection object 2 is calculated again to get new position coords
-    posDiff = positionDifference(pointOnRO1, pointOnRO2, detectionObject1, detectionObject2)    # calculates the position difference between the real object position and the detection object position
+    detectedObjectPos1 = sensorToWorld(robotPos, robotHdg, sensorPosOffset1, sensorHdgOffset1, rTheta1)   #with chariot heading updated, detection object 1 is calculated again to get new position coords
+    detectedObjectPos2 = sensorToWorld(robotPos, robotHdg, sensorPosOffset2, sensorHdgOffset2, rTheta2)   #with chariot heading updated, detection object 2 is calculated again to get new position coords
+    posDiff = positionDifference(pointOnRO1, pointOnRO2, detectedObjectPos1, detectedObjectPos2)    # calculates the position difference between the real object position and the detection object position
     return angleDiff, posDiff # returns the two calculated error changes to be applied to the current chariots position and heading
 
 '''
@@ -341,11 +383,16 @@ class TriangulateAction(Action):
         print '...'
         print 'angleDiff', angleDiff
         print 'posDiff', posDiff
+##        return angleDiff, posDiff
 
 '''
 Section 9
 Green Block
+
+ScanningSensorAction is what calls for a scan with the specified values passed in
+and outputs the range and angle of the object detection.
 '''
+
 class ScanningSensorAction(Action):
     def __init__(self, scanningSensor, coordinate,scanAngleWidth,scanNo,scanSpeed):
         super(ScanningSensorAction, self).__init__()
@@ -426,27 +473,27 @@ class ScanningSensor(object):
     def getNearestScanNumber(self):
         return self.sensor.getNearestScanNumber()
     
-##if __name__ == '__main__':
-##    robotPos = (1400,2000)
-##    robotHdg = 0
-##    realObject1 = ((1900,2500),0) #((xCoordinate,yCoordinate),objectRadius)
-##    realObject2 = (( 900,2500),0)
-##    running = 2
-##    if running == 1:
-##        bus = I2C(defaultAddress=4)
-##        #StepperMotor(bus).moveToAngle(0, 1)
-##        #StepperMotor(bus).reinitialiseToCentreDatum()
-##        #time.sleep(10)
-##        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
-##        #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
-##        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
-##        action = makeSensor_Triangulate(realObject1, realObject2)
-##        state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
-##        action.run(state)
-##    elif running == 2:
-####        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
-####        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
-##        detection1 = NamedDetectionTuple((599.0826320, 56.57), (0, 170), 0)
-##        detection2 = NamedDetectionTuple((599.0826320, -56.57), (0, 170), 0)
-##        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
-##        print angleDiff, posDiff
+if __name__ == '__main__':
+    robotPos = (1400.0,2000.0)
+    robotHdg = 0
+    realObject1 = ((1900.0,2500.0),20.0) #((xCoordinate,yCoordinate),objectRadius)
+    realObject2 = (( 900.0,2500.0),20.0)
+    running = 2
+    if running == 1:
+        bus = I2C(defaultAddress=4)
+        #StepperMotor(bus).moveToAngle(0, 1)
+        #StepperMotor(bus).reinitialiseToCentreDatum()
+        #time.sleep(10)
+        irStepper = ScanningSensor(IR(bus), StepperMotor(bus), 'irStepper')
+        #usServo = ScanningSensor(US(bus), ServoMotor(bus), 'usServo')
+        makeSensor_Triangulate = makeTriangulator(scanningSensor=irStepper, scanAngleWidth=20, scanNo=5, scanSpeed=1, scanningSensor2=irStepper, scanAngleWidth2=20, scanNo2=5, scanSpeed2=1)
+        action = makeSensor_Triangulate(realObject1, realObject2)
+        state = {'robotPos' : robotPos, 'robotHdg' : robotHdg, 'irStepper' : ((0,170),0), 'usServo' : ((0,-170),180)}
+        action.run(state)
+    elif running == 2:
+##        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0.0, 170.0), 0.0)
+##        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0.0, 170.0), 0.0)
+        detection1 = NamedDetectionTuple((579.08263203, 56.575), (0.0, 170.0), 0.0)
+        detection2 = NamedDetectionTuple((579.08263203, -56.575), (0.0, 170.0), 0.0)
+        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
+        print angleDiff, posDiff

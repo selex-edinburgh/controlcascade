@@ -70,8 +70,8 @@ def sensorControlUpdate(state,batchdata):
     '''
     state.robotPos = (1400.0,2000.0)
     state.robotHdg = 0
-    state.realObject1 = ((1700.0,2300.0),28.0) #((xCoordinate,yCoordinate),objectRadius)
-    state.realObject2 = ((1100.0,2300.0),28.0)
+    state.realObject1 = ((1700.0,2300.0),20.0) #((xCoordinate,yCoordinate),objectRadius)
+    state.realObject2 = ((1100.0,2300.0),20.0)
     if sensorSetup == True:
         StepperMotor(bus).reinitialiseToCentreDatum()
         sensorSetup = False
