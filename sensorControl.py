@@ -35,10 +35,11 @@ class SensorState(ObservableState):
         self.robotHdg = 0
         self.realObject1 = ((0,0),0)
         self.realObject2 = ((0,0),0)
-        self.sensorSetup = False
         self.waiting = False
         self.irStepperOffset = ((0,170),0)
         self.usServoOffset = ((0,-170),180)
+        self.angleDiff = 0
+        self.posDiff = 0
 
         self.running = 1 # To be removed after testing
         
@@ -48,6 +49,7 @@ def sensorControlUpdate(state,batchdata):
     Green Block
     '''
     actions = None
+    sensorSetup = False
     for item in batchdata:
         if item['messageType'] == 'control':
             pass
@@ -61,34 +63,43 @@ def sensorControlUpdate(state,batchdata):
         elif item['messageType'] == 'scan':
             actions = item['actions']
         elif item['messageType'] == 'reset':
-            state.sensorSetup = True
+            sensorSetup = True
     '''
     Section 4
     Green Block
     '''
-##    state.robotPos = (1400,2000)
-##    state.robotHdg = 0
-##    state.realObject1 = ((1700,2300),0) #((xCoordinate,yCoordinate),objectRadius)
-##    state.realObject2 = ((1100,2300),0)
-    if state.sensorSetup == True:
+    state.robotPos = (1400.0,2000.0)
+    state.robotHdg = 0
+    state.realObject1 = ((1700.0,2300.0),28.0) #((xCoordinate,yCoordinate),objectRadius)
+    state.realObject2 = ((1100.0,2300.0),28.0)
+    if sensorSetup == True:
         StepperMotor(bus).reinitialiseToCentreDatum()
-        state.sensorSetup = False
+        sensorSetup = False
+        
     if state.running == 1:
         if actions != None:
             robotState = {'robotPos' : state.robotPos, 'robotHdg' : state.robotHdg, 'irStepper' : state.irStepperOffset, 'usServo' : state.usServoOffset}
-            print actions
-            actions.run(robotState) # TODO Put the actions created in routeControl in a list and then change to iterate through them all here
+            for action in actions:
+                print action
+                state.angleDiff, state.posDiff = action.run(robotState) # TODO Put the actions created in routeControl in a list and then change to iterate through them all here
+                print 'angleDiff', state.angleDiff, 'posDiff', state.posDiff
     elif state.running == 2: # For testing
-        detection1 = NamedDetectionTuple((326.9556545, 66.57), (0, 170), 0)
-        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
-        angleDiff, posDiff = triangulate(robotPos, robotHdg, realObject1, realObject2, detection1, detection2)
-        print angleDiff, posDiff
+##        detection1 = NamedDetectionTuple((326.9556545,  66.57), (0, 170), 0)
+##        detection2 = NamedDetectionTuple((326.9556545, -66.57), (0, 170), 0)
+##        detection1 = NamedDetectionTuple((301.0927909,  68.53), (0, 170), 0)
+##        detection2 = NamedDetectionTuple((301.0927909, -68.53), (0, 170), 0)
+        detection1 = NamedDetectionTuple((298.9556545,  66.5713071913), (0, 170), 0)
+        detection2 = NamedDetectionTuple((298.9556545, -66.5713071913), (0, 170), 0)
+        state.angleDiff, state.posDiff = triangulate(state.robotPos, state.robotHdg, state.realObject1, state.realObject2, detection1, detection2)
+        print 'angleDiff', state.angleDiff, 'posDiff', state.posDiff
+        print ' '
 
 '''
 Section 5
 Green Block
 '''  
 def sensorToTrackTranslator(sourceState, destState, destQueue): # TODO have the angleDiff & posDiff given back to track to be applied.
-    message = {'messageType':'obstacle',
-            'collision': sourceState.isCollision}
+    message = {'messageType':'scanUpdate',
+                'angleDiff': sourceState.angleDiff,
+                'posDiff': sourceState.posDiff}
     destQueue.put(message)

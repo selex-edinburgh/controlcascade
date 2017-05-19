@@ -53,6 +53,8 @@ class TrackState(ObservableState):
         self.latPhase = 'end'
         self.longPhase = 'reset'
         self.requestWaypoint = False
+        self.angleDiff = 0
+        self.posDiff = 0
         self.trackLog = open('trackLog.csv', 'w')
         print >> self.trackLog, 'track', ', ', 'currentPosX', ', ', 'currentPosY' ', ', 'legGoalPosX', ', ', 'legGoalPosY' ', ', 'currentAngle', ', ', 'legGoalHdgDegrees', ', ', 'legGoalHdg', ', ', 'hdg2Go', ', ', 'dist2Go', ', ', 'startCurrentAngle', ', ', 'hdgGone', ', ', 'distGone', ', ', 'latPhase', ', ', 'longPhase', ', ', 'driveMode', ', ', 'previousDriveMode', ', ', 'requestWaypoint', ', '
 def trackControlUpdate(state,batchdata):
@@ -106,6 +108,10 @@ def trackControlUpdate(state,batchdata):
 #END end ignore all that ^^^
             
             state.timeStamp = time.time()
+
+        elif item['messageType'] == 'scanUpdate':
+            state.angleDiff = item['angleDiff']
+            state.posDiff = item['posDiff']
 
     if len(batchdata) == 0: return      # do nothing here, unless new control or sense messages have arrived
 
