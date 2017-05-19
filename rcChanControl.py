@@ -52,19 +52,26 @@ class RcChanState(ObservableState):
         self.dist2Go = 0                    #how much distance the RC would need to cover to reach the next waypoint if it drove straight towards it
         self.hdgGone = 0.0
         self.distGone = 0
+        self.prevDistGone = 0
         self.driveMode = None               #says if the RC is turn left, right, moving fwd or stationary
-        self.accelLat = 1.5                 #rate of lateral acceleration (default 1.5)
+        self.brakeDist = 125
+        self.brakeFwdSpd = -60
+        self.frictionLt = 0.96
+        self.frictionRt = 0.94
+        self.accelLat = 0.5                 #rate of lateral acceleration (default 1.5)
         self.decelLat = 0.5                 #rate of lateral deceleration (default 0.5)
-        self.accelLong = 0.5                #rate of longitudinal acceleration (default 0.5)
-        self.decelLong = 0.1                #rate of longitudinal deceleration (default 0.1)
+        self.accelLong = 0.2                #rate of longitudinal acceleration (default 0.5)
+        self.decelLong = 0.05                #rate of longitudinal deceleration (default 0.1)
         self.turnPower = 0                  #the amount to add to nullTurn which turns you in which direction 
         self.fwdPower = 0                   #the amount to add to nullFwd which drives you fwd, might take into account backwards in future
         self.latPhase = None                #has the turn been completed
         self.longPhase = None               #has the fwd been completed
         self.prevLatPhase = None
         self.prevLongPhase = None
-        self.controlStaleness = 0           #how many times round since rc received a message
+##        self.controlStaleness = 0           #how many times round since rc received a message
         self.motorBias = motorBias
+        self.motorBiasLt = 10
+        self.motorBiasRt = -15
         self.handbrake = True
         
 ##        self.speedScalingFwdBk = speedScalingFwdBk
@@ -171,11 +178,11 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         if decelRateR < state.maxSpeedLR:
             #decel to minSpeed
             state.turnPower = state.minSpeedLR if decelRateR < state.minSpeedLR else decelRateR
-            state.fwdPower = 0.0
+            state.fwdPower = int(state.motorBiasRt) if motorOutput else 0.0
         else:
             #accel to maxSpeed
             state.turnPower = state.maxSpeedLR if accelRateR > state.maxSpeedLR else accelRateR
-            state.fwdPower = 0.0
+            state.fwdPower = int(state.motorBiasRt) if motorOutput else 0.0
         if state.hdgGone >= state.startHdg2Go: #state.hdg2Go <= 0                   #to end the lat phase when heading gone is equal to or greater than the starting heading to go
             state.turnPower = 0.0
             state.fwdPower = 0.0
@@ -185,11 +192,11 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         if decelRateL > -state.maxSpeedLR:
             #decel to minSpeed
             state.turnPower = -state.minSpeedLR if decelRateL > -state.minSpeedLR else decelRateL
-            state.fwdPower = 0.0
+            state.fwdPower = int(state.motorBiasLt) if motorOutput else 0.0
         else:
             #accel to maxSpeed
             state.turnPower = -state.maxSpeedLR if accelRateL < -state.maxSpeedLR else accelRateL
-            state.fwdPower = 0.0
+            state.fwdPower = int(state.motorBiasLt) if motorOutput else 0.0
         if state.hdgGone <= state.startHdg2Go: #state.hdg2Go >= 0                   #to end the lat phase when heading gone is equal to or greater than the starting heading to go
             state.turnPower = 0.0
             state.fwdPower = 0.0
@@ -204,15 +211,26 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             #accel to maxSpeed
             state.turnPower = 0.0
             state.fwdPower = state.maxSpeedFwdBk if accelRateFwd > state.maxSpeedFwdBk else accelRateFwd
-##        state.turnPower = state.hdg2Go *2* state.decelLat   #for maintaining heading when driving forward
-##        if state.turnPower > state.maxSpeedLR:
-##            state.turnPower = state.maxSpeedLR
-##        elif state.turnPower < -state.maxSpeedLR:
-##            state.turnPower = -state.maxSpeedLR
-        if state.distGone >= state.startDist2Go:                  #to end the long phase when distance gone is equal to or greater than starting heading to go
-            state.turnPower = 0.0
-            state.fwdPower = 0.0
-            state.longPhase = 'end'
+        state.turnPower = state.hdg2Go * state.decelLat   #for maintaining heading when driving forward
+        if state.turnPower > state.maxSpeedLR:
+            state.turnPower = state.maxSpeedLR
+        elif state.turnPower < -state.maxSpeedLR:
+            state.turnPower = -state.maxSpeedLR
+            
+        if motorOutput:
+            if state.distGone >= (state.startDist2Go - state.brakeDist):                  #to end the long phase when distance gone is equal to or greater than starting heading to go
+                state.fwdPower = int(state.brakeFwdSpd)
+                distChange = state.distGone - state.prevDistGone
+                state.prevDistGone = state.distGone
+                if abs(distChange) <= 10:
+                    state.turnPower = 0.0
+                    state.fwdPower = 0.0
+                    state.longPhase = 'end'
+        else:
+            if state.distGone >= state.startDist2Go:                  #to end the long phase when distance gone is equal to or greater than starting heading to go
+                state.turnPower = 0.0
+                state.fwdPower = 0.0
+                state.longPhase = 'end'
 
     state.currentTurn = state._nullTurn + state.turnPower
     state.currentFwd = state._nullFwd + state.fwdPower
