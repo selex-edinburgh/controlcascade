@@ -21,7 +21,8 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 
 '''
     Uncomment this section and motorCommand file open part further down to
-    get back motor date to put in Graphs
+    get back motor data to put in Graphs.
+    Would advice use of .csv data print outs instead of motorcommand.
 '''
 ##try:        # delete log file
 ##    os.rename('motorCommands.txt','log/%s.old' % time.time())
@@ -55,23 +56,22 @@ class RcChanState(ObservableState):
         self.prevDistGone = 0
         self.driveMode = None               #says if the RC is turn left, right, moving fwd or stationary
         self.brakeDist = 125
-        self.brakeFwdSpd = -60
-        self.frictionLt = 0.96
-        self.frictionRt = 0.94
-        self.accelLat = 0.5                 #rate of lateral acceleration (default 1.5)
+        self.brakeFwdSpd = -40
+        self.frictionLt = 1.50 #1.15
+        self.frictionRt = 1.08
+        self.accelLat = 1.5                 #rate of lateral acceleration (default 1.5)
         self.decelLat = 0.5                 #rate of lateral deceleration (default 0.5)
         self.accelLong = 0.2                #rate of longitudinal acceleration (default 0.5)
-        self.decelLong = 0.05                #rate of longitudinal deceleration (default 0.1)
+        self.decelLong = 0.15                #rate of longitudinal deceleration (default 0.1)
         self.turnPower = 0                  #the amount to add to nullTurn which turns you in which direction 
         self.fwdPower = 0                   #the amount to add to nullFwd which drives you fwd, might take into account backwards in future
         self.latPhase = None                #has the turn been completed
         self.longPhase = None               #has the fwd been completed
         self.prevLatPhase = None
         self.prevLongPhase = None
-##        self.controlStaleness = 0           #how many times round since rc received a message
         self.motorBias = motorBias
-        self.motorBiasLt = 10
-        self.motorBiasRt = -15
+        self.motorBiasLt = -7
+        self.motorBiasRt = 13
         self.handbrake = True
         
 ##        self.speedScalingFwdBk = speedScalingFwdBk
@@ -113,34 +113,23 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             pass
 
         if item['messageType'] == 'sense':
-##                state.demandTurn = clip(item['demandTurn'] * state.speedScalingLR * state._maxDemand + state._nullTurn)   ## expects anti clockwise
-##                state.demandFwd  = clip(item['demandFwd'] * state.speedScalingFwdBk * state._maxDemand + state._nullFwd)   ## inserted minus
-##                state.demandTurn = state.demandTurn * state._turnBiasLOverR if state.demandTurn > 0.0 else state.demandTurn / state._turnBiasLOverR
             state.hdg2Go = item['hdg2Go']
             state.dist2Go = item['dist2Go']
             state.hdgGone = item['hdgGone']
             state.distGone = item['distGone']
-##            state.controlStaleness = 0
+
         elif item['messageType'] == 'stop':
             if item['stopLoops']:
                 state.handbrake = True
             else:
                 state.handbrake = False
-        elif item['messageType'] == 'control':
+        elif item['messageType'] == 'control': # receives message from track named 'control'
             state.driveMode = item['driveMode']
             state.latPhase = item['latPhase']
             state.longPhase = item['longPhase']
 
     if not batchdata:       # if no messages (loops stopped) start counting how long the thread has been stale
         return
-##        state.controlStaleness += 1
-##
-##    if state.controlStaleness == 2:
-##        state.driveMode = 'Parked'
-
-
-##    state.currentTurn = clip(limitedChange(state.currentTurn, state.demandTurn , state._lrChange)) 
-##    state.currentFwd = clip(limitedChange(state.currentFwd, state.demandFwd , state._fwdbkChange))
 
     #reset the start dist and hdg for the motor rate calculations accelRate
     if state.driveMode != 'TurnR' and state.driveMode != 'TurnL':
@@ -157,10 +146,10 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
     if not(state.handbrake):
         #calculates the rate at which the motor power is increased or decreased, with proportion of dist & hdg to go
         if state.driveMode == 'TurnR':
-            accelRateR = ((state.startHdg2Go - state.hdg2Go)*state.accelLat)+state.minSpeedLR
+            accelRateR = (((state.startHdg2Go - state.hdg2Go)*state.frictionRt)*state.accelLat)+state.minSpeedLR
             decelRateR = (state.hdg2Go*state.decelLat)+(state.minSpeedLR/2)
         elif state.driveMode == 'TurnL':
-            accelRateL = ((state.startHdg2Go - state.hdg2Go)*state.accelLat)-state.minSpeedLR
+            accelRateL = (((state.startHdg2Go - state.hdg2Go)*state.frictionLt)*state.accelLat)-state.minSpeedLR
             decelRateL = (state.hdg2Go*state.decelLat)-(state.minSpeedLR/2)
         elif state.driveMode == 'MoveFwd':
             accelRateFwd = ((state.startDist2Go - state.dist2Go)*state.accelLong)+state.minSpeedFwdBk
@@ -174,6 +163,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
         state.turnPower = 0.0
         state.fwdPower = 0.0
     elif state.driveMode == 'TurnR':
+        
         #turn right
         if decelRateR < state.maxSpeedLR:
             #decel to minSpeed
@@ -187,6 +177,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             state.turnPower = 0.0
             state.fwdPower = 0.0
             state.latPhase = 'end'
+            
     elif state.driveMode == 'TurnL':
         #turn left
         if decelRateL > -state.maxSpeedLR:
@@ -197,7 +188,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             #accel to maxSpeed
             state.turnPower = -state.maxSpeedLR if accelRateL < -state.maxSpeedLR else accelRateL
             state.fwdPower = int(state.motorBiasLt) if motorOutput else 0.0
-        if state.hdgGone <= state.startHdg2Go: #state.hdg2Go >= 0                   #to end the lat phase when heading gone is equal to or greater than the starting heading to go
+        if state.hdg2Go >= 0: #state.hdgGone <= state.startHdg2Go: #state.hdg2Go >= 0                   #to end the lat phase when heading gone is equal to or greater than the starting heading to go
             state.turnPower = 0.0
             state.fwdPower = 0.0
             state.latPhase = 'end'
@@ -238,19 +229,6 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
 ##    rcChanLog = open('rcChanLog.csv', 'a')
     print >> state.rcChanLog, 'rcChan', ', ', state.driveMode, ', ', state.latPhase, ', ', state.longPhase, ', ', state.hdg2Go, ', ', state.dist2Go, ', ', state.startHdg2Go, ', ', state.startDist2Go, ', ', state.startHdgToggle, ', ', state.startDistToggle, ', ', state.hdgGone, ', ', state.distGone, ', ', state.currentTurn, ', ', state.currentFwd, ', '
 ##    f.close
-    
-##    motorL = state.currentFwd + state.currentTurn
-##    motorR = state.currentFwd - state.currentTurn
-##    if motorL > state.nullMotorL and motorL < state.nullMotorL + State.minSpeedMotorL:
-##        motorL = state.nullMotorL + State.minSpeedMotorL
-##    elif motorL < state.nullMotorL and motorL > state.nullMotorL - State.minSpeedMotorL:
-##        motorL = state.nullMotorL - State.minSpeedMotorL
-##    if motorR > state.nullMotorR and motorR < state.nullMotorR + State.minSpeedMotorR:
-##        motorR = state.nullMotorR + State.minSpeedMotorR
-##    elif motorR < state.nullMotorR and motorR > state.nullMotorR - State.minSpeedMotorR:
-##        motorR = state.nullMotorR - State.minSpeedMotorR
-##    state.currentFwd = (motorL + motorR)/2
-##    state.currentTurn = (motorL - motorR)/2
 
 ##    f = open('motorCommands.txt', 'a')
 ##    print >> f, time.time(), ",", int(state.currentFwd), ",", int(state.currentTurn)
@@ -261,9 +239,7 @@ def rcChanControlUpdate(state,batchdata, motorOutput):
             state.currentTurn = state.currentTurn + state.motorBias
         state.ser.write(chr(clip(int(state.currentFwd),254,1)))     #Output to Motor Drive Board
         state.ser.write(chr(clip(int(state.currentTurn),(254-state.motorBias),(1-state.motorBias))))    #Output to Motor Drive Board
-        
-##    if time.time() - int(time.time()) < 0.05: print state.currentFwd, state.currentTurn#, state.demandFwd, state.demandTurn
-        
+               
 def limitedChange(startX, endX, magnitudeLimit):
     diff = endX - startX
     if diff == 0: return startX

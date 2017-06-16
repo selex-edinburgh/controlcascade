@@ -27,7 +27,7 @@ class VsimState(ObservableState):
         self.timeStampFlow["sense"] = time.time()
         self.timeStamp= time.time()
         self.vSimLog = open('vSimLog.csv', 'w')
-        print >> self.vSimLog, 'vSim', ', ', 'rcTurn', ', ', 'rcFwd', ', ', 'speedL', ', ', 'speedR', ', '
+        #print >> self.vSimLog, 'vSim', ', ', 'rcTurn', ', ', 'rcFwd', ', ', 'speedL', ', ', 'speedR', ', '
 def vsimControlUpdate(state,batchdata):
 
     prevRcTurn = state.rcTurn
@@ -51,7 +51,7 @@ def vsimControlUpdate(state,batchdata):
     state.speedL = state._leftSpeedMultiplier * (state.rcFwd + state.rcTurn) / 2.0
     state.speedR = state._rightSpeedMultiplier * (state.rcFwd - state.rcTurn) / 2.0 # demand 2.0 == max turn + max fwd
 
-    print >> state.vSimLog, 'vSim', ', ', state.rcTurn, ', ', state.rcFwd, ', ', state.speedL, ', ', state.speedR, ', '
+    #print >> state.vSimLog, 'vSim', ', ', state.rcTurn, ', ', state.rcFwd, ', ', state.speedL, ', ', state.speedR, ', '
 
 def vsimToOdoTranslator( sourceState, destState, destQueue ):
     deltaL = round(sourceState.speedL * sourceState.timeDelta / destState._mmPerPulseLt ,0)

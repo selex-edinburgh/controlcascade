@@ -63,12 +63,32 @@ class RouteState(ObservableState):
 ##        Waypoint(2300, 220, 0)
 
         #Course
-        Waypoint(1550, 335, 0),
-        Waypoint(2095, 335, 0),
-        Waypoint(2095, 1065, 0),
-        Waypoint(1550, 1065, 0),
-        Waypoint(1550, 1950, 0),
-        Waypoint(2095, 1950, 0)
+        Waypoint(1555,  335, 0),
+        Waypoint(2105,  335, 0),
+        Waypoint(2105, 1075, 0),
+        Waypoint(1555, 1075, 0),
+        Waypoint(1555, 1965, 0),
+        Waypoint(2105, 1965, 0),
+        Waypoint(2105, 2895, 0)#,
+##        Waypoint(1555, 2895, 0),
+##        Waypoint(1555, 3995, 0),
+##        Waypoint(770,  3325, 0),
+##        Waypoint(480,  3945, 0),
+##        Waypoint(480,  6625, 0),
+##        Waypoint(2440, 6625, 0),
+##        Waypoint(2440, 6325, 15),
+##        Waypoint(2440, 3945, 0),
+##        Waypoint(1465, 3945, 0),
+##        Waypoint(1465, 5365, 0),
+##        Waypoint(1465, 3945, 0),
+##        Waypoint(1555, 2845, 0),
+##        Waypoint(2105, 2845, 0),
+##        Waypoint(2105, 1965, 0),
+##        Waypoint(1555, 1965, 0),
+##        Waypoint(1555, 1075, 0),
+##        Waypoint(2105, 1075, 0),
+##        Waypoint(2105,  335, 0),
+##        Waypoint(1555,  335, 0)
         
 ##        #Square
 ##        Waypoint(1400, 3800, 0),
@@ -106,7 +126,7 @@ class RouteState(ObservableState):
         self.runActions = None
         self.changingWaypoint = False
         self.routeLog = open('routeLog.csv', 'w')
-        print >> self.routeLog, 'route', ', ', 'finishedLegGoalX', ', ', 'finishedLegGoalY', ', ', 'tempWaypointX', ', ', 'tempWaypointY', ', ', 'nextWaypointNumber', ', ', 'changingWaypoint', ', '
+        #print >> self.routeLog, 'route', ', ', 'finishedLegGoalX', ', ', 'finishedLegGoalY', ', ', 'tempWaypointX', ', ', 'tempWaypointY', ', ', 'nextWaypointNumber', ', ', 'changingWaypoint', ', '
         
 def routeControlUpdate(state,batchdata):
     '''
@@ -146,7 +166,7 @@ def routeControlUpdate(state,batchdata):
                     if ( state.nextWaypointNumber+1 < len(state.waypoints)):
                         state.nextWaypointNumber += 1
                         state.changingWaypoint = True
-            print >> state.routeLog, 'route', ', ', finishedLegGoal.getPosition(), ', ', tempWaypoint.getPosition(), ', ', state.nextWaypointNumber, ', ', state.changingWaypoint, ', '
+            #print >> state.routeLog, 'route', ', ', finishedLegGoal.getPosition(), ', ', tempWaypoint.getPosition(), ', ', state.nextWaypointNumber, ', ', state.changingWaypoint, ', '
 
 '''
 Section 5

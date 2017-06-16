@@ -32,9 +32,9 @@ class EnvSimState(ObservableState):
         self.barrelList = [(1100,5420,60,25),(3100,5420,60,25)]
         self.barrierList = [(400,7200,0,6800), (2400,0,2400,2400), (4400,7200,4800,6800)]
         self.rampList = [(2150,5900,50,120)]
-        self.paddleList = [(250,5550,8,50),(3970,5550,8,50)]
+        self.paddleList = [(230,5550,8,50),(3970,5550,8,50)]
         self.goalList = [(800,2600,200,3200,0,2400), (4000,2600,4600,3200,4800,2400)]
-        self.ballList = [(800,3200),(4000,3200)]
+        self.ballList = [(1220,3670),(3580,3670)]
 
 def envSimControlUpdate(state, batchdata):
 

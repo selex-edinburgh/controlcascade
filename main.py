@@ -14,7 +14,7 @@ Green Block
 '''
 import time
 import math
-import plumbing.arcnode
+import plumbing.arcnode # 
 
 import routeControl
 import trackControl
@@ -49,13 +49,13 @@ def runArcNodes():
     rcChanUpdateRateMax = 0.09
     lrChange = 20.0
     fwdbkChange = 20.0
-    minSpeedFwdBk = 30.0
-    minSpeedLR = 45.0
-    maxSpeedFwdBk = 60.0
-    maxSpeedLR = 70.0
+    minSpeedFwdBk = 20.0
+    minSpeedLR = 40.0
+    maxSpeedFwdBk = 50.0
+    maxSpeedLR = 60.0
     speedScalingFwdBk = 0.7
     speedScalingLR = speedScalingFwdBk*1.3 # Boosts speedScaling for turns
-    motorBias = 4
+    motorBias = 1
     turnOffset = 6
     turnBias = 1.06
 
@@ -63,21 +63,19 @@ def runArcNodes():
     trackUpdateRateMax =   1
     wheelBase = 200
     trackWidth = 237
-    movementBudget = 500
-    underTurn = 0.58 #underTurn will be changed after testing
     
     vsimUpdateRateMin = 0.016
     vsimUpdateRateMax = 0.06
     lrBias = 1.00
     speedMax = 900.0
 
-    SimMode = False #True = Simulated Mode, False = Real Mode
+    SimMode = True #True = Simulated Mode, False = Real Mode
 
     routeState  = routeControl.RouteState(near)
     firstWaypoint, secondWaypoint = routeState.waypoints[0], routeState.waypoints[1]    #Gets the first and second waypoint for setup or robot visuals
     odoState    = odoControl.OdoState(wheelDiaRt, wheelDiaLt, overrideAngle if doOverrideAngle else firstWaypoint.angleTo_Degrees(secondWaypoint))    #OdoState(wheelDiaRt, wheelDiaLt,initTheta)
     rcChanState = rcChanControl.RcChanState(lrChange, fwdbkChange, minSpeedFwdBk, minSpeedLR, maxSpeedFwdBk, maxSpeedLR, speedScalingFwdBk, speedScalingLR, motorBias, turnOffset, turnBias)
-    trackState  = trackControl.TrackState(wheelBase,trackWidth,movementBudget, firstWaypoint.x, firstWaypoint.y, secondWaypoint.x, secondWaypoint.y, underTurn)
+    trackState  = trackControl.TrackState(wheelBase,trackWidth, firstWaypoint.x, firstWaypoint.y, secondWaypoint.x, secondWaypoint.y)
     vsimState   = vsimControl.VsimState(lrBias,speedMax)
     envSimState = envSimControl.EnvSimState()
     sensorState = sensorControl.SensorState()

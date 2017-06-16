@@ -17,7 +17,7 @@ from plumbing.arcnode import ArcNodeObserverTranslator
 from lib.navigation import *
 
 class TrackState(ObservableState):
-    def __init__(self, wheelBase, trackWidth, movementBudget, xPos1, yPos1, xPos2, yPos2, underTurn):
+    def __init__(self, wheelBase, trackWidth, xPos1, yPos1, xPos2, yPos2):
         super(TrackState,self).__init__()
 
         self.noLegSet = True
@@ -34,8 +34,6 @@ class TrackState(ObservableState):
         self.turnRadius = math.hypot(self._trackWidth, self._wheelBase)/2.0 # value should be around 155.0 mm
         self.turnFactor = ((self._trackWidth/2.0)/self.turnRadius)**2.0 # takes into account the turning component
         # and the turn radius to create a correction value that can be applied to the heading (0.58)
-        self.underTurn = underTurn
-        #self._movementBudget = movementBudget       # 500.0 mm
         self.timeStamp = time.time()
         self.timeStampFlow["control"] = time.time()
         self.timeStampFlow["sense"] = time.time()
@@ -126,7 +124,7 @@ def trackControlUpdate(state,batchdata):
     legGoalHdgDegrees = math.degrees(legGoalHdgRadians)
     legGoalHdg = (90 - legGoalHdgDegrees)%360           #compass wrt North +ve clockwise
     state.hdg2Go = angleDiff(state.currentAngle, legGoalHdg)  #heading to turn to face next wpt
-
+    #print state.hdg2Go
     state.distGone = math.hypot(state.currentPos[0] - legOriginPos[0], state.currentPos[1] - legOriginPos[1])              #distance gone towards next wpt
 ##    legOriginHdgRadians = math.atan2(legOriginPos[1] - state.currentPos[1], legOriginPos[0] - state.currentPos[0])    #wptHdg= math.atan2(y,x) (radians)
 ##    legOriginHdgDegrees = math.degrees(legOriginHdgRadians)
